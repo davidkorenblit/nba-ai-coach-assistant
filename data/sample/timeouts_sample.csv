@@ -1,0 +1,118 @@
+gameId,actionNumber,clock,period,teamId,teamTricode,personId,playerName,playerNameI,xLegacy,yLegacy,shotDistance,shotResult,isFieldGoal,scoreHome,scoreAway,pointsTotal,location,description,actionType,subType,videoAvailable,shotValue,actionId
+0022300502,56,PT06M55.00S,1,0,,1610612743,,,0,0,0,,0,,,0,h,NUGGETS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,39
+0022300502,90,PT03M33.00S,1,0,,1610612743,,,0,0,0,,0,,,0,h,NUGGETS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,65
+0022300502,188,PT08M09.00S,2,0,,1610612743,,,0,0,0,,0,,,0,h,NUGGETS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,135
+0022300502,214,PT06M21.00S,2,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,153
+0022300502,241,PT04M50.00S,2,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,169
+0022300502,348,PT09M08.00S,3,0,,1610612743,,,0,0,0,,0,,,0,h,NUGGETS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,250
+0022300502,415,PT04M54.00S,3,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,298
+0022300502,580,PT07M01.00S,4,0,,1610612743,,,0,0,0,,0,,,0,h,NUGGETS Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,414
+0022300502,618,PT04M25.00S,4,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,441
+0012300013,71,PT05M24.00S,1,0,,12315,,,0,0,0,,0,,,0,h,REAL MADRID Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,51
+0012300013,127,PT01M37.00S,1,0,,1610612742,,,0,0,0,,0,,,0,v,Mavericks Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,88
+0012300013,210,PT08M31.00S,2,0,,1610612742,,,0,0,0,,0,,,0,v,Mavericks Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,154
+0012300013,242,PT07M09.00S,2,0,,12315,,,0,0,0,,0,,,0,h,REAL MADRID Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,176
+0012300013,417,PT09M36.00S,3,0,,12315,,,0,0,0,,0,,,0,h,REAL MADRID Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,300
+0012300013,481,PT05M49.00S,3,0,,1610612742,,,0,0,0,,0,,,0,v,Mavericks Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,351
+0012300013,512,PT02M52.00S,3,0,,12315,,,0,0,0,,0,,,0,h,REAL MADRID Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,376
+0012300013,619,PT07M57.00S,4,0,,12315,,,0,0,0,,0,,,0,h,REAL MADRID Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,449
+0012300013,701,PT02M49.00S,4,0,,1610612742,,,0,0,0,,0,,,0,v,Mavericks Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,507
+0012300013,722,PT01M03.00S,4,0,,1610612742,,,0,0,0,,0,,,0,v,Mavericks Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,525
+0012300007,55,PT07M31.00S,1,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,43
+0012300007,101,PT04M38.00S,1,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,76
+0012300007,144,PT02M06.00S,1,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,105
+0012300007,210,PT08M58.00S,2,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,156
+0012300007,228,PT07M43.00S,2,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,167
+0012300007,329,PT02M14.00S,2,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,246
+0012300007,442,PT07M17.00S,3,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,328
+0012300007,459,PT06M19.00S,3,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,340
+0012300007,486,PT04M10.00S,3,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Coach Challenge (Full 4 Short 0),Timeout,Coach Challenge,0,0,363
+0012300007,630,PT07M37.00S,4,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,464
+0012300007,678,PT04M10.00S,4,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,501
+0012300007,689,PT03M16.00S,4,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.6 Short 0),Timeout,Regular,0,0,511
+0012300007,728,PT00M31.20S,4,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 6 Short 0),Timeout,Regular,0,0,540
+0012300007,739,PT00M03.20S,4,0,,1610612763,,,0,0,0,,0,,,0,h,GRIZZLIES Timeout: Regular (Full 7 Short 0),Timeout,Regular,0,0,549
+0012300007,793,PT00M24.90S,5,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.7 Short 0),Timeout,Regular,0,0,587
+0012300007,800,PT00M11.10S,5,0,,1610612754,,,0,0,0,,0,,,0,v,Pacers Timeout: Regular (Reg.8 Short 0),Timeout,Regular,0,0,593
+0022300459,65,PT07M31.00S,1,0,,1610612741,,,0,0,0,,0,,,0,v,Bulls Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,47
+0022300459,109,PT03M59.00S,1,0,,1610612741,,,0,0,0,,0,,,0,v,Bulls Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,80
+0022300459,254,PT06M50.00S,2,0,,1610612755,,,0,0,0,,0,,,0,h,76ERS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,182
+0022300459,303,PT03M32.00S,2,0,,1610612741,,,0,0,0,,0,,,0,v,Bulls Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,217
+0022300459,359,PT10M49.00S,3,0,,1610612755,,,0,0,0,,0,,,0,h,76ERS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,260
+0022300459,401,PT07M36.00S,3,0,,1610612741,,,0,0,0,,0,,,0,v,Bulls Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,293
+0022300459,487,PT03M10.00S,3,0,,1610612755,,,0,0,0,,0,,,0,h,76ERS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,354
+0022300459,526,PT00M55.90S,3,0,,1610612741,,,0,0,0,,0,,,0,v,Bulls Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,380
+0022300459,641,PT06M01.00S,4,0,,1610612755,,,0,0,0,,0,,,0,h,76ERS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,465
+0022300459,683,PT02M36.00S,4,0,,1610612741,,,0,0,0,,0,,,0,v,Bulls Timeout: Regular (Reg.6 Short 0),Timeout,Regular,0,0,499
+0022300508,17,PT10M35.00S,1,0,,1610612760,,,0,0,0,,0,,,0,v,Thunder Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,12
+0022300508,73,PT05M32.00S,1,0,,1610612764,,,0,0,0,,0,,,0,h,WIZARDS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,51
+0022300508,229,PT09M18.00S,2,0,,1610612764,,,0,0,0,,0,,,0,h,WIZARDS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,154
+0022300508,324,PT03M01.00S,2,0,,1610612760,,,0,0,0,,0,,,0,v,Thunder Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,226
+0022300508,386,PT10M40.00S,3,0,,1610612764,,,0,0,0,,0,,,0,h,WIZARDS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,264
+0022300508,458,PT04M13.00S,3,0,,1610612760,,,0,0,0,,0,,,0,v,Thunder Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,316
+0022300508,495,PT01M43.00S,3,0,,1610612760,,,0,0,0,,0,,,0,v,Thunder Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,345
+0022300508,570,PT07M55.00S,4,0,,1610612764,,,0,0,0,,0,,,0,h,WIZARDS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,397
+0022300508,583,PT06M16.00S,4,0,,1610612760,,,0,0,0,,0,,,0,v,Thunder Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,405
+0022300508,623,PT03M34.00S,4,0,,1610612764,,,0,0,0,,0,,,0,h,WIZARDS Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,432
+0022300508,692,PT00M22.60S,4,0,,1610612764,,,0,0,0,,0,,,0,h,WIZARDS Timeout: Regular (Full 6 Short 0),Timeout,Regular,0,0,483
+0022300508,696,PT00M19.00S,4,0,,1610612760,,,0,0,0,,0,,,0,v,Thunder Timeout: Regular (Reg.6 Short 0),Timeout,Regular,0,0,486
+0022300323,69,PT06M50.00S,1,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,53
+0022300323,105,PT03M16.00S,1,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,75
+0022300323,181,PT09M44.00S,2,0,,1610612762,,,0,0,0,,0,,,0,v,Jazz Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,126
+0022300323,246,PT04M09.00S,2,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,175
+0022300323,274,PT02M37.00S,2,0,,1610612762,,,0,0,0,,0,,,0,v,Jazz Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,197
+0022300323,323,PT11M00.00S,3,0,,1610612762,,,0,0,0,,0,,,0,v,Jazz Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,233
+0022300323,359,PT09M07.00S,3,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,263
+0022300323,404,PT06M48.00S,3,0,,1610612762,,,0,0,0,,0,,,0,v,Jazz Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,293
+0022300323,442,PT04M43.00S,3,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,322
+0022300323,543,PT09M13.00S,4,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 6 Short 0),Timeout,Regular,0,0,402
+0022300323,598,PT04M39.00S,4,0,,1610612757,,,0,0,0,,0,,,0,h,TRAIL BLAZERS Timeout: Regular (Full 7 Short 0),Timeout,Regular,0,0,440
+0022300072,70,PT06M28.00S,1,0,,1610612762,,,0,0,0,,0,,,0,h,JAZZ Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,55
+0022300072,122,PT03M08.00S,1,0,,1610612758,,,0,0,0,,0,,,0,v,Kings Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,95
+0022300072,204,PT09M00.00S,2,0,,1610612762,,,0,0,0,,0,,,0,h,JAZZ Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,158
+0022300072,268,PT05M28.00S,2,0,,1610612758,,,0,0,0,,0,,,0,v,Kings Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,201
+0022300072,424,PT06M51.00S,3,0,,1610612762,,,0,0,0,,0,,,0,h,JAZZ Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,316
+0022300072,488,PT02M59.00S,3,0,,1610612758,,,0,0,0,,0,,,0,v,Kings Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,363
+0022300072,595,PT08M56.00S,4,0,,1610612762,,,0,0,0,,0,,,0,h,JAZZ Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,438
+0022300072,650,PT05M36.00S,4,0,,1610612758,,,0,0,0,,0,,,0,v,Kings Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,474
+0022300072,686,PT02M25.00S,4,0,,1610612762,,,0,0,0,,0,,,0,h,JAZZ Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,507
+0022301211,80,PT05M08.00S,1,0,,1610612741,,,0,0,0,,0,,,0,h,BULLS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,60
+0022301211,129,PT01M29.00S,1,0,,1610612766,,,0,0,0,,0,,,0,v,Hornets Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,97
+0022301211,177,PT10M38.00S,2,0,,1610612766,,,0,0,0,,0,,,0,v,Hornets Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,125
+0022301211,222,PT07M39.00S,2,0,,1610612766,,,0,0,0,,0,,,0,v,Hornets Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,158
+0022301211,279,PT03M36.00S,2,0,,1610612741,,,0,0,0,,0,,,0,h,BULLS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,198
+0022301211,358,PT08M58.00S,3,0,,1610612766,,,0,0,0,,0,,,0,v,Hornets Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,260
+0022301211,418,PT05M06.00S,3,0,,1610612741,,,0,0,0,,0,,,0,h,BULLS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,307
+0022301211,551,PT08M54.00S,4,0,,1610612741,,,0,0,0,,0,,,0,h,BULLS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,401
+0022301211,613,PT04M56.00S,4,0,,1610612741,,,0,0,0,,0,,,0,h,BULLS Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,447
+0022301211,633,PT03M24.00S,4,0,,1610612741,,,0,0,0,,0,,,0,h,BULLS Timeout: Coach Challenge (Full 5 Short 0),Timeout,Coach Challenge,0,0,463
+0022301211,683,PT00M26.80S,4,0,,1610612766,,,0,0,0,,0,,,0,v,Hornets Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,502
+0022301211,694,PT00M21.50S,4,0,,1610612766,,,0,0,0,,0,,,0,v,Hornets Timeout: Regular (Reg.6 Short 0),Timeout,Regular,0,0,508
+0022300490,77,PT05M53.00S,1,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,61
+0022300490,148,PT02M41.00S,1,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,112
+0022300490,255,PT06M42.00S,2,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,190
+0022300490,308,PT02M39.00S,2,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,227
+0022300490,389,PT07M50.00S,3,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,285
+0022300490,462,PT02M55.00S,3,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,335
+0022300490,569,PT07M12.00S,4,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,407
+0022300490,593,PT05M43.00S,4,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,424
+0022300490,609,PT04M20.00S,4,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,437
+0022300490,619,PT03M36.00S,4,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,445
+0022300490,635,PT02M21.00S,4,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Coach Challenge (Reg.5 Short 0),Timeout,Coach Challenge,0,0,454
+0022300490,650,PT01M04.00S,4,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.6 Short 0),Timeout,Regular,0,0,466
+0022300490,662,PT00M25.90S,4,0,,1610612765,,,0,0,0,,0,,,0,v,Pistons Timeout: Regular (Reg.7 Short 0),Timeout,Regular,0,0,477
+0022300490,667,PT00M17.00S,4,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 6 Short 0),Timeout,Regular,0,0,481
+0022300490,685,PT00M02.10S,4,0,,1610612744,,,0,0,0,,0,,,0,h,WARRIORS Timeout: Regular (Full 7 Short 0),Timeout,Regular,0,0,494
+0022300527,50,PT06M50.00S,1,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 1 Short 0),Timeout,Regular,0,0,44
+0022300527,112,PT02M14.00S,1,0,,1610612751,,,0,0,0,,0,,,0,v,Nets Timeout: Regular (Reg.1 Short 0),Timeout,Regular,0,0,88
+0022300527,224,PT06M00.00S,2,0,,1610612751,,,0,0,0,,0,,,0,v,Nets Timeout: Regular (Reg.2 Short 0),Timeout,Regular,0,0,165
+0022300527,281,PT02M28.00S,2,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 2 Short 0),Timeout,Regular,0,0,203
+0022300527,420,PT05M54.00S,3,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 3 Short 0),Timeout,Regular,0,0,315
+0022300527,465,PT02M47.00S,3,0,,1610612751,,,0,0,0,,0,,,0,v,Nets Timeout: Regular (Reg.3 Short 0),Timeout,Regular,0,0,348
+0022300527,501,PT01M12.00S,3,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Coach Challenge (Full 3 Short 0),Timeout,Coach Challenge,0,0,376
+0022300527,558,PT09M51.00S,4,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 4 Short 0),Timeout,Regular,0,0,407
+0022300527,607,PT06M30.00S,4,0,,1610612751,,,0,0,0,,0,,,0,v,Nets Timeout: Regular (Reg.4 Short 0),Timeout,Regular,0,0,441
+0022300527,663,PT03M19.00S,4,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 5 Short 0),Timeout,Regular,0,0,475
+0022300527,665,PT03M08.00S,4,0,,1610612751,,,0,0,0,,0,,,0,v,Nets Timeout: Regular (Reg.5 Short 0),Timeout,Regular,0,0,477
+0022300527,695,PT01M14.00S,4,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 6 Short 0),Timeout,Regular,0,0,500
+0022300527,724,PT00M35.00S,4,0,,1610612739,,,0,0,0,,0,,,0,h,CAVALIERS Timeout: Regular (Full 7 Short 0),Timeout,Regular,0,0,519
