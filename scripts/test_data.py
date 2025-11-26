@@ -1,42 +1,52 @@
-# NBA Timeout Data Fetcher - Using PlayByPlayV3
-from nba_api.stats.endpoints import playbyplayv3, leaguegamefinder
 import pandas as pd
-import random
+from nba_api.stats.endpoints import leaguegamefinder, playbyplayv3
 import time
 
-print("Fetching games from 2023-24 season...")
-# 1. Get all games from 2023-24 season
-gamefinder = leaguegamefinder.LeagueGameFinder(season_nullable='2023-24')
-games = gamefinder.get_data_frames()[0]
+# הגדרות תצוגה
+pd.set_option('display.max_columns', None)
 
-# 2. Pick 10 random game IDs
-random_games = games.sample(10)['GAME_ID'].tolist()
-print(f"Selected {len(random_games)} random games")
+print("Fetching last 5 NBA games...")
+# משיכת רשימת המשחקים הכי עדכניים
+gamefinder = leaguegamefinder.LeagueGameFinder(season_nullable='2024-25', league_id_nullable='00', season_type_nullable='Regular Season')
+games = gamefinder.get_data_frames()[0].head(5) # לוקחים 5 משחקים
+game_ids = games['GAME_ID'].unique()
 
-# 3. Fetch play-by-play for each game and filter timeouts
-all_timeouts = []
-for i, game_id in enumerate(random_games, 1):
+results = []
+
+print(f"Testing {len(game_ids)} games across the league...\n")
+
+for g_id in game_ids:
+    # השהיה קטנה כדי לא להעמיס על ה-API
+    time.sleep(1)
+    
+    # פרטי המשחק לתצוגה
+    matchup = games[games['GAME_ID'] == g_id]['MATCHUP'].iloc[0]
+    
+    # משיכת ה-PBP
     try:
-        print(f"Fetching game {i}/10: {game_id}")
-        pbp = playbyplayv3.PlayByPlayV3(game_id=game_id)
-        df = pbp.get_data_frames()[0]
+        df = playbyplayv3.PlayByPlayV3(game_id=g_id).get_data_frames()[0]
         
-        # Filter for timeout events (EVENTMSGTYPE == 4)
-        timeouts = df[df['actionType'] == 'Timeout']
-        print(f"  Found {len(timeouts)} timeouts")
+        # בדיקת הבאג: כמה שורות ריקות יש ב-actionType שיש בהן Steal/Block בתיאור?
+        hidden_events = df[
+            (df['actionType'] == '') & 
+            (df['description'].str.contains('STEAL|BLOCK', case=False, regex=True, na=False))
+        ]
         
-        all_timeouts.append(timeouts)
-        time.sleep(1)  # Wait 1 second between requests
+        count = len(hidden_events)
+        status = "BROKEN" if count > 0 else "OK"
+        
+        results.append({
+            'GameID': g_id,
+            'Matchup': matchup,
+            'Hidden_Events_Found': count,
+            'Status': status
+        })
+        print(f"Game {matchup}: {status} ({count} missing labels)")
         
     except Exception as e:
-        print(f"  Error: {e}")
-        continue
+        print(f"Error fetching game {g_id}: {e}")
 
-# 4. Combine all timeouts and save
-if all_timeouts:
-    final_df = pd.concat(all_timeouts, ignore_index=True)
-    output_path = 'C:/Users/david/finalPro/data/sample/timeouts_sample.csv'
-    final_df.to_csv(output_path, index=False)
-    print(f"\nSuccess! Saved {len(final_df)} timeouts to {output_path}")
-else:
-    print("\nNo timeouts found!")
+# סיכום
+print("\n--- SUMMARY ---")
+summary_df = pd.DataFrame(results)
+print(summary_df)
