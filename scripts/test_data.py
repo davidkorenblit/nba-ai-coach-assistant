@@ -1,52 +1,42 @@
 import pandas as pd
-from nba_api.stats.endpoints import leaguegamefinder, playbyplayv3
 import time
+from nba_api.stats.endpoints import leaguegamefinder
+from nba_api.live.nba.endpoints import playbyplay
 
-# הגדרות תצוגה
-pd.set_option('display.max_columns', None)
+# רשימת עונות לבדיקה (אחורה בזמן)
+# כבר בדקנו את 23-24 וזה עבד, אז נתחיל מ-22
+seasons_to_check = ['2022-23', '2021-22', '2020-21', '2019-20', '2018-19', '2017-18']
 
-print("Fetching last 5 NBA games...")
-# משיכת רשימת המשחקים הכי עדכניים
-gamefinder = leaguegamefinder.LeagueGameFinder(season_nullable='2024-25', league_id_nullable='00', season_type_nullable='Regular Season')
-games = gamefinder.get_data_frames()[0].head(5) # לוקחים 5 משחקים
-game_ids = games['GAME_ID'].unique()
+print("--- Checking Historical Availability ---")
 
-results = []
-
-print(f"Testing {len(game_ids)} games across the league...\n")
-
-for g_id in game_ids:
-    # השהיה קטנה כדי לא להעמיס על ה-API
-    time.sleep(1)
-    
-    # פרטי המשחק לתצוגה
-    matchup = games[games['GAME_ID'] == g_id]['MATCHUP'].iloc[0]
-    
-    # משיכת ה-PBP
+for season in seasons_to_check:
+    print(f"\nChecking Season {season}...")
     try:
-        df = playbyplayv3.PlayByPlayV3(game_id=g_id).get_data_frames()[0]
+        # 1. מציאת משחק מייצג
+        gamefinder = leaguegamefinder.LeagueGameFinder(season_nullable=season, league_id_nullable='00')
+        games = gamefinder.get_data_frames()[0]
         
-        # בדיקת הבאג: כמה שורות ריקות יש ב-actionType שיש בהן Steal/Block בתיאור?
-        hidden_events = df[
-            (df['actionType'] == '') & 
-            (df['description'].str.contains('STEAL|BLOCK', case=False, regex=True, na=False))
-        ]
+        if games.empty:
+            print(f"  No games found in archive for {season}. Skipping.")
+            continue
+            
+        # לוקחים משחק אחד לבדיקה
+        game_id = games.iloc[0]['GAME_ID']
         
-        count = len(hidden_events)
-        status = "BROKEN" if count > 0 else "OK"
+        # 2. בדיקת Live Endpoint
+        pbp = playbyplay.PlayByPlay(game_id=game_id)
+        actions = pbp.actions.get_dict()
         
-        results.append({
-            'GameID': g_id,
-            'Matchup': matchup,
-            'Hidden_Events_Found': count,
-            'Status': status
-        })
-        print(f"Game {matchup}: {status} ({count} missing labels)")
-        
+        if actions:
+            print(f"  [V] SUCCESS: Live data available for {season}")
+        else:
+            print(f"  [X] FAILED: Live data is EMPTY for {season}")
+            print("  --- STOPPING: Reached the limit of available history. ---")
+            break # עוצרים כשמגיעים לגבול
+            
     except Exception as e:
-        print(f"Error fetching game {g_id}: {e}")
-
-# סיכום
-print("\n--- SUMMARY ---")
-summary_df = pd.DataFrame(results)
-print(summary_df)
+        print(f"  [X] ERROR for {season}: {e}")
+        print("  --- STOPPING: Reached the limit. ---")
+        break
+        
+    time.sleep(1) # נימוס
