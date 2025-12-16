@@ -34,12 +34,12 @@ def verify_defense_structure():
     if not steals.empty:
         main_filled = steals['playerName'].notna().sum()
         side_filled = 0
-        if 'stealPlayerName' in df.columns:
-            side_filled = steals['stealPlayerName'].notna().sum()
+        if 'stealPersonId' in df.columns:
+            side_filled = steals['stealPersonId'].notna().sum()
             
         print(f"Steals (Total: {len(steals)}):")
         print(f"  -> 'playerName' (Main) filled count:      {main_filled}")
-        print(f"  -> 'stealPlayerName' (Side) filled count: {side_filled}")
+        print(f"  -> 'stealPersonId' (Side) filled count: {side_filled}")
     else:
         print("No steals found in data.")
 
@@ -48,12 +48,12 @@ def verify_defense_structure():
     if not blocks.empty:
         main_filled = blocks['playerName'].notna().sum()
         side_filled = 0
-        if 'blockPlayerName' in df.columns:
-            side_filled = blocks['blockPlayerName'].notna().sum()
+        if 'blockPersonId' in df.columns:
+            side_filled = blocks['blockPersonId'].notna().sum()
             
         print(f"Blocks (Total: {len(blocks)}):")
         print(f"  -> 'playerName' (Main) filled count:      {main_filled}")
-        print(f"  -> 'blockPlayerName' (Side) filled count: {side_filled}")
+        print(f"  -> 'blockPersonId' (Side) filled count: {side_filled}")
 
     print("\n--- CONCLUSION ---")
     if missing_cols:
