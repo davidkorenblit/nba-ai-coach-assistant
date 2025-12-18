@@ -44,9 +44,12 @@ def run_quality_check():
     cols_to_show = ['period', 'seconds_remaining', 'scoreHome', 'score_margin', 'play_duration']
     print(df[cols_to_show].sample(5).to_string(index=False))
 
-    # --- 5. בדיקת טיים-אאוטים ---
+  # 5. בדיקת טיים-אאוטים - תיקון הסינון
     print("\nTIMEOUTS FOUND (Top 5 Teams):")
-    timeouts_only = df[df['timeout_type'] != 'None']
+    
+    # מוודאים שהערך הוא לא NaN (ריק) וגם לא המחרוזת 'None'
+    timeouts_only = df[df['timeout_type'].notna() & (df['timeout_type'] != 'None')]
+    
     if not timeouts_only.empty:
         print(timeouts_only['timeout_type'].value_counts().head(5))
         print(f"   Total Timeouts: {len(timeouts_only)}")
