@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import re
 
 # --- הגדרות נתיבים (ממוקד לעונת 2024/25 בלבד) ---
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -98,6 +99,48 @@ def map_home_away_teams(df):
 
     return home_teams_map
 
+
+import re
+
+def parse_lineups(df, player_map, home_teams_map):
+    """
+    מפרק את 'personIdsFilter' לשתי עמודות: home_lineup, away_lineup.
+    דורש player_map (שנבנה קודם) ו-home_teams_map.
+    """
+    
+    def _parse_row(row):
+        game_id = row['gameId']
+        raw_str = str(row['personIdsFilter'])
+        
+        # אם אין נתונים או שזה 0
+        if not raw_str or raw_str == '0':
+            return [], []
+
+        home_id = home_teams_map.get(game_id)
+        if not home_id: return [], [] # מקרה קצה
+
+        # חילוץ כל המספרים מהמחרוזת
+        all_ids = [int(x) for x in re.findall(r'\d+', raw_str)]
+        
+        home_players = []
+        away_players = []
+        
+        for pid in all_ids:
+            tid = player_map.get(pid)
+            if tid == home_id:
+                home_players.append(pid)
+            elif tid: # אם השחקן מוכר אבל לא מהבית, הוא בחוץ
+                away_players.append(pid)
+                
+        return home_players, away_players
+
+    # החלת הלוגיקה (זה יקח זמן)
+    # שימוש ב-zip כדי להחזיר שתי עמודות
+    lineups = df.apply(_parse_row, axis=1, result_type='expand')
+    df['home_lineup'] = lineups[0]
+    df['away_lineup'] = lineups[1]
+    
+    return df
 
 
 
