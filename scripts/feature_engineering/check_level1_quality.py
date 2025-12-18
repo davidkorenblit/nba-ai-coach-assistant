@@ -42,5 +42,6 @@ def run_quality_check():
     # timeout_type לא אמור להיות NaN אלא 'None', אז בודקים אם יש NaN אמיתי
     print(df[['scoreHome', 'personIdsFilter', 'timeout_type']].isna().sum())
 
+
 if __name__ == "__main__":
     run_quality_check()
