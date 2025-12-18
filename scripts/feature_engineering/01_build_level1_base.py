@@ -82,6 +82,25 @@ def process_single_game(df_game):
             
     return df_game
 
+def calculate_play_duration(df):
+    # חישוב משך כל פעולה (בדקות) על בסיס שינוי ב-seconds_remaining
+    df.sort_values(by=['gemaId','period', 'seconds_remaining'], ascending=[True, True, False])
+    # חישוב הפרש בין השורות
+    df['play_duration'] = df.groupby('gameId')['seconds_remaining'].diff().abs()
+    # מילוי העמודות הריקות ב-0
+    df['play_duration'] = df['play_duration'].fillna(0)
+
+    return df
+
+def map_home_away_teams(df):
+    scoring_plays = df[df['scoreHome'].diff()>0]
+    home_teams_map = scoring_plays.groupby('gameId')['teamId'].agg(lambda x: x.mode().iloc[0]).to_dict()
+
+    return home_teams_map
+
+
+
+
 def main():
     print(f"🚀 Starting Level 1 FE on: {os.path.basename(RAW_FILE_PATH)}")
     
