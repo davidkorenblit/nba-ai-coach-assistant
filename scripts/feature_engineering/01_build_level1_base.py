@@ -192,6 +192,22 @@ def calculate_possession(df):
     return df
 
 
+def estimate_shot_clock(df):
+    """
+    מחשב כמה זמן נשאר לזרוק (24 שניות פחות הזמן שעבר בפוזשן).
+    """
+    # מחשבים זמן מצטבר בתוך כל פוזשן
+    df['time_elapsed_in_poss'] = df.groupby(['gameId', 'possession_id'])['play_duration'].cumsum()
+    
+    # שעון זריקות = 24 פחות מה שעבר
+    df['shot_clock_estimated'] = 24.0 - df['time_elapsed_in_poss']
+    
+    # תיקון: אם היה ריבאונד התקפה, זה מתאפס ל-14 (דורש לוגיקה נוספת)
+    # תיקון: לא יכול להיות שלילי
+    df['shot_clock_estimated'] = df['shot_clock_estimated'].clip(lower=0)
+    
+    return df
+
 def main():
     print(f"🚀 Starting Level 1 FE on: {os.path.basename(RAW_FILE_PATH)}")
     
