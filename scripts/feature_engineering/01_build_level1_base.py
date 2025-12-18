@@ -143,6 +143,54 @@ def parse_lineups(df, player_map, home_teams_map):
     return df
 
 
+def calculate_possession(df):
+    """
+    קובע מזהה פוזשן (Possession ID) רץ.
+    מחליף פוזשן כאשר:
+    1. יש ריבאונד הגנה.
+    2. יש איבוד כדור.
+    3. נקלע סל שדה (2pt/3pt) - מזוהה לפי שינוי בניקוד.
+    4. נקלע סל עונשין אחרון (אופציונלי, כאן נתמקד בעיקר, אפשר להוסיף 1of1 וכו').
+    """
+    # וודא שהמיון נכון לפני חישוב הפרשים
+    df = df.sort_values(by=['gameId', 'period', 'seconds_remaining'], ascending=[True, True, False])
+
+    # 1. זיהוי שינוי ניקוד (האם היה סל בשורה הזו?)
+    # משווים לשורה הקודמת באותו משחק
+    df['score_total'] = df['scoreHome'] + df['scoreAway']
+    df['score_diff'] = df.groupby('gameId')['score_total'].diff().fillna(0)
+    is_score_change = df['score_diff'] > 0
+
+    # 2. הגדרת התנאים להחלפת פוזשן
+    # א. ריבאונד הגנה
+    is_def_reb = (df['actionType'] == 'rebound') & (df['subType'] == 'defensive')
+    
+    # ב. איבוד כדור
+    is_turnover = df['actionType'] == 'turnover'
+    
+    # ג. סל שדה שנכנס (זריקה + שינוי ניקוד)
+    # לפי התמונה: actionType הוא '2pt' או '3pt'
+    is_fg_made = df['actionType'].isin(['2pt', '3pt']) & is_score_change
+
+    # ד. זריקת עונשין אחרונה שנכנסה (למשל 2 of 2) - משנה פוזשן
+    # נזהה לפי הטקסט ב-subType ושינוי ניקוד
+    is_last_ft_made = (
+        (df['actionType'] == 'freethrow') & 
+        (df['subType'].isin(['1 of 1', '2 of 2', '3 of 3'])) & 
+        is_score_change
+    )
+
+    # 3. איחוד כל הטריגרים
+    df['is_poss_change'] = (is_def_reb | is_turnover | is_fg_made | is_last_ft_made).astype(int)
+
+    # 4. יצירת ID רץ (Cumulative Sum)
+    df['possession_id'] = df.groupby(['gameId'])['is_poss_change'].cumsum()
+    
+    # ניקוי עמודות עזר
+    df.drop(columns=['score_total', 'score_diff'], inplace=True)
+    
+    return df
+
 
 def main():
     print(f"🚀 Starting Level 1 FE on: {os.path.basename(RAW_FILE_PATH)}")
