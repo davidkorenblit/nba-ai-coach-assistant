@@ -85,22 +85,34 @@ def process_single_game(df_game):
 
 def calculate_play_duration(df):
     # חישוב משך כל פעולה (בדקות) על בסיס שינוי ב-seconds_remaining
-    df.sort_values(by=['gemaId','period', 'seconds_remaining'], ascending=[True, True, False])
+    df=df.sort_values(by=['gameId','period', 'seconds_remaining'], ascending=[True, True, False])
     # חישוב הפרש בין השורות
-    df['play_duration'] = df.groupby('gameId')['seconds_remaining'].diff().abs()
-    # מילוי העמודות הריקות ב-0
-    df['play_duration'] = df['play_duration'].fillna(0)
+    df['prev_seconds'] = df.groupby(['gameId', 'period'])['seconds_remaining'].shift(1)
+    df['play_duration'] = df['prev_seconds'] - df['seconds_remaining']
+    df['play_duration'] = df['play_duration'].fillna(0).clip(lower=0)
+    df.drop(columns=['prev_seconds'], inplace=True)
 
     return df
 
+def build_player_team_map(df):
+    """ מיפוי מזהה שחקן -> מזהה קבוצה (הפונקציה שהייתה חסרה) """
+    # אנו מניחים ששחקן משחק ברוב המקרים באותה קבוצה באותה עונה
+    # במקרה של טרייד, זה יקח את ה-Mode (הקבוצה בה שיחק הכי הרבה מהלכים)
+    # לדיוק מקסימלי, עדיף למפות פר משחק, אבל לרוב זה מספיק טוב
+    valid_players = df[df['personId'] > 0]
+    return valid_players.groupby('personId')['teamId'].agg(lambda x: x.mode().iloc[0] if not x.mode().empty else 0).to_dict()
+
+
+
 def map_home_away_teams(df):
     scoring_plays = df[df['scoreHome'].diff()>0]
+    if scoring_plays.empty:
+        return {}
     home_teams_map = scoring_plays.groupby('gameId')['teamId'].agg(lambda x: x.mode().iloc[0]).to_dict()
 
     return home_teams_map
 
 
-import re
 
 def parse_lineups(df, player_map, home_teams_map):
     """
@@ -208,14 +220,18 @@ def estimate_shot_clock(df):
     
     return df
 
+
+
+
+
 def main():
-    print(f"🚀 Starting Level 1 FE on: {os.path.basename(RAW_FILE_PATH)}")
+    print(f"🚀 Starting Level 1 FE (Full Enrichment) on: {os.path.basename(RAW_FILE_PATH)}")
     
     if not os.path.exists(RAW_FILE_PATH):
         print(f"❌ File not found: {RAW_FILE_PATH}")
         return
 
-    # טעינת הקובץ הבודד
+    # 1. טעינה
     try:
         df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
         print(f"   Loaded {len(df)} rows.")
@@ -223,22 +239,38 @@ def main():
         print(f"❌ Error reading CSV: {e}")
         return
 
-    # עיבוד (Group by GameId ליתר ביטחון, למקרה שיש כמה משחקים בקובץ העונתי)
-    print("   Processing game logic (Time, Timeouts, Filling)...")
+    # 2. עיבוד בסיסי (נרמול זמנים, מילוי תוצאה, זיהוי סוגי Timeout)
+    print("   🔨 Step 1: Basic Processing (Time, Scores, Timeouts)...")
     df_processed = df.groupby('gameId', group_keys=False).apply(process_single_game)
     
-    # סינון עמודות
-    # מוודאים שכל העמודות שאנחנו רוצים קיימות (למניעת שגיאות אם משהו חסר במקור)
-    available_cols = [c for c in COLS_TO_KEEP if c in df_processed.columns]
-    df_final = df_processed[available_cols]
+    # 3. חישוב משך מהלך (חייב להיות לפני שעון זריקות)
+    print("   ⏱️ Step 2: Calculating Play Duration...")
+    df_processed = calculate_play_duration(df_processed)
 
-    # שמירה
+    # 4. פיצוח הרכבים וזיהוי בית/חוץ
+    print("   👥 Step 3: Parsing Lineups & Homeliness (This might take a moment)...")
+    # בניית מפות עזר
+    player_map = build_player_team_map(df_processed) # פונקציית עזר שהגדרנו קודם
+    home_teams_map = map_home_away_teams(df_processed)
+    # הרצת הפיענוח
+    df_processed = parse_lineups(df_processed, player_map, home_teams_map)
+
+    # 5. לוגיקת פוזשן (תלויה בזיהוי סלים ואיבודים)
+    print("   🏀 Step 4: Calculating Possession Logic...")
+    df_processed = calculate_possession(df_processed)
+
+    # 6. שעון זריקות משוער (תלוי בפוזשן ובמשך מהלך)
+    print("   ⏳ Step 5: Estimating Shot Clock...")
+    df_processed = estimate_shot_clock(df_processed)
+
+    # 7. שמירה
+    # הערה: אנחנו שומרים את כל העמודות החדשות, לכן לא נסנן בקשיחות עם COLS_TO_KEEP הישן
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    df_final.to_csv(OUTPUT_FILE, index=False)
+    df_processed.to_csv(OUTPUT_FILE, index=False)
     
-    print(f"✅ DONE. Saved to: {OUTPUT_FILE}")
-    print(f"   Shape: {df_final.shape}")
-    print(f"   New Columns Example: {['seconds_remaining', 'is_timeout', 'timeout_type']}")
+    print(f"✅ DONE. Full Level 1 Dataset saved to: {OUTPUT_FILE}")
+    print(f"   Final Shape: {df_processed.shape}")
+    print(f"   New Features: {['play_duration', 'possession_id', 'shot_clock_estimated', 'home_lineup']}")
 
 if __name__ == "__main__":
     main()
