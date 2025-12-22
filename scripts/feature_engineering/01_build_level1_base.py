@@ -8,18 +8,6 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_FILE_PATH = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData', 'season_2024_25.csv')
 OUTPUT_FILE = os.path.join(CURRENT_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
 
-# עמודות שנשמור (כולל העמודות הדטרמיניסטיות החדשות)
-COLS_TO_KEEP = [
-    'gameId', 'period', 'clock', 'seconds_remaining', 'actionNumber',
-    'actionType', 'subType', 'description',
-    'playerName', 'personId', 'teamId', 'teamTricode',
-    'scoreHome', 'scoreAway', 'score_margin',
-    'is_timeout', 'timeout_type',
-    'reboundDefensiveTotal', 'reboundOffensiveTotal', 'turnoverTotal',
-    'foulPersonalTotal', 'pointsTotal', 'shotResult',
-    'personIdsFilter', 'x', 'y', 'shotDistance'
-]
-
 # --- Helper Functions (Utils) ---
 def parse_clock(clock_str):
     """Utility: Converts clock string to float seconds."""
@@ -78,13 +66,16 @@ def enrich_state_counters(df):
     df['timeout_type'] = df.apply(extract_team_from_desc, axis=1)
     df['is_timeout'] = (df['timeout_type'] != 'None').astype(int)
     
-    # חישוב מלאי פסקי זמן (וקטורי לפי קבוצה)
+    # חישוב מלאי פסקי זמן
     # אנו מניחים 7 לכל קבוצה ומחסירים 1 על כל הופעה
     teams = [t for t in df['timeout_type'].unique() if t not in ['None', 'General']]
     for team in teams:
-        is_team_to = (df['timeout_type'] == team).astype(int)
-        # GroupBy gameId כדי שהספירה תתאפס כל משחק
-        used = df.groupby('gameId')[is_team_to.name].cumsum()
+        # יצירת סדרה של 0 ו-1
+        is_team_to_series = (df['timeout_type'] == team).astype(int)
+        
+        # תיקון קריטי: ביצוע GroupBy על הסדרה עצמה כדי להבטיח חיבור מספרים
+        used = is_team_to_series.groupby(df['gameId']).cumsum()
+        
         df[f'timeouts_remaining_{team}'] = (7 - used).clip(lower=0)
 
     # B. Foul Counts (Per Quarter)
@@ -94,6 +85,8 @@ def enrich_state_counters(df):
 
     # C. Event Counters (Cumulative) - בסיס לחלונות זמן ב-Level 2
     for metric in ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']:
+        # וידוא שהטייפ הוא מספרי לפני הסכימה
+        df[metric] = pd.to_numeric(df[metric], errors='coerce').fillna(0)
         df[f'cum_{metric}'] = df.groupby(['gameId', 'teamId'])[metric].cumsum()
         
     return df
@@ -108,11 +101,6 @@ def calculate_temporal_metrics(df):
     prev_time = df.groupby(['gameId', 'period'])['seconds_remaining'].shift(1)
     df['play_duration'] = (prev_time - df['seconds_remaining']).fillna(0).clip(lower=0)
     
-    # Shot Clock Estimation (with 14s Correction)
-    # אנו משתמשים בפוזשן (שיחושב בהמשך) או בלוגיקה זמנית. 
-    # כאן נבצע הכנה: איפוס שעון. הלוגיקה המלאה תלויה בפוזשן ID ולכן תרוץ אחריו ב-main,
-    # אבל הפונקציה מוגדרת כאן מטעמי סדר.
-    pass 
     return df
 
 def calculate_possession_flow(df):
@@ -146,7 +134,6 @@ def apply_shot_clock_logic(df):
     df['shot_clock_estimated'] = (24.0 - elapsed).clip(lower=0)
     
     # Correction: Offensive Rebound -> Reset to 14 max
-    # אם בפוזשן הנוכחי יש ריבאונד התקפה, אנו "חותכים" את השעון
     mask_off_reb = df['reboundOffensiveTotal'] > 0
     df.loc[mask_off_reb, 'shot_clock_estimated'] = 14.0
     
