@@ -3,7 +3,7 @@ import os
 
 # --- הגדרות ---
 # נתיב לקובץ ה-Interim (V2)
-FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'data', 'interim', 'level1_base.csv')
+FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'interim', 'level1_base.csv')
 
 def check_event_context(df, event_name, text_trigger, col_substring):
     """
