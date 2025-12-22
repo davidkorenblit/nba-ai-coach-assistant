@@ -64,30 +64,30 @@ def enrich_state_counters(df):
     """
     # A. Timeouts Parsing & Inventory
     df['timeout_type'] = df.apply(extract_team_from_desc, axis=1)
-    df['is_timeout'] = (df['timeout_type'] != 'None').astype(int)
     
     # חישוב מלאי פסקי זמן
-    # אנו מניחים 7 לכל קבוצה ומחסירים 1 על כל הופעה
     teams = [t for t in df['timeout_type'].unique() if t not in ['None', 'General']]
     for team in teams:
-        # יצירת סדרה של 0 ו-1
         is_team_to_series = (df['timeout_type'] == team).astype(int)
-        
-        # תיקון קריטי: ביצוע GroupBy על הסדרה עצמה כדי להבטיח חיבור מספרים
         used = is_team_to_series.groupby(df['gameId']).cumsum()
-        
         df[f'timeouts_remaining_{team}'] = (7 - used).clip(lower=0)
 
-    # B. Foul Counts (Per Quarter)
+    # B. Foul Counts (Per Quarter) - THE FIX IS HERE
     df['is_foul'] = (df['foulPersonalTotal'] > 0).astype(int)
-    # ספירה מצטברת לפי משחק-רבע-קבוצה
+    
+    # חישוב מצטבר. שורות ללא קבוצה יקבלו NaN
     df['team_fouls_period'] = df.groupby(['gameId', 'period', 'teamTricode'])['is_foul'].cumsum()
+    
+    # --- התיקון: מילוי חורים לאירועים ללא קבוצה (כמו סוף רבע) ---
+    df['team_fouls_period'] = df['team_fouls_period'].fillna(0)
 
-    # C. Event Counters (Cumulative) - בסיס לחלונות זמן ב-Level 2
-    for metric in ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']:
-        # וידוא שהטייפ הוא מספרי לפני הסכימה
+    # C. Event Counters (Cumulative)
+    cols_to_sum = ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']
+    for metric in cols_to_sum:
         df[metric] = pd.to_numeric(df[metric], errors='coerce').fillna(0)
         df[f'cum_{metric}'] = df.groupby(['gameId', 'teamId'])[metric].cumsum()
+        # גם כאן כדאי למלא אפסים ליתר ביטחון
+        df[f'cum_{metric}'] = df[f'cum_{metric}'].fillna(0)
         
     return df
 

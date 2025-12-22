@@ -92,14 +92,23 @@ class Level1Validator:
             self._log("Sub Timer", True, "Timer logic valid (non-negative).")
 
     def check_critical_missing_values(self):
-        """Ensures no gaps in critical flow columns."""
+        """Ensures no gaps in critical flow columns and investigates if found."""
         critical = ['scoreHome', 'play_duration', 'possession_id', 'team_fouls_period']
-        missing = self.df[critical].isna().sum().sum()
+        # בדיקה אם יש בכלל חוסרים
+        missing_count = self.df[critical].isna().sum().sum()
         
-        if missing == 0:
+        if missing_count == 0:
             self._log("Missing Values", True, "Zero missing values in critical columns.")
         else:
-            self._log("Missing Values", False, f"Found {missing} missing values in critical columns.")
+            self._log("Missing Values", False, f"Found {missing_count} missing values.")
+            
+            # --- תוספת: חקירה מיידית של החוסרים ---
+            print("\n   🕵️‍♂️ DIAGNOSTICS: Where are the NaNs?")
+            for col in critical:
+                nans = self.df[self.df[col].isna()]
+                if not nans.empty:
+                    print(f"   👉 Column '{col}' has {len(nans)} missing values.")
+                    print(f"      Top Action Types: {nans['actionType'].value_counts().head(3).to_dict()}")
 
     # --- Runner ---
     def run(self):
