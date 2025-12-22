@@ -3,14 +3,13 @@ import numpy as np
 import os
 import re
 
-# --- Config & Constants ---
+# --- Config ---
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_FILE_PATH = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData', 'season_2024_25.csv')
 OUTPUT_FILE = os.path.join(CURRENT_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
 
-# --- Helper Functions (Utils) ---
+# --- Helper Functions ---
 def parse_clock(clock_str):
-    """Utility: Converts clock string to float seconds."""
     if pd.isna(clock_str): return 0.0
     s = str(clock_str).strip()
     try:
@@ -23,84 +22,97 @@ def parse_clock(clock_str):
         return float(s)
     except: return 0.0
 
-# --- Feature Implementation Modules ---
+# --- Feature Modules ---
 
 def process_base_timeline(df):
-    """
-    Implements: Precise Game Clock, Score & Margin, sorting.
-    """
-    # 1. Time Normalization
+    # 1. Clean Team Codes (Critical Fix for Equality Checks)
+    if 'teamTricode' in df.columns:
+        df['teamTricode'] = df['teamTricode'].astype(str).str.strip()
+    
+    # 2. Time
     df['seconds_remaining'] = df['clock'].apply(parse_clock)
     
-    # 2. Chronological Sort
+    # 3. Sort
     df.sort_values(by=['gameId', 'period', 'seconds_remaining', 'actionNumber'], 
                    ascending=[True, True, False, True], inplace=True)
     
-    # 3. Score State (Fill Gaps)
+    # 4. Score Fill
     for col in ['scoreHome', 'scoreAway']:
         df[col] = df.groupby('gameId')[col].ffill().fillna(0)
-    
     df['score_margin'] = df['scoreHome'] - df['scoreAway']
-    
-    # 4. Fill NaNs for numerical counters (Safety)
+
+    # 5. Fill Counters
     zero_fill_cols = ['reboundDefensiveTotal', 'reboundOffensiveTotal', 'turnoverTotal', 'foulPersonalTotal', 'pointsTotal']
     for c in zero_fill_cols:
         if c in df.columns: df[c] = df[c].fillna(0)
         
     return df
 
-def enrich_state_counters(df):
+def enrich_state_counters_v4(df):
     """
-    FIXED V3: Better Timeout detection logic & Clean counters.
+    V4 FIX: Calculates Home/Away Timeouts instead of sparse Team columns.
+    Solves the Dashboard issue permanently.
     """
-    # --- Timeouts Fix ---
-    # לוגיקה משולבת: אם יש טריקוד, קח אותו. אם אין, נסה לחלץ מהתיאור.
-    def _resolve_timeout_team(row):
-        # האם זה אירוע טיים אאוט?
-        if row['actionType'] == 9 or 'Timeout' in str(row['description']):
-            # עדיפות 1: הקוד הקיים בעמודה
-            if pd.notna(row['teamTricode']):
-                return row['teamTricode']
-            # עדיפות 2: חילוץ מהטקסט (גיבוי)
-            parts = str(row['description']).split()
-            return parts[0].strip() if parts else 'Unknown'
-        return 'None'
-
-    df['timeout_team'] = df.apply(_resolve_timeout_team, axis=1)
+    # 1. Identify Home/Away Teams per Game
+    # We create a map of gameId -> {home: 'BOS', away: 'ATL'}
+    # Helper: Find the tricode associated with teamId for Home/Away
     
-    # חישוב מלאי פסקי זמן
-    teams = [t for t in df['teamTricode'].dropna().unique()]
-    for team in teams:
-        # סופרים רק אם זו הקבוצה הספציפית
-        is_team_to = (df['timeout_team'] == team).astype(int)
-        used = is_team_to.groupby(df['gameId']).cumsum()
-        df[f'timeouts_remaining_{team}'] = (7 - used).clip(lower=0)
+    # מיפוי: gameId -> teamId של הבית
+    home_id_map = df[df['scoreHome'].diff() > 0].groupby('gameId')['teamId'].first().to_dict()
+    
+    # מיפוי: teamId -> teamTricode
+    id_to_code = df.dropna(subset=['teamTricode']).groupby('teamId')['teamTricode'].first().to_dict()
+    
+    # פונקציה לזיהוי מי הבית ומי החוץ בכל שורה
+    def get_role(row):
+        hid = home_id_map.get(row['gameId'])
+        if not hid: return 'unknown'
+        if row['teamId'] == hid: return 'home'
+        if row['teamId'] != 0 and row['teamId'] != hid: return 'away'
+        return 'neutral'
 
-    # --- Fouls ---
+    # 2. Resolve Timeout Takers (Clean Logic)
+    def _resolve_timeout_role(row):
+        # זיהוי אם זה טיים אאוט
+        if row['actionType'] == 9 or 'Timeout' in str(row['description']):
+            # בדיקה האם הקבוצה שלקחה היא הבית או החוץ
+            # נשתמש ב-teamTricode הקיים בשורה
+            current_code = str(row['teamTricode']).strip()
+            
+            # מציאת קוד הבית למשחק הזה
+            hid = home_id_map.get(row['gameId'])
+            home_code = id_to_code.get(hid)
+            
+            if current_code == home_code: return 'home'
+            if current_code != 'nan': return 'away' # אם זה לא הבית וזה לא ריק, זה החוץ
+        return 'none'
+
+    df['timeout_role'] = df.apply(_resolve_timeout_role, axis=1)
+    
+    # 3. Calculate Inventory (Home/Away)
+    for side in ['home', 'away']:
+        is_side_to = (df['timeout_role'] == side).astype(int)
+        used = is_side_to.groupby(df['gameId']).cumsum()
+        df[f'timeouts_remaining_{side}'] = (7 - used).clip(lower=0)
+
+    # 4. Fouls & Counters
     df['is_foul'] = (df['foulPersonalTotal'] > 0).astype(int)
+    # כאן נשתמש בטריקוד כדי לפצל לקבוצות בגרפים אם נרצה, אבל המדד המרכזי הוא ה-Timeouts
     df['team_fouls_period'] = df.groupby(['gameId', 'period', 'teamTricode'])['is_foul'].cumsum().fillna(0)
 
-    # --- Event Counters (Cumulative) ---
     cols_to_sum = ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']
     for metric in cols_to_sum:
-        # המרה בטוחה למספרים
         df[metric] = pd.to_numeric(df[metric], errors='coerce').fillna(0)
         df[f'cum_{metric}'] = df.groupby(['gameId', 'teamId'])[metric].cumsum().fillna(0)
         
     return df
 
 def calculate_temporal_metrics(df):
-    """
-    Implements: Play Duration, Shot Clock Remaining.
-    """
     prev_time = df.groupby(['gameId', 'period'])['seconds_remaining'].shift(1)
     df['play_duration'] = (prev_time - df['seconds_remaining']).fillna(0).clip(lower=0)
     return df
 
 def calculate_possession_flow(df):
-    """
-    Implements: Possession ID.
-    """
     is_def_reb = df['reboundDefensiveTotal'] > 0
     is_turnover = df['turnoverTotal'] > 0
     
@@ -115,21 +127,13 @@ def calculate_possession_flow(df):
     return df
 
 def apply_shot_clock_logic(df):
-    """
-    Implements: Shot Clock (Final Calculation).
-    """
     elapsed = df.groupby(['gameId', 'possession_id'])['play_duration'].cumsum()
     df['shot_clock_estimated'] = (24.0 - elapsed).clip(lower=0)
-    
     mask_off_reb = df['reboundOffensiveTotal'] > 0
     df.loc[mask_off_reb, 'shot_clock_estimated'] = 14.0
     return df
 
 def process_lineups_logic(df):
-    """
-    FIXED V3: Added Sorting to prevent false substitutions.
-    """
-    # 1. Map Players
     valid_players = df[df['personId'] > 0]
     player_map = valid_players.groupby('personId')['teamId'].agg(
         lambda x: x.mode().iloc[0] if not x.mode().empty else 0
@@ -140,7 +144,6 @@ def process_lineups_logic(df):
     if not scoring.empty:
         home_map = scoring.groupby('gameId')['teamId'].agg(lambda x: x.mode().iloc[0]).to_dict()
 
-    # 2. Parse & SORT IDs
     def _parse(row):
         gid = row['gameId']
         raw = str(row['personIdsFilter'])
@@ -149,7 +152,7 @@ def process_lineups_logic(df):
         if not hid: return [], []
         
         ids = [int(x) for x in re.findall(r'\d+', raw)]
-        ids.sort() # <--- THE FIX: Sorting ensures [1,2,3] == [3,2,1]
+        ids.sort() # Sorting fix
         
         return ([p for p in ids if player_map.get(p) == hid], 
                 [p for p in ids if player_map.get(p) and player_map.get(p) != hid])
@@ -158,7 +161,6 @@ def process_lineups_logic(df):
     df['home_lineup'] = lineups[0]
     df['away_lineup'] = lineups[1]
 
-    # 3. Last Sub Time (Detect changes on sorted lists)
     df['lineup_signature'] = df['home_lineup'].astype(str) + "|" + df['away_lineup'].astype(str)
     df['is_sub'] = (df['lineup_signature'] != df.groupby('gameId')['lineup_signature'].shift(1)).astype(int)
     
@@ -170,62 +172,37 @@ def process_lineups_logic(df):
     return df
 
 def clean_sparse_columns(df):
-    """
-    NEW V3: Drops columns confirmed as 'Dead' or 'Redundant' by QA.
-    """
     cols_to_drop = [
         'assistPlayerNameInitial', 'assistPersonId', 'assistTotal',
         'stealPlayerName', 'stealPersonId',
-        'blockPlayerName', 'blockPersonId'
+        'blockPlayerName', 'blockPersonId',
+        'timeout_role' # Cleanup helper
     ]
-    # מסננים רק מה שקיים בפועל
     existing_cols = [c for c in cols_to_drop if c in df.columns]
-    
     if existing_cols:
-        print(f"   🧹 Cleaning up {len(existing_cols)} dead/redundant columns...")
         df.drop(columns=existing_cols, inplace=True)
-        
     return df
 
-# --- Main Pipeline ---
+# --- Main ---
 
 def main():
-    print(f"🚀 Starting Optimized Level 1 FE (V3) on: {os.path.basename(RAW_FILE_PATH)}")
-    
+    print(f"🚀 Starting V4 FE (Fixing Whitespace & Home/Away Logic)...")
     if not os.path.exists(RAW_FILE_PATH):
         print(f"❌ File not found: {RAW_FILE_PATH}"); return
 
     df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
-    print(f"   Loaded {len(df)} rows.")
-
-    # --- Pipeline Execution ---
-    print("   ⏱️  Phase 1: Timeline, Score & Base State...")
-    df = process_base_timeline(df)
     
-    print("   📊 Phase 2: Inventory (Timeouts Fix) & Counters...")
-    df = enrich_state_counters(df)
-
-    print("   ⏳ Phase 3: Play Duration Calculation...")
+    df = process_base_timeline(df) # Includes whitespace strip
+    df = enrich_state_counters_v4(df) # Logic fix for timeouts
     df = calculate_temporal_metrics(df)
-
-    print("   🏀 Phase 4: Deterministic Possession Logic...")
     df = calculate_possession_flow(df)
-
-    print("   ⏲️  Phase 5: Shot Clock Estimation...")
     df = apply_shot_clock_logic(df)
-    
-    print("   👥 Phase 6: Lineups (Sorted) & Sub Timer...")
     df = process_lineups_logic(df)
-
-    print("   🧹 Phase 7: Final Cleanup (Sparsity Removal)...")
     df = clean_sparse_columns(df)
 
-    # Save
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     df.to_csv(OUTPUT_FILE, index=False)
-    
-    print(f"✅ DONE. File saved: {OUTPUT_FILE}")
-    print(f"   Final Shape: {df.shape}")
+    print(f"✅ V4 DONE. Saved to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
     main()
