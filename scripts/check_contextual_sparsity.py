@@ -2,16 +2,16 @@ import pandas as pd
 import os
 
 # --- הגדרות ---
-# נתיב לקובץ ה-Interim (V2)
+# נתיב לקובץ ה-Interim (מניחים שהסקריפט רץ מתוך תיקיית scripts)
 FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'interim', 'level1_base.csv')
 
 def check_event_context(df, event_name, text_trigger, col_substring):
     """
-    בודק דלילות של עמודות ספציפיות רק בתוך השורות שבהן האירוע קרה.
+    בודק דלילות של עמודות ספציפיות + בדיקת תקינות של ה-ID הראשי.
     """
     print(f"\n🏀 Testing Event: {event_name.upper()}")
     
-    # 1. סינון השורות בהן האירוע התרחש (לפי התיאור)
+    # 1. סינון השורות בהן האירוע התרחש
     event_rows = df[df['description'].str.contains(text_trigger, case=False, na=False)]
     
     if event_rows.empty:
@@ -20,40 +20,41 @@ def check_event_context(df, event_name, text_trigger, col_substring):
 
     print(f"   Found {len(event_rows)} rows containing '{text_trigger}'.")
 
-    # 2. מציאת כל העמודות הקשורות לאירוע (לפי השם)
+    # --- PART A: בדיקת עמודות ייעודיות (החשודות כמיותרות) ---
     relevant_cols = [c for c in df.columns if col_substring.lower() in c.lower()]
-    
-    if not relevant_cols:
-        print(f"   ❌ No columns found matching substring '{col_substring}'.")
-        return
-
-    # 3. בדיקת חוסרים
-    print(f"   Checking {len(relevant_cols)} related columns:")
+    print(f"   [A] Checking specific '{col_substring}' columns (Candidates for Drop):")
     for col in relevant_cols:
-        # אחוז החוסרים רק בשורות הרלוונטיות
         missing_pct = event_rows[col].isna().mean() * 100
-        
-        # החלטה: אם חסר ב-99% מהמקרים שבהם האירוע קרה - העמודה כנראה מיותרת
         status = "✅ KEEP" if missing_pct < 20 else "🗑️  DROP CANDIDATE"
         if missing_pct > 99: status = "💀 DEAD (100% Empty)"
-            
         print(f"     -> {col:<30} : {missing_pct:6.1f}% missing. {status}")
 
+    # --- PART B: בדיקת עמודת הזהות הראשית (הפתרון המצופה) ---
+    print(f"   [B] Checking PRIMARY identity columns (The Alternative):")
+    main_cols = ['personId', 'playerName', 'teamTricode']
+    
+    for col in main_cols:
+        if col in df.columns:
+            # בדיקת NaN
+            missing = event_rows[col].isna().mean() * 100
+            # בדיקת אפסים (לפעמים ID=0 זה חוסר)
+            zeros = (event_rows[col] == 0).mean() * 100 if pd.api.types.is_numeric_dtype(event_rows[col]) else 0
+            
+            status = "✅ PERFECT" if (missing + zeros) < 1 else "❌ BROKEN"
+            print(f"     -> {col:<30} : {missing:6.1f}% NaN, {zeros:6.1f}% Zeros. {status}")
+        else:
+            print(f"     -> {col:<30} : COLUMN MISSING")
+
 def main():
-    print(f"🕵️‍♂️ Starting Advanced Contextual QA...")
+    print(f"🕵️‍♂️ Starting Advanced Contextual QA (with Primary ID Check)...")
     if not os.path.exists(FILE_PATH):
-        print("❌ File not found."); return
+        print(f"❌ File not found at: {FILE_PATH}"); return
 
     df = pd.read_csv(FILE_PATH, low_memory=False)
     
     # --- בדיקות הקשריות ---
-    # 1. Assists
     check_event_context(df, "Assists", "Assist", "assist")
-    
-    # 2. Blocks
     check_event_context(df, "Blocks", "Block", "block")
-    
-    # 3. Steals
     check_event_context(df, "Steals", "Steal", "steal")
 
     print("\n🏁 Analysis Complete.")
