@@ -72,9 +72,9 @@ def feature_explosiveness(df):
     print("🔹 Running: Explosiveness...")
     LOOKBACK = 20 # שורות אחורה להשוואה
     
-    df['score_diff_lag'] = df.groupby('gameId')['scoreMargin'].shift(LOOKBACK)
+    df['score_diff_lag'] = df.groupby('gameId')['score_margin'].shift(LOOKBACK)
     # השיפוע = ההפרש עכשיו פחות ההפרש לפני 20 מהלכים
-    df['explosiveness_index'] = df['scoreMargin'] - df['score_diff_lag']
+    df['explosiveness_index'] = df['score_margin'] - df['score_diff_lag']
     df['explosiveness_index'] = df['explosiveness_index'].fillna(0)
     
     return df.drop(columns=['score_diff_lag'])
@@ -120,7 +120,7 @@ def feature_crunch_time(df):
     """זמן < 5 דקות והפרש < 5 נקודות."""
     print("🔹 Running: Crunch Time...")
     df['is_crunch_time'] = np.where(
-        (df['seconds_remaining'] <= 300) & (df['scoreMargin'].abs() <= 5), 1, 0
+        (df['seconds_remaining'] <= 300) & (df['score_margin'].abs() <= 5), 1, 0
     )
     return df
 
@@ -142,7 +142,7 @@ def main():
     print(f"✅ Saved Full Level 2 to: {OUTPUT_PATH}")
     
     # הצגת דוגמה של הפיצ'רים החדשים
-    new_cols = ['seconds_remaining', 'scoreMargin', 'momentum_streak_rolling', 
+    new_cols = ['seconds_remaining', 'score_margin', 'momentum_streak_rolling', 
                 'explosiveness_index', 'is_star_resting', 'is_crunch_time']
     print(df[new_cols].tail(10))
 
