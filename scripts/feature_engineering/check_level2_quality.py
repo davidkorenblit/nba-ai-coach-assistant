@@ -11,6 +11,7 @@ class Level2Validator:
     """
     Validator Suite for Level 2 Feature Engineering.
     Checks consistency of Context, Momentum, and Dynamic features.
+    Updated: Includes checks for 'Zero Momentum' bug and 'actionType' existence.
     """
 
     def __init__(self, file_path):
@@ -40,12 +41,18 @@ class Level2Validator:
     # --- Validation Logic Methods ---
 
     def check_feature_existence(self):
-        """Ensures all 7 new features were created and saved."""
+        """Ensures all 7 new features + Critical Source Columns exist."""
         expected_cols = [
             'style_tempo_rolling', 'is_high_fatigue', 
             'momentum_streak_rolling', 'explosiveness_index', 
             'instability_index', 'is_star_resting', 'is_crunch_time'
         ]
+        
+        # תוספת: וידוא שעמודת המקור לתיקון קיימת
+        if 'actionType' not in self.df.columns:
+            self._log("Schema Check", False, "Missing critical source column: 'actionType'")
+            self.results.append(False)
+
         missing = [col for col in expected_cols if col not in self.df.columns]
         
         if not missing:
@@ -61,7 +68,6 @@ class Level2Validator:
         for col in binary_cols:
             if col not in self.df.columns: continue
             unique_vals = self.df[col].unique()
-            # בודק אם יש ערכים שאינם 0 או 1
             invalid_vals = [x for x in unique_vals if x not in [0, 1, 0.0, 1.0]]
             
             if invalid_vals:
@@ -90,6 +96,12 @@ class Level2Validator:
         min_val = self.df['momentum_streak_rolling'].min()
         max_val = self.df['momentum_streak_rolling'].max()
         
+        # --- תיקון: בדיקה ספציפית לבאג ה-0 ---
+        if min_val == 0 and max_val == 0:
+             self._log("Momentum Sanity", False, "⚠️ CRITICAL FAIL: All Momentum values are 0.0! (String parsing bug).")
+             return
+        # --------------------------------------
+
         if -100 <= min_val and max_val <= 100:
              self._log("Momentum Sanity", True, f"Values within sane range ({min_val:.1f} to {max_val:.1f}).")
         else:
