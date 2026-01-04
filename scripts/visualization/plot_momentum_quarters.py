@@ -3,16 +3,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import random
+import numpy as np
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, '..', 'data', 'interim', 'level2_features.csv')
 FIGURES_DIR = os.path.join(BASE_DIR, '..', 'reports', 'figures')
 
+# סף המומנטום להפעלה התראה (אפשר לכייל)
+ALERT_THRESHOLD = 4.0 
+
 def identify_home_away(df):
     """Identifies Home and Away team codes."""
     try:
-        # Heuristic: Home team usually appears in scoreHome increments
         home_score_rows = df[df['scoreHome'].diff() > 0]
         if not home_score_rows.empty:
             home_team = home_score_rows.iloc[0]['teamTricode']
@@ -27,16 +30,12 @@ def identify_home_away(df):
         return "HOME", "AWAY"
 
 def calculate_split_momentum(df, home_team, away_team):
-    """
-    Splits the unified 'event_momentum_val' into separate rolling momentum 
-    tracks for Home and Away teams.
-    """
-    # 1. Split events by team
+    """Splits momentum into Home/Away tracks."""
+    # 1. Split events
     df['home_event_val'] = df.apply(lambda x: x['event_momentum_val'] if x['teamTricode'] == home_team else 0, axis=1)
     df['away_event_val'] = df.apply(lambda x: x['event_momentum_val'] if x['teamTricode'] == away_team else 0, axis=1)
     
-    # 2. Calculate Rolling Sum (Momentum Buildup) for each team separately
-    # Window size 10 events (adjustable)
+    # 2. Rolling Sum
     WINDOW = 10
     df['home_momentum'] = df['home_event_val'].rolling(window=WINDOW, min_periods=1).sum().fillna(0)
     df['away_momentum'] = df['away_event_val'].rolling(window=WINDOW, min_periods=1).sum().fillna(0)
@@ -54,7 +53,7 @@ def plot_momentum_by_quarter():
     selected_game_id = random.choice(game_ids)
     game_df = df[df['gameId'] == selected_game_id].copy()
     
-    # Important: Ensure Chronological Order for rolling calc
+    # Chronological Order
     game_df.sort_values(by=['period', 'seconds_remaining'], ascending=[True, False], inplace=True)
     game_df.reset_index(drop=True, inplace=True)
     
@@ -62,11 +61,11 @@ def plot_momentum_by_quarter():
     home_team, away_team = identify_home_away(game_df)
     game_df = calculate_split_momentum(game_df, home_team, away_team)
     
-    print(f"🎨 Generating Momentum Split Report for: {home_team} vs {away_team} (Game {selected_game_id})")
+    print(f"🎨 Generating Momentum Alert Report for: {home_team} vs {away_team}")
 
-    # 4. Plot - 4 Quarters Layout
+    # 4. Plot
     fig, axes = plt.subplots(4, 1, figsize=(14, 16), sharex=False, sharey=True)
-    fig.suptitle(f'Momentum Wars: {home_team} (Green) vs {away_team} (Blue) - Game {selected_game_id}', fontsize=16, weight='bold')
+    fig.suptitle(f'Momentum Alerts (Threshold > {ALERT_THRESHOLD}): {home_team} vs {away_team}', fontsize=16, weight='bold')
 
     periods = [1, 2, 3, 4]
     
@@ -75,33 +74,44 @@ def plot_momentum_by_quarter():
         period_df = game_df[game_df['period'] == p]
         
         if period_df.empty:
-            ax.text(0.5, 0.5, "No Data for Period", ha='center')
+            ax.text(0.5, 0.5, "No Data", ha='center')
             continue
 
-        # X-Axis: We want 'Time Elapsed in Quarter' (0 to 720) instead of raw index for clarity
-        # But for simplicity in PBP flow, we can use the index within the period
-        x_axis = range(len(period_df))
+        x_axis = np.arange(len(period_df))
         
-        # Plot Home
-        ax.plot(x_axis, period_df['home_momentum'], color='green', label=f'{home_team}', lw=2, alpha=0.8)
+        # Plot Lines
+        ax.plot(x_axis, period_df['home_momentum'], color='green', label=f'{home_team}', lw=2, alpha=0.7)
         ax.fill_between(x_axis, period_df['home_momentum'], 0, color='green', alpha=0.1)
         
-        # Plot Away
-        ax.plot(x_axis, period_df['away_momentum'], color='blue', label=f'{away_team}', lw=2, alpha=0.8)
+        ax.plot(x_axis, period_df['away_momentum'], color='blue', label=f'{away_team}', lw=2, alpha=0.7)
         ax.fill_between(x_axis, period_df['away_momentum'], 0, color='blue', alpha=0.1)
-        
+
+        # --- ALERTS LOGIC (Red Circles) ---
+        # Find indices where momentum crosses threshold
+        home_alerts = np.where(period_df['home_momentum'] >= ALERT_THRESHOLD)[0]
+        away_alerts = np.where(period_df['away_momentum'] >= ALERT_THRESHOLD)[0]
+
+        if len(home_alerts) > 0:
+            ax.scatter(home_alerts, period_df['home_momentum'].iloc[home_alerts], 
+                       color='red', edgecolor='white', s=60, zorder=5, 
+                       label='Timeout Alert!' if i==0 else "")
+            
+        if len(away_alerts) > 0:
+            ax.scatter(away_alerts, period_df['away_momentum'].iloc[away_alerts], 
+                       color='red', edgecolor='white', s=60, zorder=5)
+
         ax.set_title(f'Quarter {p}', loc='left', fontsize=12, weight='bold')
-        ax.set_ylabel('Momentum Intensity')
+        ax.set_ylabel('Momentum')
         ax.grid(True, alpha=0.2)
         
         if i == 0:
             ax.legend(loc='upper right')
 
-    plt.xlabel('Event Sequence (Play-by-Play Order)')
+    plt.xlabel('Event Sequence')
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    out_path = os.path.join(FIGURES_DIR, f'momentum_split_{selected_game_id}.png')
+    out_path = os.path.join(FIGURES_DIR, f'momentum_alerts_{selected_game_id}.png')
     plt.savefig(out_path, dpi=150)
     print(f"✅ Saved Graph: {out_path}")
     plt.show()
