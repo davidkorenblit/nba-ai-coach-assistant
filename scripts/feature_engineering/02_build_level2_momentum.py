@@ -1,76 +1,85 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# חישוב נתיבים יחסיים לתיקיית הדאטה
 INPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
 OUTPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level2_features.csv')
-
-# רשימת כוכבים (Joel Embiid, Devin Booker)
-STAR_PLAYERS = [203954, 1626164]
+LOOKUP_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'lookup', 'high_usage_players_2024-25.csv')
 
 def load_data():
-    if not os.path.exists(INPUT_PATH): raise FileNotFoundError(f"Missing: {INPUT_PATH}")
+    if not os.path.exists(INPUT_PATH): 
+        raise FileNotFoundError(f"Missing: {INPUT_PATH}")
     df = pd.read_csv(INPUT_PATH, low_memory=False)
     # מיון חובה לפי זמן יורד
     df.sort_values(by=['gameId', 'period', 'seconds_remaining'], ascending=[True, True, False], inplace=True)
     return df
+
+def get_star_ids():
+    """Loads dynamic list of stars from the lookup file."""
+    if not os.path.exists(LOOKUP_PATH):
+        print(f"⚠️ Warning: Lookup file not found at {LOOKUP_PATH}. Star features will be empty.")
+        return []
+    try:
+        stars_df = pd.read_csv(LOOKUP_PATH)
+        # המרה למחרוזת לצורך חיפוש בטקסט הליינאפ
+        return stars_df['PLAYER_ID'].astype(str).tolist()
+    except Exception as e:
+        print(f"❌ Error loading star lookup: {e}")
+        return []
 
 # --- Context Features ---
 
 def feature_style_shift(df):
     print("🔹 Running: Style Shift...")
     WINDOW_SIZE = 15
-    # חישוב ממוצע נע של שעון הזריקות
     df['style_tempo_rolling'] = df.groupby('gameId')['shot_clock_estimated'].transform(
         lambda x: x.rolling(window=WINDOW_SIZE, min_periods=1).mean()
     ).fillna(14.0)
     return df
 
 def feature_shared_fatigue(df):
-    print("🔹 Running: Shared Fatigue...")
+    print("🔹 Running: Shared Fatigue (Calibrated)...")
+    # UPDATED: סף עייפות מכויל ל-185 שניות
     FATIGUE_THRESHOLD = 185
     df['is_high_fatigue'] = np.where(df['time_since_last_sub'] > FATIGUE_THRESHOLD, 1, 0)
     return df
 
-# --- Momentum Features (THE FIX) ---
+# --- Momentum Features ---
 
 def feature_smart_streak(df):
     """
-    FIXED: Uses 'actionType', 'shotResult', and 'foulTechnicalTotal' 
-    instead of string parsing description.
+    FIXED: Uses 'actionType', 'shotResult', and 'foulTechnicalTotal'.
     """
-    print("🔹 Running: Smart Momentum Streak (Fixed Logic)...")
+    print("🔹 Running: Smart Momentum Streak (Vectorized)...")
     
-    # 1. איפוס עמודת הניקוד
     df['event_momentum_val'] = 0.0
     
-    # 2. לוגיקה וקטורית מדויקת על בסיס העמודות המובנות
-    
-    # שלשות (חובה שיהיה Made)
+    # שלשות
     mask_3pt = (df['actionType'] == '3pt') & (df['shotResult'] == 'Made')
     df.loc[mask_3pt, 'event_momentum_val'] += 1.5
     
-    # סלים ל-2 (חובה שיהיה Made)
+    # סלים ל-2
     mask_2pt = (df['actionType'] == '2pt') & (df['shotResult'] == 'Made')
     df.loc[mask_2pt, 'event_momentum_val'] += 1.0
     
-    # חטיפות (אירוע הגנתי חזק)
+    # חטיפות
     df.loc[df['actionType'] == 'steal', 'event_momentum_val'] += 2.0
     
     # חסימות
     df.loc[df['actionType'] == 'block', 'event_momentum_val'] += 1.5
     
-    # עבירות טכניות (משתמשים בעמודת המונה הספציפית)
+    # עבירות טכניות
     if 'foulTechnicalTotal' in df.columns:
         df.loc[df['foulTechnicalTotal'] > 0, 'event_momentum_val'] += 2.5
     
-    # 3. חישוב מצטבר בחלון (Rolling Sum)
     WINDOW_EVENTS = 10
     df['momentum_streak_rolling'] = df.groupby('gameId')['event_momentum_val'].transform(
         lambda x: x.rolling(window=WINDOW_EVENTS, min_periods=1).sum()
-    ).fillna(0) # מילוי אפסים בהתחלה
+    ).fillna(0)
     
     return df
 
@@ -83,25 +92,36 @@ def feature_explosiveness(df):
     return df.drop(columns=['score_diff_lag'])
 
 def feature_instability(df):
-    print("🔹 Running: Instability Index...")
+    print("🔹 Running: Instability Index (Quarter Fixed)...")
     LAG_EVENTS = 10
-    df['time_lag'] = df.groupby('gameId')['seconds_remaining'].shift(LAG_EVENTS)
+    
+    # UPDATED: חישוב לפי רבע (Period) כדי למנוע קפיצות זמן לא הגיוניות
+    df['time_lag'] = df.groupby(['gameId', 'period'])['seconds_remaining'].shift(LAG_EVENTS)
+    
     df['instability_index'] = df['time_lag'] - df['seconds_remaining']
     df['instability_index'] = df['instability_index'].fillna(60)
     return df.drop(columns=['time_lag'])
 
 def feature_star_resting(df):
-    print("🔹 Running: Star Resting...")
-    def check_star_on_bench(row):
-        try:
-            current_players = str(row['home_lineup']) + str(row['away_lineup'])
-            for star_id in STAR_PLAYERS:
-                if str(star_id) not in current_players:
-                    return 1 
-            return 0
-        except:
-            return 0
-    df['is_star_resting'] = df.apply(check_star_on_bench, axis=1)
+    print("🔹 Running: Star Resting (Dynamic Lookup)...")
+    
+    star_ids = get_star_ids()
+    
+    if not star_ids:
+        df['is_star_resting'] = 0
+        return df
+
+    # אופטימיזציה: יצירת Regex Pattern לחיפוש מהיר במקום לולאות
+    # בודק האם *אחד* מה-IDs ברשימה קיים בליינאפ
+    star_pattern = '|'.join(star_ids)
+    
+    # איחוד הליינאפים לחיפוש אחד
+    combined_lineups = df['home_lineup'].astype(str) + " " + df['away_lineup'].astype(str)
+    
+    # אם יש התאמה -> הכוכב משחק (has_star=1). אנו רוצים לדעת מתי הוא נח (is_resting=1)
+    has_star = combined_lineups.str.contains(star_pattern, regex=True, na=False).astype(int)
+    df['is_star_resting'] = 1 - has_star
+    
     return df
 
 def feature_crunch_time(df):
@@ -112,20 +132,26 @@ def feature_crunch_time(df):
     return df
 
 def main():
-    print("🚀 Starting Level 2 Feature Engineering (V2 Fixed)...")
-    df = load_data()
-    
-    # Pipeline
-    df = feature_style_shift(df)
-    df = feature_shared_fatigue(df)
-    df = feature_smart_streak(df)    # <-- המתוקן
-    df = feature_explosiveness(df)
-    df = feature_instability(df)
-    df = feature_star_resting(df)
-    df = feature_crunch_time(df)
-    
-    df.to_csv(OUTPUT_PATH, index=False)
-    print(f"✅ Saved Fixed Level 2 to: {OUTPUT_PATH}")
+    print("🚀 Starting Level 2 Feature Engineering (V3 - Dynamic & Calibrated)...")
+    try:
+        df = load_data()
+        
+        # Pipeline
+        df = feature_style_shift(df)
+        df = feature_shared_fatigue(df)
+        df = feature_smart_streak(df)
+        df = feature_explosiveness(df)
+        df = feature_instability(df)
+        df = feature_star_resting(df)
+        df = feature_crunch_time(df)
+        
+        df.to_csv(OUTPUT_PATH, index=False)
+        print(f"✅ Saved Upgraded Level 2 to: {OUTPUT_PATH}")
+        print(f"📊 Features Shape: {df.shape}")
+        
+    except Exception as e:
+        print(f"❌ Critical Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
