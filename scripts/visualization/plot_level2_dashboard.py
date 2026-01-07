@@ -84,7 +84,7 @@ def plot_level2_dashboard():
     ax5 = axes[2, 0]
     ax5.step(x_axis, game_df['is_high_fatigue'], color='#e67e22', where='post', lw=2)
     ax5.fill_between(x_axis, game_df['is_high_fatigue'], step='post', color='#e67e22', alpha=0.3)
-    ax5.set_title('5. Shared Fatigue (>5 mins w/o sub)', fontsize=14)
+    ax5.set_title('5. Shared Fatigue (>80 sec w/o sub)', fontsize=14)
     ax5.set_yticks([0, 1])
     ax5.set_yticklabels(['Fresh', 'Fatigued'])
     ax5.grid(alpha=0.3)
