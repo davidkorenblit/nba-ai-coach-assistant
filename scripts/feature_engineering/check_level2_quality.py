@@ -125,7 +125,7 @@ class Level2Validator:
 
     def check_fatigue_calibration(self):
         """
-        NEW: Verifies Fatigue Threshold (185s).
+        NEW: Verifies Fatigue Threshold (100s).
         We expect > 0.5% of events to be fatigued. If 0%, threshold is too high.
         """
         col = 'is_high_fatigue'
