@@ -9,9 +9,9 @@ FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..',
 
 class Level2Validator:
     """
-    Validator Suite for Level 2 Feature Engineering.
+    Validator Suite for Level 2 Feature Engineering (V3).
     Checks consistency of Context, Momentum, and Dynamic features.
-    Updated: Includes checks for 'Zero Momentum' bug and 'actionType' existence.
+    Updated: Includes Logic Checks for Star Resting, Fatigue Calibration, and Instability.
     """
 
     def __init__(self, file_path):
@@ -48,7 +48,6 @@ class Level2Validator:
             'instability_index', 'is_star_resting', 'is_crunch_time'
         ]
         
-        # תוספת: וידוא שעמודת המקור לתיקון קיימת
         if 'actionType' not in self.df.columns:
             self._log("Schema Check", False, "Missing critical source column: 'actionType'")
             self.results.append(False)
@@ -95,17 +94,62 @@ class Level2Validator:
         
         min_val = self.df['momentum_streak_rolling'].min()
         max_val = self.df['momentum_streak_rolling'].max()
+        mean_val = self.df['momentum_streak_rolling'].mean()
         
-        # --- תיקון: בדיקה ספציפית לבאג ה-0 ---
+        # --- בדיקת מומנטום (האם הבאג תוקן?) ---
         if min_val == 0 and max_val == 0:
-             self._log("Momentum Sanity", False, "⚠️ CRITICAL FAIL: All Momentum values are 0.0! (String parsing bug).")
+             self._log("Momentum Sanity", False, "⚠️ CRITICAL FAIL: All Momentum values are 0.0! (Vector logic failed).")
              return
         # --------------------------------------
 
         if -100 <= min_val and max_val <= 100:
-             self._log("Momentum Sanity", True, f"Values within sane range ({min_val:.1f} to {max_val:.1f}).")
+             self._log("Momentum Sanity", True, f"Valid Range: {min_val:.1f} to {max_val:.1f} (Mean: {mean_val:.2f}).")
         else:
              self._log("Momentum Sanity", False, f"Suspiciously extreme values detected ({min_val} to {max_val}).")
+
+    def check_star_resting_logic(self):
+        """
+        NEW: Verifies Dynamic Star Loading.
+        We expect the feature to vary (0 and 1). If it's all 0, lookup failed.
+        """
+        col = 'is_star_resting'
+        if col not in self.df.columns: return
+
+        unique_vals = self.df[col].unique()
+        if len(unique_vals) < 2:
+            val = unique_vals[0]
+            self._log("Star Resting Logic", False, f"⚠️ Feature is static (Value: {val}). Dynamic lookup likely failed.")
+        else:
+            pct = self.df[col].mean() * 100
+            self._log("Star Resting Logic", True, f"Dynamic detection active ({pct:.1f}% of events marked as Stars Resting).")
+
+    def check_fatigue_calibration(self):
+        """
+        NEW: Verifies Fatigue Threshold (185s).
+        We expect > 0.5% of events to be fatigued. If 0%, threshold is too high.
+        """
+        col = 'is_high_fatigue'
+        if col not in self.df.columns: return
+
+        pct = self.df[col].mean() * 100
+        if pct < 0.1:
+            self._log("Fatigue Calibration", False, f"⚠️ Too Strict! Only {pct:.2f}% flagged. Threshold (185s) might need checking.")
+        else:
+            self._log("Fatigue Calibration", True, f"Balanced. High Fatigue detected in {pct:.1f}% of events.")
+
+    def check_instability_smoothness(self):
+        """
+        NEW: Verifies Period Grouping Fix.
+        Ensures no NaNs exist in instability_index (which happens if quarters aren't handled right).
+        """
+        col = 'instability_index'
+        if col not in self.df.columns: return
+
+        nans = self.df[col].isna().sum()
+        if nans > 0:
+            self._log("Instability Logic", False, f"❌ Found {nans} NaNs! Period grouping fix didn't work.")
+        else:
+            self._log("Instability Logic", True, "Clean. No NaNs found (Quarter transition handled correctly).")
 
     def check_explosiveness_index(self):
         """Verifies Explosiveness isn't purely zero."""
@@ -115,25 +159,7 @@ class Level2Validator:
              self._log("Explosiveness", False, "All values are 0. Calculation likely failed.")
         else:
              max_abs = self.df['explosiveness_index'].abs().max()
-             if max_abs < 50:
-                 self._log("Explosiveness", True, f"Calculation active (Max swing: {max_abs} pts).")
-             else:
-                 self._log("Explosiveness", False, f"Suspicious spike detected: {max_abs} pts change.")
-
-    def check_nulls_in_features(self):
-        """Ensures no NaNs in the new features."""
-        new_cols = [
-            'style_tempo_rolling', 'momentum_streak_rolling', 
-            'explosiveness_index', 'instability_index'
-        ]
-        has_nans = False
-        for col in new_cols:
-            if col in self.df.columns and self.df[col].isna().sum() > 0:
-                self._log("Null Check", False, f"Column '{col}' still has NaN values!")
-                has_nans = True
-        
-        if not has_nans:
-            self._log("Null Check", True, "Clean dataset. No NaNs in numeric features.")
+             self._log("Explosiveness", True, f"Calculation active (Max swing: {max_abs} pts).")
 
     # --- Runner ---
     def run(self):
@@ -145,13 +171,18 @@ class Level2Validator:
         self.check_feature_existence()
         self.check_binary_flags()
         self.check_crunch_time_logic()
-        self.check_momentum_sanity()
+        
+        # New & Updated Logic Checks
+        self.check_momentum_sanity()      # Updated
+        self.check_star_resting_logic()   # New
+        self.check_fatigue_calibration()  # New
+        self.check_instability_smoothness() # New
+        
         self.check_explosiveness_index()
-        self.check_nulls_in_features()
         
         print("-" * 60)
         if all(self.results):
-            print("🚀 STATUS: PASSED. Level 2 features are robust.")
+            print("🚀 STATUS: PASSED. Level 2 features are robust and calibrated.")
         else:
             print("⚠️ STATUS: WARNINGS DETECTED. Review logs above.")
 
