@@ -3,10 +3,13 @@ import numpy as np
 import os
 import re
 
-# --- Config ---
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-RAW_FILE_PATH = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData', 'season_2024_25.csv')
-OUTPUT_FILE = os.path.join(CURRENT_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
+# --- Config & Settings ---
+# משתיק אזהרות Future של פנדס לגבי החלפת ערכים
+pd.set_option('future.no_silent_downcasting', True)
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+RAW_FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
+OUTPUT_FILE = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
 
 # --- Helper Functions ---
 def parse_clock(clock_str):
@@ -25,7 +28,7 @@ def parse_clock(clock_str):
 # --- Feature Modules ---
 
 def process_base_timeline(df):
-    # 1. Clean Team Codes (Critical Fix for Equality Checks)
+    # 1. Clean Team Codes
     if 'teamTricode' in df.columns:
         df['teamTricode'] = df['teamTricode'].astype(str).str.strip()
     
@@ -50,46 +53,26 @@ def process_base_timeline(df):
 
 def enrich_state_counters_v4(df):
     """
-    V4 FIX: Calculates Home/Away Timeouts instead of sparse Team columns.
-    Solves the Dashboard issue permanently.
+    V4 FIX: Calculates Home/Away Timeouts correctly.
     """
     # 1. Identify Home/Away Teams per Game
-    # We create a map of gameId -> {home: 'BOS', away: 'ATL'}
-    # Helper: Find the tricode associated with teamId for Home/Away
-    
-    # מיפוי: gameId -> teamId של הבית
     home_id_map = df[df['scoreHome'].diff() > 0].groupby('gameId')['teamId'].first().to_dict()
-    
-    # מיפוי: teamId -> teamTricode
     id_to_code = df.dropna(subset=['teamTricode']).groupby('teamId')['teamTricode'].first().to_dict()
     
-    # פונקציה לזיהוי מי הבית ומי החוץ בכל שורה
-    def get_role(row):
-        hid = home_id_map.get(row['gameId'])
-        if not hid: return 'unknown'
-        if row['teamId'] == hid: return 'home'
-        if row['teamId'] != 0 and row['teamId'] != hid: return 'away'
-        return 'neutral'
-
-    # 2. Resolve Timeout Takers (Clean Logic)
+    # 2. Resolve Timeout Takers
     def _resolve_timeout_role(row):
-        # זיהוי אם זה טיים אאוט
         if row['actionType'] == 9 or 'Timeout' in str(row['description']):
-            # בדיקה האם הקבוצה שלקחה היא הבית או החוץ
-            # נשתמש ב-teamTricode הקיים בשורה
             current_code = str(row['teamTricode']).strip()
-            
-            # מציאת קוד הבית למשחק הזה
             hid = home_id_map.get(row['gameId'])
             home_code = id_to_code.get(hid)
             
             if current_code == home_code: return 'home'
-            if current_code != 'nan': return 'away' # אם זה לא הבית וזה לא ריק, זה החוץ
+            if current_code != 'nan': return 'away'
         return 'none'
 
     df['timeout_role'] = df.apply(_resolve_timeout_role, axis=1)
     
-    # 3. Calculate Inventory (Home/Away)
+    # 3. Calculate Inventory
     for side in ['home', 'away']:
         is_side_to = (df['timeout_role'] == side).astype(int)
         used = is_side_to.groupby(df['gameId']).cumsum()
@@ -97,7 +80,6 @@ def enrich_state_counters_v4(df):
 
     # 4. Fouls & Counters
     df['is_foul'] = (df['foulPersonalTotal'] > 0).astype(int)
-    # כאן נשתמש בטריקוד כדי לפצל לקבוצות בגרפים אם נרצה, אבל המדד המרכזי הוא ה-Timeouts
     df['team_fouls_period'] = df.groupby(['gameId', 'period', 'teamTricode'])['is_foul'].cumsum().fillna(0)
 
     cols_to_sum = ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']
@@ -134,6 +116,11 @@ def apply_shot_clock_logic(df):
     return df
 
 def process_lineups_logic(df):
+    """
+    FIXED V6: Prevents 'float + str' error by using string placeholders
+    before converting back to NaN for ffill.
+    """
+    print("   🔧 Processing Lineups (with Noise Filtering)...")
     valid_players = df[df['personId'] > 0]
     player_map = valid_players.groupby('personId')['teamId'].agg(
         lambda x: x.mode().iloc[0] if not x.mode().empty else 0
@@ -147,13 +134,19 @@ def process_lineups_logic(df):
     def _parse(row):
         gid = row['gameId']
         raw = str(row['personIdsFilter'])
-        if not raw or raw == '0': return [], []
+        
+        # סינון רעשים
+        if not raw or raw == '0' or raw == 'nan': return None, None
+        
         hid = home_map.get(gid)
-        if not hid: return [], []
+        if not hid: return None, None
         
         ids = [int(x) for x in re.findall(r'\d+', raw)]
-        ids.sort() # Sorting fix
+        ids.sort()
         
+        # ולידציה: חייבים 10 שחקנים
+        if len(ids) < 10: return None, None
+
         return ([p for p in ids if player_map.get(p) == hid], 
                 [p for p in ids if player_map.get(p) and player_map.get(p) != hid])
 
@@ -161,22 +154,50 @@ def process_lineups_logic(df):
     df['home_lineup'] = lineups[0]
     df['away_lineup'] = lineups[1]
 
-    df['lineup_signature'] = df['home_lineup'].astype(str) + "|" + df['away_lineup'].astype(str)
-    df['is_sub'] = (df['lineup_signature'] != df.groupby('gameId')['lineup_signature'].shift(1)).astype(int)
+    # --- התיקון לקריסה (TypeError) ---
     
+    # 1. המרה למחרוזות בטוחות (שימוש ב-"MISSING" במקום NaN)
+    s_home = df['home_lineup'].apply(lambda x: str(x) if x is not None else "MISSING")
+    s_away = df['away_lineup'].apply(lambda x: str(x) if x is not None else "MISSING")
+
+    # 2. חיבור המחרוזות
+    df['lineup_temp'] = s_home + "|" + s_away
+
+    # 3. החזרת NaN למקומות שבהם היה MISSING (כדי ש-ffill יעבוד)
+    df['lineup_temp'] = df['lineup_temp'].replace(to_replace=r'.*MISSING.*', value=np.nan, regex=True)
+
+    # 4. מילוי חוסרים (FFILL)
+    df['lineup_signature'] = df.groupby('gameId')['lineup_temp'].ffill()
+    df['lineup_signature'] = df['lineup_signature'].fillna("START")
+
+    # 5. זיהוי חילופים
+    df['is_new_period'] = (df['period'] != df.groupby('gameId')['period'].shift(1)).astype(int)
+    shift_sig = df.groupby('gameId')['lineup_signature'].shift(1)
+    
+    df['is_sub'] = np.where(
+        (df['lineup_signature'] != shift_sig) & (df['is_new_period'] == 0) & (shift_sig != "START"), 
+        1, 
+        0
+    )
+    
+    # 6. חישוב זמן
     df['lineup_era'] = df.groupby('gameId')['is_sub'].cumsum()
-    start_times = df.groupby(['gameId', 'lineup_era'])['seconds_remaining'].transform('max')
+    
+    grp = df.groupby(['gameId', 'period', 'lineup_era'])
+    start_times = grp['seconds_remaining'].transform('max')
     df['time_since_last_sub'] = start_times - df['seconds_remaining']
     
-    df.drop(columns=['is_sub', 'lineup_era', 'lineup_signature'], inplace=True)
+    # Cleanup
+    df.drop(columns=['lineup_temp', 'is_new_period', 'lineup_era', 'lineup_signature', 'is_sub'], inplace=True)
     return df
 
 def clean_sparse_columns(df):
+    """Removes unused or messy columns to keep the file clean."""
     cols_to_drop = [
         'assistPlayerNameInitial', 'assistPersonId', 'assistTotal',
         'stealPlayerName', 'stealPersonId',
         'blockPlayerName', 'blockPersonId',
-        'timeout_role' # Cleanup helper
+        'timeout_role'
     ]
     existing_cols = [c for c in cols_to_drop if c in df.columns]
     if existing_cols:
@@ -186,23 +207,23 @@ def clean_sparse_columns(df):
 # --- Main ---
 
 def main():
-    print(f"🚀 Starting V4 FE (Fixing Whitespace & Home/Away Logic)...")
+    print(f"🚀 Starting Level 1 FE (V6 - Final Fix)...")
     if not os.path.exists(RAW_FILE_PATH):
         print(f"❌ File not found: {RAW_FILE_PATH}"); return
 
     df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
     
-    df = process_base_timeline(df) # Includes whitespace strip
-    df = enrich_state_counters_v4(df) # Logic fix for timeouts
+    df = process_base_timeline(df)
+    df = enrich_state_counters_v4(df)
     df = calculate_temporal_metrics(df)
     df = calculate_possession_flow(df)
     df = apply_shot_clock_logic(df)
-    df = process_lineups_logic(df)
-    df = clean_sparse_columns(df)
+    df = process_lineups_logic(df) # <-- The Fix
+    df = clean_sparse_columns(df)  # <-- The Missing Function
 
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     df.to_csv(OUTPUT_FILE, index=False)
-    print(f"✅ V4 DONE. Saved to {OUTPUT_FILE}")
+    print(f"✅ Level 1 DONE. Saved to {OUTPUT_FILE}")
 
 if __name__ == "__main__":
     main()

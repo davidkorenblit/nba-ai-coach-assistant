@@ -5,7 +5,6 @@ import sys
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# חישוב נתיבים יחסיים לתיקיית הדאטה
 INPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
 OUTPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level2_features.csv')
 LOOKUP_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'lookup', 'high_usage_players_2024-25.csv')
@@ -25,7 +24,6 @@ def get_star_ids():
         return []
     try:
         stars_df = pd.read_csv(LOOKUP_PATH)
-        # המרה למחרוזת לצורך חיפוש בטקסט הליינאפ
         return stars_df['PLAYER_ID'].astype(str).tolist()
     except Exception as e:
         print(f"❌ Error loading star lookup: {e}")
@@ -51,9 +49,6 @@ def feature_shared_fatigue(df):
 # --- Momentum Features ---
 
 def feature_smart_streak(df):
-    """
-    FIXED: Uses 'actionType', 'shotResult', and 'foulTechnicalTotal'.
-    """
     print("🔹 Running: Smart Momentum Streak (Vectorized)...")
     
     df['event_momentum_val'] = 0.0
@@ -95,7 +90,6 @@ def feature_instability(df):
     print("🔹 Running: Instability Index (Quarter Fixed)...")
     LAG_EVENTS = 10
     
-    # UPDATED: חישוב לפי רבע (Period) כדי למנוע קפיצות זמן לא הגיוניות
     df['time_lag'] = df.groupby(['gameId', 'period'])['seconds_remaining'].shift(LAG_EVENTS)
     
     df['instability_index'] = df['time_lag'] - df['seconds_remaining']
@@ -111,28 +105,27 @@ def feature_star_resting(df):
         df['is_star_resting'] = 0
         return df
 
-    # אופטימיזציה: יצירת Regex Pattern לחיפוש מהיר במקום לולאות
-    # בודק האם *אחד* מה-IDs ברשימה קיים בליינאפ
     star_pattern = '|'.join(star_ids)
-    
-    # איחוד הליינאפים לחיפוש אחד
     combined_lineups = df['home_lineup'].astype(str) + " " + df['away_lineup'].astype(str)
     
-    # אם יש התאמה -> הכוכב משחק (has_star=1). אנו רוצים לדעת מתי הוא נח (is_resting=1)
     has_star = combined_lineups.str.contains(star_pattern, regex=True, na=False).astype(int)
     df['is_star_resting'] = 1 - has_star
     
     return df
 
-def feature_crunch_time(df):
-    print("🔹 Running: Crunch Time...")
-    df['is_crunch_time'] = np.where(
+def feature_clutch_time(df):
+    """
+    Renamed from Crunch Time to Clutch Time.
+    Definition: Last 5 minutes, margin within 5 points.
+    """
+    print("🔹 Running: Clutch Time...")
+    df['is_clutch_time'] = np.where(
         (df['seconds_remaining'] <= 300) & (df['score_margin'].abs() <= 5), 1, 0
     )
     return df
 
 def main():
-    print("🚀 Starting Level 2 Feature Engineering (V3 - Dynamic & Calibrated)...")
+    print("🚀 Starting Level 2 Feature Engineering (V4 - Clutch Time Update)...")
     try:
         df = load_data()
         
@@ -143,7 +136,7 @@ def main():
         df = feature_explosiveness(df)
         df = feature_instability(df)
         df = feature_star_resting(df)
-        df = feature_crunch_time(df)
+        df = feature_clutch_time(df) # <-- Updated name
         
         df.to_csv(OUTPUT_PATH, index=False)
         print(f"✅ Saved Upgraded Level 2 to: {OUTPUT_PATH}")

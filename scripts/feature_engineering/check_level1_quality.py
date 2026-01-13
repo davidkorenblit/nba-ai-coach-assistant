@@ -80,16 +80,22 @@ class Level1Validator:
             self._log("Cumulative Counters", False, f"Suspiciously low max points: {max_pts}.")
 
     def check_substitution_timer(self):
-        """Verifies substitution timer is calculated and non-negative."""
+        """Verifies substitution timer accumulates properly (Fix Verification)."""
         if 'time_since_last_sub' not in self.df.columns:
             self._log("Sub Timer", False, "Missing column.")
             return
 
         min_val = self.df['time_since_last_sub'].min()
+        max_val = self.df['time_since_last_sub'].max()
+        
         if min_val < 0:
             self._log("Sub Timer", False, f"Negative time found: {min_val}s.")
+            return
+
+        if max_val > 300:
+            self._log("Sub Timer", True, f"Valid accumulation detected (Max streak: {max_val:.0f}s).")
         else:
-            self._log("Sub Timer", True, "Timer logic valid (non-negative).")
+            self._log("Sub Timer", False, f"⚠️ Timer stuck low! Max value is only {max_val:.0f}s (Fix failed).")
 
     def check_critical_missing_values(self):
         """Ensures no gaps in critical flow columns and investigates if found."""
