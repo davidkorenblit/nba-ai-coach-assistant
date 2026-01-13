@@ -77,10 +77,10 @@ def plot_level2_dashboard():
     # Plot the raw seconds counter
     ax4.plot(x_axis, game_df['time_since_last_sub'], color='#e67e22', lw=1.5, label='Time w/o Sub')
     # Add Threshold Line
-    ax4.axhline(100, color='red', linestyle='--', lw=2, label='Threshold (100s)')
+    ax4.axhline(350, color='red', linestyle='--', lw=2, label='Threshold (350s)')
     # Highlight danger zone
-    ax4.fill_between(x_axis, game_df['time_since_last_sub'], 100,
-                     where=(game_df['time_since_last_sub'] > 100),
+    ax4.fill_between(x_axis, game_df['time_since_last_sub'], 350,
+                     where=(game_df['time_since_last_sub'] > 350),
                      color='red', alpha=0.3)
     
     ax4.set_title('4. Lineup Fatigue Accumulation', fontsize=14)
