@@ -72,13 +72,20 @@ def plot_level2_dashboard():
     ax3.set_ylabel('Time per 10 Events')
     ax3.grid(alpha=0.3)
 
-    # 4. Shared Fatigue
+    # 4. Lineup Fatigue (UPDATED: Continuous with Threshold)
     ax4 = axes[1, 1]
-    ax4.step(x_axis, game_df['is_high_fatigue'], color='#e67e22', where='post', lw=2)
-    ax4.fill_between(x_axis, game_df['is_high_fatigue'], step='post', color='#e67e22', alpha=0.3)
-    ax4.set_title('4. Lineup Fatigue (>100s No Sub)', fontsize=14) # Updated Threshold
-    ax4.set_yticks([0, 1])
-    ax4.set_yticklabels(['Fresh', 'Fatigued'])
+    # Plot the raw seconds counter
+    ax4.plot(x_axis, game_df['time_since_last_sub'], color='#e67e22', lw=1.5, label='Time w/o Sub')
+    # Add Threshold Line
+    ax4.axhline(100, color='red', linestyle='--', lw=2, label='Threshold (100s)')
+    # Highlight danger zone
+    ax4.fill_between(x_axis, game_df['time_since_last_sub'], 100,
+                     where=(game_df['time_since_last_sub'] > 100),
+                     color='red', alpha=0.3)
+    
+    ax4.set_title('4. Lineup Fatigue Accumulation', fontsize=14)
+    ax4.set_ylabel('Seconds Without Substitution')
+    ax4.legend(loc='upper left')
     ax4.grid(alpha=0.3)
 
     # 5. Star Resting
@@ -90,13 +97,16 @@ def plot_level2_dashboard():
     ax5.set_yticklabels(['Playing', 'Resting'])
     ax5.grid(alpha=0.3)
 
-    # 6. Clutch Time (Renamed from Crunch Time)
+    # 6. Clutch Time (Renamed & Logic Updated)
     ax6 = axes[2, 1]
     # Background Margin
     ax6.plot(x_axis, game_df['score_margin'], color='gray', alpha=0.3, label='Score Margin')
-    # Clutch Highlight
-    if 'is_crunch_time' in game_df.columns:
-        clutch_mask = game_df['is_crunch_time'] == 1
+    
+    # Check for new column name, fallback to old if needed
+    clutch_col = 'is_clutch_time' if 'is_clutch_time' in game_df.columns else 'is_crunch_time'
+    
+    if clutch_col in game_df.columns:
+        clutch_mask = game_df[clutch_col] == 1
         if clutch_mask.any():
             clutch_series = game_df['score_margin'].copy()
             clutch_series[~clutch_mask] = float('nan')
