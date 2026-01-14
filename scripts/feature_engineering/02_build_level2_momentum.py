@@ -41,8 +41,8 @@ def feature_style_shift(df):
 
 def feature_shared_fatigue(df):
     print("🔹 Running: Shared Fatigue (Calibrated)...")
-    # UPDATED: סף עייפות מכויל ל-350 שניות
-    FATIGUE_THRESHOLD = 350
+    # UPDATED: סף עייפות מכויל ל-550 שניות
+    FATIGUE_THRESHOLD = 550
     df['is_high_fatigue'] = np.where(df['time_since_last_sub'] > FATIGUE_THRESHOLD, 1, 0)
     return df
 

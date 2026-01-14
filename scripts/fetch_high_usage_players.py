@@ -5,7 +5,9 @@ from nba_api.stats.endpoints import leaguedashplayerstats
 # --- Config ---
 SEASON = '2024-25'
 MIN_GAMES_PLAYED = 45  # הורדתי ל-45 לביטחון, אפשר לשנות ל-50
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'lookup')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+OUTPUT_DIR = os.path.join(BASE_DIR, 'data', 'lookup')
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, f'high_usage_players_{SEASON}.csv')
 
 def fetch_high_usage_players():
