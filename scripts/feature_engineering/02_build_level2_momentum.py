@@ -24,7 +24,7 @@ def get_star_ids():
         return []
     try:
         stars_df = pd.read_csv(LOOKUP_PATH)
-        return stars_df['PLAYER_ID'].astype(str).tolist()
+        return stars_df['PLAYER_NAME'].astype(str).tolist()
     except Exception as e:
         print(f"❌ Error loading star lookup: {e}")
         return []
