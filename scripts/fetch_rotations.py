@@ -1,7 +1,8 @@
 import pandas as pd
 import os
 import time
-import sys
+import random
+import concurrent.futures
 from nba_api.stats.endpoints import gamerotation
 
 # --- Config ---
@@ -9,71 +10,121 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 OUTPUT_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 
-def fetch_rotations():
-    print(f"🚀 Starting Rotation Fetcher...")
-    
-    # 1. טעינת רשימת המשחקים שיש לנו כבר
-    if not os.path.exists(RAW_PBP_PATH):
-        print(f"❌ Error: Source file not found at {RAW_PBP_PATH}")
-        return
+MAX_WORKERS = 4      # מספר תהליכונים שמרני
+SAVE_INTERVAL = 20   # כל כמה משחקים שומרים לקובץ
 
-    print(f"📂 Reading Game IDs from existing PBP data...")
+def get_existing_game_ids():
+    """בודק איזה משחקים כבר שמרנו כדי לא להוריד שוב."""
+    if not os.path.exists(OUTPUT_PATH):
+        return set()
     try:
-        # קוראים רק את עמודת ה-gameId כדי לחסוך זיכרון
-        df_source = pd.read_csv(RAW_PBP_PATH, usecols=['gameId'])
-        unique_games = df_source['gameId'].unique()
-        print(f"🏀 Found {len(unique_games)} unique games to process.")
-    except Exception as e:
-        print(f"❌ Error reading source CSV: {e}")
+        # קוראים רק את עמודת gameId כדי לחסוך זיכרון
+        df = pd.read_csv(OUTPUT_PATH, usecols=['gameId'], dtype={'gameId': str})
+        return set(df['gameId'].unique())
+    except:
+        return set()
+
+def fetch_single_game_rotation(game_id):
+    """משיכת משחק בודד."""
+    try:
+        # השהייה אקראית (Jitter)
+        time.sleep(random.uniform(0.5, 1.2))
+        
+        rot = gamerotation.GameRotation(game_id=game_id, timeout=10)
+        frames = []
+        
+        # Home
+        if hasattr(rot, 'home_team'):
+            df = rot.home_team.get_data_frame()
+            if not df.empty:
+                df['gameId'] = game_id
+                df['team_side'] = 'home'
+                frames.append(df)
+        
+        # Away
+        if hasattr(rot, 'away_team'):
+            df = rot.away_team.get_data_frame()
+            if not df.empty:
+                df['gameId'] = game_id
+                df['team_side'] = 'away'
+                frames.append(df)
+        
+        return frames if frames else None
+
+    except Exception:
+        return None
+
+def fetch_rotations_robust():
+    print(f"🚀 Starting ROBUST Rotation Fetcher...")
+    
+    # 1. טעינת רשימת המשחקים
+    if not os.path.exists(RAW_PBP_PATH):
+        print("❌ Source file missing."); return
+
+    df_source = pd.read_csv(RAW_PBP_PATH, usecols=['gameId'], low_memory=False)
+    all_game_ids = df_source['gameId'].astype(str).str.zfill(10).unique()
+    
+    # 2. סינון משחקים שכבר נעשו
+    existing_ids = get_existing_game_ids()
+    games_to_process = [gid for gid in all_game_ids if gid not in existing_ids]
+    
+    print(f"📊 Total Games: {len(all_game_ids)}")
+    print(f"✅ Already Done: {len(existing_ids)}")
+    print(f"🔄 Remaining:   {len(games_to_process)}")
+    
+    if not games_to_process:
+        print("🎉 Nothing to do! All games are fetched.")
         return
 
-    all_rotations = []
+    # 3. הרצה במקביל
+    batch_data = []
+    completed_in_session = 0
+    errors_in_session = 0
     
-    # 2. ריצה על המשחקים ומשיכת נתונים
-    for i, gid in enumerate(unique_games):
-        try:
-            # המרת ID לפורמט של NBA API (מחרוזת של 10 ספרות)
-            game_id_str = str(gid).zfill(10)
-            
-            print(f"   🔄 Fetching {game_id_str} ({i+1}/{len(unique_games)})...", end="\r")
-            
-            # קריאה ל-API
-            rot = gamerotation.GameRotation(game_id=game_id_str)
-            
-            # עיבוד בית/חוץ
-            df_home = rot.home_team_rotation.get_data_frame()
-            df_away = rot.away_team_rotation.get_data_frame()
-            
-            if not df_home.empty:
-                df_home['gameId'] = gid
-                df_home['team_side'] = 'home'
-                all_rotations.append(df_home)
-                
-            if not df_away.empty:
-                df_away['gameId'] = gid
-                df_away['team_side'] = 'away'
-                all_rotations.append(df_away)
-            
-            # Pause to be nice to the API
-            time.sleep(0.6)
-
-        except Exception as e:
-            print(f"\n   ⚠️ Error fetching {gid}: {e}")
-            continue
-
-    print("\n✅ Fetching complete. Saving data...")
-
-    # 3. שמירה לקובץ מאוחד
-    if all_rotations:
-        final_df = pd.concat(all_rotations, ignore_index=True)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        future_to_game = {executor.submit(fetch_single_game_rotation, gid): gid for gid in games_to_process}
         
-        # וידוא תיקייה
-        os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-        
-        final_df.to_csv(OUTPUT_PATH, index=False)
-        print(f"💾 Saved {len(final_df)} rotation rows to: {OUTPUT_PATH}")
-    else:
-        print("❌ No data was fetched.")
+        for future in concurrent.futures.as_completed(future_to_game):
+            game_id = future_to_game[future]
+            completed_in_session += 1
+            
+            result = future.result()
+            if result:
+                batch_data.extend(result)
+            else:
+                errors_in_session += 1
+            
+            # הדפסת סטטוס
+            print(f"   ⏳ Session Progress: {completed_in_session}/{len(games_to_process)} | Errors: {errors_in_session}", end="\r")
+            
+            # 4. שמירה אינקרמנטלית (Batch Save)
+            if len(batch_data) > 0 and completed_in_session % SAVE_INTERVAL == 0:
+                save_batch_to_csv(batch_data)
+                batch_data = [] # ריקון הזיכרון
+
+    # שמירת שאריות בסוף הריצה
+    if batch_data:
+        save_batch_to_csv(batch_data)
+
+    print("\n✅ Session Complete.")
+
+def save_batch_to_csv(data_frames):
+    """שומר רשימת דאטה-פריימים לקובץ CSV (מצב Append)."""
+    if not data_frames: return
+    
+    df_batch = pd.concat(data_frames, ignore_index=True)
+    
+    # סידור עמודות
+    cols_order = ['gameId', 'team_side', 'PERSON_ID', 'IN_TIME_REAL', 'OUT_TIME_REAL', 'USG_PCT']
+    existing = [c for c in cols_order if c in df_batch.columns]
+    others = [c for c in df_batch.columns if c not in existing]
+    df_batch = df_batch[existing + others]
+    
+    # האם הקובץ קיים? אם כן, לא כותבים כותרות (header=False)
+    file_exists = os.path.exists(OUTPUT_PATH)
+    
+    df_batch.to_csv(OUTPUT_PATH, mode='a', header=not file_exists, index=False)
+    # print(f" [Saved {len(df_batch)} rows] ", end="") # אופציונלי לדיבוג
 
 if __name__ == "__main__":
-    fetch_rotations()
+    fetch_rotations_robust()
