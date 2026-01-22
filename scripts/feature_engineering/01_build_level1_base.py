@@ -1,17 +1,19 @@
 import pandas as pd
 import numpy as np
 import os
-import re
+import sys
+from tqdm import tqdm
 
 # --- Config & Settings ---
-# משתיק אזהרות Future של פנדס לגבי החלפת ערכים
 pd.set_option('future.no_silent_downcasting', True)
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RAW_FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
+ROTATIONS_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 OUTPUT_FILE = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
 
 # --- Helper Functions ---
+
 def parse_clock(clock_str):
     if pd.isna(clock_str): return 0.0
     s = str(clock_str).strip()
@@ -25,60 +27,79 @@ def parse_clock(clock_str):
         return float(s)
     except: return 0.0
 
-# --- Feature Modules ---
+def get_absolute_time(row):
+    """Calculates absolute seconds elapsed from start of game for rotation matching."""
+    p = row['period']
+    rem = row['seconds_remaining']
+    # Regulation (4x12m) + OT (5m)
+    if p <= 4:
+        return (p - 1) * 720 + (720 - rem)
+    else:
+        return (4 * 720) + ((p - 5) * 300) + (300 - rem)
+
+# --- Core Logic Steps ---
+
+def load_and_prep_data():
+    print("🔹 Loading datasets...")
+    if not os.path.exists(RAW_PBP_PATH): raise FileNotFoundError(f"Missing PBP: {RAW_PBP_PATH}")
+    if not os.path.exists(ROTATIONS_PATH): raise FileNotFoundError(f"Missing Rotations: {ROTATIONS_PATH}")
+    
+    df_pbp = pd.read_csv(RAW_PBP_PATH, low_memory=False)
+    df_rot = pd.read_csv(ROTATIONS_PATH)
+    
+    # Ensure IDs match
+    df_pbp['gameId'] = df_pbp['gameId'].astype(str).str.zfill(10)
+    df_rot['gameId'] = df_rot['gameId'].astype(str).str.zfill(10)
+    
+    return df_pbp, df_rot
 
 def process_base_timeline(df):
-    # 1. Clean Team Codes
+    print("🔹 Processing timeline and scores...")
     if 'teamTricode' in df.columns:
         df['teamTricode'] = df['teamTricode'].astype(str).str.strip()
     
-    # 2. Time
     df['seconds_remaining'] = df['clock'].apply(parse_clock)
+    df['time_elapsed'] = df.apply(get_absolute_time, axis=1) # NEW: For rotation sync
     
-    # 3. Sort
     df.sort_values(by=['gameId', 'period', 'seconds_remaining', 'actionNumber'], 
                    ascending=[True, True, False, True], inplace=True)
     
-    # 4. Score Fill
     for col in ['scoreHome', 'scoreAway']:
         df[col] = df.groupby('gameId')[col].ffill().fillna(0)
     df['score_margin'] = df['scoreHome'] - df['scoreAway']
 
-    # 5. Fill Counters
-    zero_fill_cols = ['reboundDefensiveTotal', 'reboundOffensiveTotal', 'turnoverTotal', 'foulPersonalTotal', 'pointsTotal']
-    for c in zero_fill_cols:
+    cols = ['reboundDefensiveTotal', 'reboundOffensiveTotal', 'turnoverTotal', 'foulPersonalTotal', 'pointsTotal']
+    for c in cols:
         if c in df.columns: df[c] = df[c].fillna(0)
         
     return df
 
-def enrich_state_counters_v4(df):
-    """
-    V4 FIX: Calculates Home/Away Timeouts correctly.
-    """
-    # 1. Identify Home/Away Teams per Game
+def enrich_state_counters(df):
+    """Restored from Old Code: Timeouts, Fouls, Cumulatives."""
+    print("🔹 Enriching State Counters (Timeouts & Fouls)...")
+    
+    # 1. Identify Home/Away
     home_id_map = df[df['scoreHome'].diff() > 0].groupby('gameId')['teamId'].first().to_dict()
     id_to_code = df.dropna(subset=['teamTricode']).groupby('teamId')['teamTricode'].first().to_dict()
     
-    # 2. Resolve Timeout Takers
     def _resolve_timeout_role(row):
         if row['actionType'] == 9 or 'Timeout' in str(row['description']):
             current_code = str(row['teamTricode']).strip()
             hid = home_id_map.get(row['gameId'])
             home_code = id_to_code.get(hid)
-            
             if current_code == home_code: return 'home'
             if current_code != 'nan': return 'away'
         return 'none'
 
     df['timeout_role'] = df.apply(_resolve_timeout_role, axis=1)
     
-    # 3. Calculate Inventory
+    # 2. Inventory
     for side in ['home', 'away']:
         is_side_to = (df['timeout_role'] == side).astype(int)
         used = is_side_to.groupby(df['gameId']).cumsum()
         df[f'timeouts_remaining_{side}'] = (7 - used).clip(lower=0)
 
-    # 4. Fouls & Counters
+    # 3. Fouls & Counters
     df['is_foul'] = (df['foulPersonalTotal'] > 0).astype(int)
     df['team_fouls_period'] = df.groupby(['gameId', 'period', 'teamTricode'])['is_foul'].cumsum().fillna(0)
 
@@ -89,12 +110,15 @@ def enrich_state_counters_v4(df):
         
     return df
 
-def calculate_temporal_metrics(df):
+def calculate_flow_metrics(df):
+    """Restored from Old Code: Temporal & Possession."""
+    print("🔹 Calculating Flow Metrics...")
+    
+    # Temporal
     prev_time = df.groupby(['gameId', 'period'])['seconds_remaining'].shift(1)
     df['play_duration'] = (prev_time - df['seconds_remaining']).fillna(0).clip(lower=0)
-    return df
-
-def calculate_possession_flow(df):
+    
+    # Possession
     is_def_reb = df['reboundDefensiveTotal'] > 0
     is_turnover = df['turnoverTotal'] > 0
     
@@ -106,124 +130,127 @@ def calculate_possession_flow(df):
         
     df['is_poss_change'] = (is_def_reb | is_turnover | is_made_shot).astype(int)
     df['possession_id'] = df.groupby('gameId')['is_poss_change'].cumsum()
+    
     return df
 
 def apply_shot_clock_logic(df):
+    """Restored from Old Code."""
     elapsed = df.groupby(['gameId', 'possession_id'])['play_duration'].cumsum()
     df['shot_clock_estimated'] = (24.0 - elapsed).clip(lower=0)
     mask_off_reb = df['reboundOffensiveTotal'] > 0
     df.loc[mask_off_reb, 'shot_clock_estimated'] = 14.0
     return df
 
-def process_lineups_logic(df):
-    """
-    FIXED V6: Prevents 'float + str' error by using string placeholders
-    before converting back to NaN for ffill.
-    """
-    print("   🔧 Processing Lineups (with Noise Filtering)...")
-    valid_players = df[df['personId'] > 0]
-    player_map = valid_players.groupby('personId')['teamId'].agg(
-        lambda x: x.mode().iloc[0] if not x.mode().empty else 0
-    ).to_dict()
+def merge_real_rotations(df_pbp, df_rot):
+    """NEW: Merges external rotation file instead of guessing."""
+    print("🔹 Merging REAL Rotations (This takes time)...")
     
-    scoring = df[df['scoreHome'].diff() > 0]
-    home_map = {}
-    if not scoring.empty:
-        home_map = scoring.groupby('gameId')['teamId'].agg(lambda x: x.mode().iloc[0]).to_dict()
+    rot_map = {}
+    print("   -> Building Index...")
+    for gid, group in tqdm(df_rot.groupby('gameId')):
+        rot_map[gid] = {'home': [], 'away': []}
+        for _, row in group.iterrows():
+            entry = (float(row['IN_TIME_REAL']), float(row['OUT_TIME_REAL']), int(row['PERSON_ID']))
+            rot_map[gid][row['team_side']].append(entry)
 
-    def _parse(row):
-        gid = row['gameId']
-        raw = str(row['personIdsFilter'])
-        
-        # סינון רעשים
-        if not raw or raw == '0' or raw == 'nan': return None, None
-        
-        hid = home_map.get(gid)
-        if not hid: return None, None
-        
-        ids = [int(x) for x in re.findall(r'\d+', raw)]
-        ids.sort()
-        
-        # ולידציה: חייבים 10 שחקנים
-        if len(ids) < 10: return None, None
-
-        return ([p for p in ids if player_map.get(p) == hid], 
-                [p for p in ids if player_map.get(p) and player_map.get(p) != hid])
-
-    lineups = df.apply(_parse, axis=1, result_type='expand')
-    df['home_lineup'] = lineups[0]
-    df['away_lineup'] = lineups[1]
-
-    # --- התיקון לקריסה (TypeError) ---
+    result_home = []
+    result_away = []
     
-    # 1. המרה למחרוזות בטוחות (שימוש ב-"MISSING" במקום NaN)
-    s_home = df['home_lineup'].apply(lambda x: str(x) if x is not None else "MISSING")
-    s_away = df['away_lineup'].apply(lambda x: str(x) if x is not None else "MISSING")
+    print("   -> Mapping...")
+    grouped_pbp = df_pbp.groupby('gameId')
+    
+    for gid, game_events in tqdm(grouped_pbp):
+        if gid not in rot_map:
+            result_home.extend([None] * len(game_events))
+            result_away.extend([None] * len(game_events))
+            continue
+            
+        times = game_events['time_elapsed'].values
+        
+        # Optimize: Pre-fetch lists
+        h_intervals = rot_map[gid]['home']
+        a_intervals = rot_map[gid]['away']
+        
+        # List comprehension is faster than apply here
+        h_lineups = [sorted([pid for (s, e, pid) in h_intervals if s <= t + 0.1 < e]) for t in times]
+        a_lineups = [sorted([pid for (s, e, pid) in a_intervals if s <= t + 0.1 < e]) for t in times]
+            
+        result_home.extend(h_lineups)
+        result_away.extend(a_lineups)
+        
+    df_pbp['home_lineup'] = result_home
+    df_pbp['away_lineup'] = result_away
+    return df_pbp
 
-    # 2. חיבור המחרוזות
-    df['lineup_temp'] = s_home + "|" + s_away
-
-    # 3. החזרת NaN למקומות שבהם היה MISSING (כדי ש-ffill יעבוד)
-    df['lineup_temp'] = df['lineup_temp'].replace(to_replace=r'.*MISSING.*', value=np.nan, regex=True)
-
-    # 4. מילוי חוסרים (FFILL)
-    df['lineup_signature'] = df.groupby('gameId')['lineup_temp'].ffill()
-    df['lineup_signature'] = df['lineup_signature'].fillna("START")
-
-    # 5. זיהוי חילופים
+def calculate_fatigue_and_subs(df):
+    """Updated logic using the real lineups."""
+    print("🔹 Calculating Fatigue...")
+    
+    df['home_sig'] = df['home_lineup'].astype(str)
+    df['away_sig'] = df['away_lineup'].astype(str)
+    df['lineup_signature'] = df['home_sig'] + "|" + df['away_sig']
+    
     df['is_new_period'] = (df['period'] != df.groupby('gameId')['period'].shift(1)).astype(int)
     shift_sig = df.groupby('gameId')['lineup_signature'].shift(1)
     
     df['is_sub'] = np.where(
-        (df['lineup_signature'] != shift_sig) & (df['is_new_period'] == 0) & (shift_sig != "START"), 
-        1, 
-        0
+        (df['lineup_signature'] != shift_sig) & (df['is_new_period'] == 0) & (shift_sig.notna()), 
+        1, 0
     )
     
-    # 6. חישוב זמן
-    df['lineup_era'] = df.groupby('gameId')['is_sub'].cumsum()
-    
-    grp = df.groupby(['gameId', 'period', 'lineup_era'])
+    df['stint_id'] = df.groupby('gameId')['is_sub'].cumsum()
+    grp = df.groupby(['gameId', 'period', 'stint_id'])
     start_times = grp['seconds_remaining'].transform('max')
     df['time_since_last_sub'] = start_times - df['seconds_remaining']
     
-    # Cleanup
-    df.drop(columns=['lineup_temp', 'is_new_period', 'lineup_era', 'lineup_signature', 'is_sub'], inplace=True)
+    df.drop(columns=['home_sig', 'away_sig', 'lineup_signature', 'is_new_period', 'stint_id'], inplace=True)
     return df
 
 def clean_sparse_columns(df):
-    """Removes unused or messy columns to keep the file clean."""
     cols_to_drop = [
         'assistPlayerNameInitial', 'assistPersonId', 'assistTotal',
-        'stealPlayerName', 'stealPersonId',
-        'blockPlayerName', 'blockPersonId',
+        'stealPlayerName', 'stealPersonId', 'blockPlayerName', 'blockPersonId',
         'timeout_role'
     ]
-    existing_cols = [c for c in cols_to_drop if c in df.columns]
-    if existing_cols:
-        df.drop(columns=existing_cols, inplace=True)
+    existing = [c for c in cols_to_drop if c in df.columns]
+    if existing: df.drop(columns=existing, inplace=True)
     return df
 
 # --- Main ---
 
 def main():
-    print(f"🚀 Starting Level 1 FE (V6 - Final Fix)...")
-    if not os.path.exists(RAW_FILE_PATH):
-        print(f"❌ File not found: {RAW_FILE_PATH}"); return
-
-    df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
-    
-    df = process_base_timeline(df)
-    df = enrich_state_counters_v4(df)
-    df = calculate_temporal_metrics(df)
-    df = calculate_possession_flow(df)
-    df = apply_shot_clock_logic(df)
-    df = process_lineups_logic(df) # <-- The Fix
-    df = clean_sparse_columns(df)  # <-- The Missing Function
-
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-    df.to_csv(OUTPUT_FILE, index=False)
-    print(f"✅ Level 1 DONE. Saved to {OUTPUT_FILE}")
+    print(f"🚀 Starting Level 1 FE (V8 - COMPLETE INTEGRATION)...")
+    try:
+        # 1. Load
+        df, df_rot = load_and_prep_data()
+        
+        # 2. Timeline & Scores
+        df = process_base_timeline(df)
+        
+        # 3. State Counters (Restored!)
+        df = enrich_state_counters(df)
+        
+        # 4. Flow Metrics (Restored!)
+        df = calculate_flow_metrics(df)
+        df = apply_shot_clock_logic(df)
+        
+        # 5. Real Rotations (New!)
+        df = merge_real_rotations(df, df_rot)
+        
+        # 6. Fatigue (Updated!)
+        df = calculate_fatigue_and_subs(df)
+        
+        # 7. Cleanup
+        df = clean_sparse_columns(df)
+        
+        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+        df.to_csv(OUTPUT_FILE, index=False)
+        print(f"✅ Level 1 DONE. Saved to {OUTPUT_FILE}")
+        
+    except Exception as e:
+        print(f"❌ Critical Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
