@@ -7,7 +7,7 @@ import numpy as np
 
 # --- Config (Robust pathing) ---
 # עולה 4 שלבים מהתיקייה validation לתיקיית השורש finalPro
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
 FIGURES_DIR = os.path.join(BASE_DIR, 'reports', 'figures')
 
