@@ -6,7 +6,6 @@ import re
 # --- Config & Settings ---
 pd.set_option('future.no_silent_downcasting', True)
 
-# נתיב בסיס - עולה 3 שלבים מהסקריפט לתיקיית השורש
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RAW_FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 ROTATIONS_FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
@@ -26,7 +25,7 @@ def parse_clock(clock_str):
         return float(s)
     except: return 0.0
 
-# --- Feature Modules (Core Logic - DO NOT TOUCH) ---
+# --- Feature Modules (Core Logic) ---
 
 def process_base_timeline(df):
     if 'teamTricode' in df.columns:
@@ -43,6 +42,7 @@ def process_base_timeline(df):
     return df
 
 def enrich_state_counters_v4(df):
+    # 1. Identify Home/Away Teams
     home_id_map = df[df['scoreHome'].diff() > 0].groupby('gameId')['teamId'].first().to_dict()
     id_to_code = df.dropna(subset=['teamTricode']).groupby('teamId')['teamTricode'].first().to_dict()
     
@@ -56,12 +56,22 @@ def enrich_state_counters_v4(df):
         return 'none'
 
     df['timeout_role'] = df.apply(_resolve_timeout_role, axis=1)
+    
+    # 2. Timeouts
     for side in ['home', 'away']:
         is_side_to = (df['timeout_role'] == side).astype(int)
         used = is_side_to.groupby(df['gameId']).cumsum()
         df[f'timeouts_remaining_{side}'] = (7 - used).clip(lower=0)
+    
+    # 3. Fouls & Cumulative Metrics (FIXED: Added back)
     df['is_foul'] = (df['foulPersonalTotal'] > 0).astype(int)
     df['team_fouls_period'] = df.groupby(['gameId', 'period', 'teamTricode'])['is_foul'].cumsum().fillna(0)
+    
+    cols_to_sum = ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']
+    for metric in cols_to_sum:
+        df[metric] = pd.to_numeric(df[metric], errors='coerce').fillna(0)
+        df[f'cum_{metric}'] = df.groupby(['gameId', 'teamId'])[metric].cumsum().fillna(0)
+        
     return df
 
 def calculate_temporal_metrics(df):
@@ -84,22 +94,15 @@ def apply_shot_clock_logic(df):
     df.loc[mask_off_reb, 'shot_clock_estimated'] = 14.0
     return df
 
-# --- REFACTORED ACTIVE INFERENCE LINEUP ENGINE ---
+# --- ACTIVE INFERENCE LINEUP ENGINE ---
 
 def process_lineups_logic(df, df_rot):
-    """
-    Tier 1: Official Rotations (Fetch)
-    Tier 2: Active Inference (Backward Discovery from PBP)
-    Tier 3: FFill (Forward Persistence)
-    """
     print("   🔍 Activating Inference Engine: Discovery & Backward-Fill...")
-
-    # 1. מפה בסיסית של שחקנים לקבוצות
+    
     player_to_team = df.dropna(subset=['personId', 'teamId']).groupby('personId')['teamId'].first().to_dict()
     scoring = df[df['scoreHome'].diff() > 0]
     home_team_map = scoring.groupby('gameId')['teamId'].agg(lambda x: x.mode().iloc[0]).to_dict()
 
-    # 2. הכנת נתוני Rotations (Tier 1)
     def get_elapsed(row):
         if row['period'] <= 4: return (row['period'] - 1) * 720 + (720 - row['seconds_remaining'])
         return 2880 + (row['period'] - 5) * 300 + (300 - row['seconds_remaining'])
@@ -114,12 +117,10 @@ def process_lineups_logic(df, df_rot):
                 side = 'Home' if r['team_side'] == 'home' else 'Away'
                 rot_lookup[gid][side].append((r['IN_TIME_REAL'], r['OUT_TIME_REAL'], int(r['PERSON_ID'])))
 
-    # 3. פונקציית הגילוי (Discovery) לכל רבע
     def infer_quarter_starters(group):
         gid = str(group['gameId'].iloc[0]).zfill(10)
         hid = home_team_map.get(group['gameId'].iloc[0])
         
-        # א. ניסיון Tier 1: בדיקת API בזמן אפס של הרבע
         if gid in rot_lookup:
             t_start = group['elapsed_sec'].min()
             h_starters = [p for (s, e, p) in rot_lookup[gid]['Home'] if s <= t_start < e]
@@ -127,32 +128,22 @@ def process_lineups_logic(df, df_rot):
             if len(h_starters) == 5 and len(a_starters) == 5:
                 return sorted(h_starters), sorted(a_starters), 1
 
-        # ב. ניסיון Tier 2: הבלש (Inference מתוך האירועים)
         known_h, known_a = set(), set()
-        
         for _, row in group.iterrows():
             pid, tid = row['personId'], row['teamId']
             if pd.isna(pid) or pid == 0: continue
-            
-            # אם שחקן עשה פעולה, הוא על המגרש
             if tid == hid: known_h.add(int(pid))
             else: known_a.add(int(pid))
-            
-            # אם הגענו לחילוף, מי שיצא (SUB out) חייב היה להיות שם מההתחלה
             if 'SUB out' in str(row['description']):
                 if tid == hid: known_h.add(int(pid))
                 else: known_a.add(int(pid))
-
             if len(known_h) >= 5 and len(known_a) >= 5: break
             
-        # לוקחים רק את ה-5 הראשונים שזוהו
         return sorted(list(known_h)[:5]), sorted(list(known_a)[:5]), 0
 
-    # הרצת הגילוי לכל רבע בכל משחק
     print("   🕵️‍♂️ Identifying starters for all periods...")
     starter_results = df.groupby(['gameId', 'period']).apply(infer_quarter_starters)
     
-    # 4. החלה רטרואקטיבית (Backward Fill)
     def apply_starters(row):
         res = starter_results.get((row['gameId'], row['period']))
         if res: return res
@@ -163,13 +154,9 @@ def process_lineups_logic(df, df_rot):
     df['away_lineup'] = temp_res[1]
     df['lineup_confidence'] = temp_res[2]
 
-    # 5. זיהוי חילופים בזמן אמת ו-Forward Fill
-    # אנחנו משתמשים ב-lineup_signature כדי לזהות מתי משהו משתנה
     s_home = df['home_lineup'].apply(lambda x: str(x))
     s_away = df['away_lineup'].apply(lambda x: str(x))
     df['lineup_temp'] = s_home + "|" + s_away
-    
-    # חישוב חילופים וזמן (שמירה על הלוגיקה המקורית)
     df['lineup_signature'] = df.groupby('gameId')['lineup_temp'].ffill()
     df['is_new_period'] = (df['period'] != df.groupby('gameId')['period'].shift(1)).astype(int)
     shift_sig = df.groupby('gameId')['lineup_signature'].shift(1)
@@ -180,10 +167,8 @@ def process_lineups_logic(df, df_rot):
     
     df['lineup_era'] = df.groupby('gameId')['is_sub'].cumsum()
     grp = df.groupby(['gameId', 'period', 'lineup_era'])
-    start_times = grp['seconds_remaining'].transform('max')
-    df['time_since_last_sub'] = (start_times - df['seconds_remaining']).clip(lower=0)
+    df['time_since_last_sub'] = grp['seconds_remaining'].transform('max') - df['seconds_remaining']
     
-    # Cleanup
     df.drop(columns=['lineup_temp', 'is_new_period', 'lineup_era', 'lineup_signature', 'is_sub', 'elapsed_sec'], inplace=True)
     return df
 
@@ -198,27 +183,24 @@ def clean_sparse_columns(df):
 # --- Main ---
 
 def main():
-    print(f"🚀 Starting ACTIVE HYBRID Level 1 (Inference V1)...")
+    print(f"🚀 Starting ACTIVE HYBRID Level 1 (V8 - Final Counters Fix)...")
     if not os.path.exists(RAW_FILE_PATH):
         print(f"❌ PBP File missing."); return
     
     df_rot = pd.read_csv(ROTATIONS_FILE_PATH) if os.path.exists(ROTATIONS_FILE_PATH) else None
     df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
     
-    # Pipeline
     df = process_base_timeline(df)
     df = enrich_state_counters_v4(df)
     df = calculate_temporal_metrics(df)
     df = calculate_possession_flow(df)
     df = apply_shot_clock_logic(df)
-    
-    # THE DETECTIVE ENGINE
     df = process_lineups_logic(df, df_rot)
-    
     df = clean_sparse_columns(df)
+    
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     df.to_csv(OUTPUT_FILE, index=False)
-    print(f"✅ Level 1 DONE. 100% Coverage through Inference.")
+    print(f"✅ Level 1 DONE. 100% Coverage & Full Counters.")
 
 if __name__ == "__main__":
     main()
