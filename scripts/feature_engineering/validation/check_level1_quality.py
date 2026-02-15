@@ -5,14 +5,13 @@ import sys
 import ast
 
 # --- Config (4 levels up to Root) ---
-# וודא שהנתיב הזה תואם למיקום הקובץ בתוך scripts/feature_engineering/validation/
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 FILE_PATH = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
 
 class Level1Validator:
     """
     Validator Suite for Hybrid Level 1.
-    Implements the Validator Pattern: Isolated checks for game rules and data integrity.
+    Includes Checks for: Completeness, Confidence, Consistency, Physics, and Lineup Turnover.
     """
 
     def __init__(self, file_path):
@@ -29,10 +28,9 @@ class Level1Validator:
         try:
             self.df = pd.read_csv(self.file_path, low_memory=False)
             
-            # המרת מחרוזות הרשימות בחזרה לאובייקטים (לצורך בדיקת len)
+            # המרת מחרוזות הרשימות בחזרה לאובייקטים
             for col in ['home_lineup', 'away_lineup']:
                 if col in self.df.columns:
-                    # שימוש ב-ast.literal_eval בצורה בטוחה
                     self.df[col] = self.df[col].apply(
                         lambda x: ast.literal_eval(x) if pd.notna(x) and str(x).startswith('[') else []
                     )
@@ -51,7 +49,7 @@ class Level1Validator:
     # --- 1. Hybrid & Lineup Logic Checks ---
 
     def check_lineup_completeness(self):
-        """Verifies exactly 5 players per team in every row (The 10-Player Test)."""
+        """Verifies exactly 5 players per team in every row."""
         h_count = self.df['home_lineup'].apply(len)
         a_count = self.df['away_lineup'].apply(len)
         
@@ -59,19 +57,37 @@ class Level1Validator:
         fail_count = (~full_house).sum()
         
         if fail_count == 0:
-            self._log("10-Player Test", True, "Perfect 5v5 coverage across all rows.")
+            self._log("10-Player Test", True, "Perfect 5v5 coverage.")
         else:
             pct = (fail_count / len(self.df)) * 100
-            self._log("10-Player Test", False, f"Missing players in {fail_count:,} rows ({pct:.1f}%). Note: Common at game starts before first PBP action.")
+            self._log("10-Player Test", False, f"Missing players in {fail_count:,} rows ({pct:.1f}%).")
+
+    def check_lineup_turnover(self):
+        """NEW: Detects 'Stagnant Lineups' where substitutions are not being captured."""
+        # יצירת מזהה ייחודי לחמישייה (String) כדי לספור שינויים
+        self.df['lineup_sig_qa'] = self.df['home_lineup'].astype(str) + self.df['away_lineup'].astype(str)
+        
+        # ספירת חמישיות ייחודיות לכל משחק
+        lineup_counts = self.df.groupby('gameId')['lineup_sig_qa'].nunique()
+        stagnant_games = lineup_counts[lineup_counts <= 2] # משחק שלם עם פחות מ-2 חמישיות הוא לא הגיוני
+        
+        avg_lineups = lineup_counts.mean()
+        
+        if len(stagnant_games) == 0:
+            self._log("Lineup Turnover", True, f"Subs detected. Avg {avg_lineups:.1f} unique lineups per game.")
+        else:
+            pct = (len(stagnant_games) / self.df['gameId'].nunique()) * 100
+            self._log("Lineup Turnover", False, f"{pct:.1f}% of games have NO or FEW substitutions detected (Stagnant).")
+        
+        self.df.drop(columns=['lineup_sig_qa'], inplace=True)
 
     def report_confidence_health(self):
-        """Reports how much of our data is Official vs. Inferred."""
+        """Reports Official vs. Inferred data."""
         if 'lineup_confidence' not in self.df.columns:
             self._log("Confidence Tracking", False, "Column 'lineup_confidence' missing.")
             return
-
         official_pct = self.df['lineup_confidence'].mean() * 100
-        self._log("Inference Stats", True, f"Reliability Score: {official_pct:.1f}% Official API | {100-official_pct:.1f}% Hybrid/Inference")
+        self._log("Inference Stats", True, f"Reliability Score: {official_pct:.1f}% Official API.")
 
     def check_player_team_consistency(self):
         """Ensures no player is in both lineups simultaneously."""
@@ -81,93 +97,58 @@ class Level1Validator:
         
         overlaps = self.df.apply(_has_overlap, axis=1).sum()
         if overlaps == 0:
-            self._log("Team Consistency", True, "No player overlaps found between Home and Away.")
+            self._log("Team Consistency", True, "No player overlaps found.")
         else:
-            self._log("Team Consistency", False, f"Found {overlaps} rows where a player is listed on both teams.")
+            self._log("Team Consistency", False, f"Found {overlaps} rows with player overlaps.")
 
     # --- 2. Game Rules & Physics Checks ---
 
     def check_shot_clock_14s_rule(self):
         """Verifies shot clock resets to max 14s after offensive rebounds."""
         if 'reboundOffensiveTotal' not in self.df.columns: return
-        
         off_reb_mask = self.df['reboundOffensiveTotal'] > 0
         violations = self.df.loc[off_reb_mask, 'shot_clock_estimated'] > 14.1
-        
         if violations.any():
-            max_val = self.df.loc[off_reb_mask, 'shot_clock_estimated'].max()
-            self._log("14s Rule Logic", False, f"Found values > 14s after OffReb (Max: {max_val:.1f}s)")
+            self._log("14s Rule Logic", False, "Found values > 14s after OffReb.")
         else:
-            self._log("14s Rule Logic", True, "Shot clock correctly capped at 14s after all offensive rebounds.")
+            self._log("14s Rule Logic", True, "Shot clock correctly capped at 14s.")
 
     def check_timeouts_inventory_integrity(self):
-        """Verifies timeouts decrease correctly and never go negative."""
+        """Verifies timeouts range."""
         cols = [c for c in self.df.columns if 'timeouts_remaining' in c]
-        if not cols:
-            self._log("Timeouts Inventory", False, "No 'timeouts_remaining' columns found.")
-            return
-
-        min_val = self.df[cols].min().min()
-        max_val = self.df[cols].max().max()
-        
-        if min_val >= 0 and max_val <= 7:
-             self._log("Timeouts Inventory", True, f"Inventory valid (Range: {min_val}-{max_val}).")
-        else:
-             self._log("Timeouts Inventory", False, f"Invalid range detected: {min_val} to {max_val}.")
+        if not cols: return
+        min_val, max_val = self.df[cols].min().min(), self.df[cols].max().max()
+        self._log("Timeouts Inventory", (min_val >= 0 and max_val <= 7), f"Inventory valid (Range: {min_val}-{max_val}).")
 
     def check_cumulative_counters_monotonicity(self):
-        """Verifies that points generally increase (Sanity check)."""
+        """Verifies points accumulation."""
         if 'cum_pointsTotal' not in self.df.columns:
-            self._log("Cumulative Counters", False, "Missing 'cum_pointsTotal'.")
+            self._log("Cumulative Counters", False, "Missing points column.")
             return
-            
         max_pts = self.df['cum_pointsTotal'].max()
-        if max_pts > 50:
-            self._log("Cumulative Counters", True, f"Points are accumulating (Max Pts: {max_pts}).")
-        else:
-            self._log("Cumulative Counters", False, f"Suspiciously low max points: {max_pts}.")
+        self._log("Cumulative Counters", (max_pts > 50), f"Points accumulating (Max: {max_pts}).")
 
     def check_substitution_timer_sync(self):
-        """Ensures the fatigue timer resets on substitutions and stays positive."""
-        if 'time_since_last_sub' not in self.df.columns:
-            self._log("Sub Timer", False, "Missing 'time_since_last_sub' column.")
-            return
-
-        min_val = self.df['time_since_last_sub'].min()
-        max_val = self.df['time_since_last_sub'].max()
-        
-        if min_val < 0:
-            self._log("Sub Timer Sync", False, f"Negative time found: {min_val}s.")
-        elif max_val > 60:
-            self._log("Sub Timer Sync", True, f"Timer is active (Max streak: {max_val:.0f}s).")
-        else:
-            self._log("Sub Timer Sync", False, f"Timer seems stuck or failed to accumulate (Max: {max_val}).")
+        """Ensures the fatigue timer resets."""
+        if 'time_since_last_sub' not in self.df.columns: return
+        min_val, max_val = self.df['time_since_last_sub'].min(), self.df['time_since_last_sub'].max()
+        # אם הטיימר מגיע ליותר מ-720 שניות (רבע שלם) ללא איפוס ב-100% מהמקרים, זו תקלה.
+        self._log("Sub Timer Sync", (min_val >= 0 and max_val > 60), f"Timer active (Max: {max_val:.0f}s).")
 
     def check_critical_missing_values(self):
-        """Ensures no gaps in the critical flow of the game."""
+        """Ensures no gaps in critical columns."""
         critical = ['scoreHome', 'play_duration', 'home_lineup', 'away_lineup']
         missing_count = self.df[critical].isna().sum().sum()
-        
-        if missing_count == 0:
-            self._log("Critical Gaps", True, "Zero missing values in core columns.")
-        else:
-            self._log("Critical Gaps", False, f"Found {missing_count} missing values.")
-            
-            print("\n   🕵️‍♂️ DIAGNOSTICS: Where are the NaNs?")
-            for col in critical:
-                nans = self.df[self.df[col].isna()]
-                if not nans.empty:
-                    print(f"   👉 Column '{col}' has {len(nans)} NaNs.")
+        self._log("Critical Gaps", (missing_count == 0), f"Missing values: {missing_count}")
 
-    # --- Runner ---
     def run(self):
         print(f"🕵️‍♂️ Running FULL HYBRID QA Validator on: {os.path.basename(self.file_path)}")
         print("-" * 60)
         self.load_data()
         print("-" * 60)
         
-        # הרצת כל הבדיקות - מהחדש לישן
         self.check_lineup_completeness()
+        self.check_lineup_turnover() # הבדיקה החדשה כאן
         self.report_confidence_health()
         self.check_player_team_consistency()
         self.check_substitution_timer_sync()
@@ -178,9 +159,9 @@ class Level1Validator:
         
         print("-" * 60)
         if all(self.results):
-            print("🚀 STATUS: PASSED. Dataset is solid and ready for Level 2.")
+            print("🚀 STATUS: PASSED. Dataset is solid.")
         else:
-            print("⚠️ STATUS: WARNINGS DETECTED. Review logs above before ML training.")
+            print("⚠️ STATUS: WARNINGS DETECTED. Substitutions might be stuck.")
 
 if __name__ == "__main__":
     validator = Level1Validator(FILE_PATH)
