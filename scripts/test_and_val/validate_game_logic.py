@@ -4,8 +4,8 @@ import numpy as np
 
 # --- הגדרות ---
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data', 'pureData')
-OUTPUT_DIR = os.path.join(CURRENT_DIR, '..', 'docs', 'reports') # דוחות טקסטואליים
+DATA_DIR = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData')
+OUTPUT_DIR = os.path.join(CURRENT_DIR, '..', '..', 'docs', 'reports')
 BAD_GAMES_FILE = os.path.join(OUTPUT_DIR, 'invalid_games_blacklist.csv')
 
 # --- חוקי הסף (Thresholds) ---

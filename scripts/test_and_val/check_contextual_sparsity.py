@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # --- הגדרות ---
-FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'interim', 'level1_base.csv')
+FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'data', 'interim', 'level1_base.csv')
 
 def check_event_context(df, event_name, text_trigger, col_substring):
     print(f"\n🏀 Testing Event: {event_name.upper()}")

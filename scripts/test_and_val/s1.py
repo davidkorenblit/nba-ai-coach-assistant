@@ -4,7 +4,7 @@ import time
 import random
 from nba_api.stats.endpoints import gamerotation
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MISSING_IDS_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'missing_ids.csv')
 OUTPUT_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 

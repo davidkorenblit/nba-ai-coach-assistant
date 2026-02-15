@@ -4,8 +4,8 @@ import os
 
 # --- הגדרות ---
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data', 'pureData')
-OUTPUT_DIR = os.path.join(CURRENT_DIR, '..', 'docs', 'figures')
+DATA_DIR = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData')
+OUTPUT_DIR = os.path.join(CURRENT_DIR, '..', '..', 'docs', 'figures')
 INPUT_FILENAME = "season_2024_25.csv"
 INPUT_FILE = os.path.join(DATA_DIR, INPUT_FILENAME)
 

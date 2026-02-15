@@ -8,10 +8,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ניסיון לאתר את תיקיית הדאטה (עולה למעלה עד שמוצא)
 # מותאם למבנה: project/data/pureData ו-project/scripts/...
-DATA_DIR = os.path.join(CURRENT_DIR, '..', 'data', 'pureData') 
-if not os.path.exists(DATA_DIR):
-    # ניסיון נוסף למקרה שהסקריפט בתוך תת-תיקייה (scripts/feature_engineering)
-    DATA_DIR = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData')
+DATA_DIR = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData')
 
 # רשימת העמודות הקריטיות לבדיקה (לפי מה שסיכמנו)
 COLUMNS_TO_CHECK = [

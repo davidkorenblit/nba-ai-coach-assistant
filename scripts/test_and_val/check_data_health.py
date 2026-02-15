@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # --- Config ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROTATIONS_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 

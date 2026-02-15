@@ -1,10 +1,11 @@
 import pandas as pd
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 ROTATIONS_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 MISSING_IDS_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'missing_ids.csv')
+
 
 def inspect():
     # 1. כל המשחקים
