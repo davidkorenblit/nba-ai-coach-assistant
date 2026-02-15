@@ -1,35 +1,45 @@
 import pandas as pd
 import os
+import time
+import random
+from nba_api.stats.endpoints import gamerotation
 
-# הגדרת נתיב: עולים למעלה לתיקיית data/interim
-# ההנחה היא שהסקריפט רץ מתוך תיקיית scripts/feature_engineering או scripts
-current_dir = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MISSING_IDS_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'missing_ids.csv')
+OUTPUT_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 
-# ניסיון לאתר את הנתיב הנכון (תמיכה גם אם מריצים מתוך תת-תיקייה)
-path = os.path.join(current_dir, '..', 'data', 'interim', 'level2_features.csv')
-if not os.path.exists(path):
-    # ניסיון לעלות שתי רמות למעלה (למקרה שהסקריפט בתוך feature_engineering)
-    path = os.path.join(current_dir, '..', '..', 'data', 'interim', 'level2_features.csv')
+def fill_smart():
+    print("🚑 Starting SMART Rescue...")
+    if not os.path.exists(MISSING_IDS_PATH): return
+    
+    missing_ids = pd.read_csv(MISSING_IDS_PATH, header=None, dtype=str)[0].tolist()
+    i = 0
+    while i < len(missing_ids):
+        gid = missing_ids[i]
+        try:
+            print(f"   💉 Fixing {gid} [{i+1}/{len(missing_ids)}]...", end="\r")
+            time.sleep(random.uniform(2, 4)) # הפסקה בין בקשות
+            
+            rot = gamerotation.GameRotation(game_id=gid, timeout=30)
+            frames = []
+            if hasattr(rot, 'home_team'): frames.append(rot.home_team.get_data_frame())
+            if hasattr(rot, 'away_team'): frames.append(rot.away_team.get_data_frame())
+            
+            # אם חזר מידע - שומרים
+            if frames:
+                df = pd.concat(frames, ignore_index=True)
+                df['gameId'] = gid
+                # סידור מהיר של עמודות כדי למנוע קריסה
+                cols = ['gameId', 'PERSON_ID', 'IN_TIME_REAL', 'OUT_TIME_REAL']
+                exist = [c for c in cols if c in df.columns]
+                other = [c for c in df.columns if c not in exist]
+                df[exist + other].to_csv(OUTPUT_PATH, mode='a', header=False, index=False)
+            
+            i += 1 # הצלחה -> ממשיכים
+            
+        except Exception as e:
+            print(f"\n   🛑 Blocked on {gid}. Sleeping 3 mins...")
+            time.sleep(180) # ישנים 3 דקות ומנסים שוב את אותו משחק
 
-print(f"📂 Looking for file at: {path}")
-
-try:
-    if not os.path.exists(path):
-        print(f"❌ File not found at {path}. Check path manually.")
-    else:
-        # טעינת הקובץ
-        df = pd.read_csv(path, low_memory=False)
-        print(f"✅ Success! File loaded. Shape: {df.shape}")
-        
-        print("\n📋 Columns List:")
-        print(df.columns.tolist())
-        
-        # --- בדיקה לתיקון הבאג: מהם סוגי הפעולות הקיימים? ---
-        if 'actionType' in df.columns:
-            print("\n🔍 Action Types Found (Top 20):")
-            print(df['actionType'].value_counts().head(20))
-        else:
-            print("\n⚠️ Note: 'actionType' column is missing from Level 2 file.")
-
-except Exception as e:
-    print(f"❌ Error: {e}")
+if __name__ == "__main__":
+    fill_smart()
