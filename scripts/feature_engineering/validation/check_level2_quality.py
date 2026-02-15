@@ -5,7 +5,7 @@ import sys
 
 # --- Config ---
 # בודקים את הקובץ המאוחד של שלב 2
-FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'data', 'interim', 'level2_features.csv')
+FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'data', 'interim', 'level2_features.csv')
 
 class Level2Validator:
     """

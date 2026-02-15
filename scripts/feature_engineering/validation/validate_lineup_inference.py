@@ -6,8 +6,8 @@ import seaborn as sns
 import time
 
 # --- Configuration ---
-# מתקן את הנתיבים כדי שיתאימו למבנה הפרויקט שלך
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# גם כאן נדרשות 4 רמות (תיקנתי מ-3 ל-4 כדי שיתאים למיקום החדש)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 OUTPUT_REPORT_PATH = os.path.join(BASE_DIR, 'data', 'reports', 'lineup_inference_report.csv')
 OUTPUT_PLOT_PATH = os.path.join(BASE_DIR, 'data', 'reports', 'lineup_coverage_plot.png')

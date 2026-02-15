@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'data', 'interim', 'level1_base.csv')
+FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'data', 'interim', 'level1_base.csv')
 
 def inspect_events():
     df = pd.read_csv(FILE_PATH, low_memory=False)

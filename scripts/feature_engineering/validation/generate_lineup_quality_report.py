@@ -6,8 +6,7 @@ import seaborn as sns
 import time
 
 # --- Configuration ---
-# שינינו את המיקום, אז צריך לעלות 3 רמות כדי להגיע ל-Root
-# File is at: scripts/feature_engineering/validation/generate_lineup_quality_report.py
+# העלייה ל-Root מתבצעת דרך 4 רמות: validation -> fe -> scripts -> Root
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
