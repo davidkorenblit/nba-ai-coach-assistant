@@ -6,7 +6,7 @@ import ast
 
 # --- Config ---
 # הנתיב מעודכן לפי המבנה החדש (3 רמות למעלה ל-Root)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 FILE_PATH = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
 
 class Level1Validator:
