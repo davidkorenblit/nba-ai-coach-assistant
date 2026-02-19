@@ -5,126 +5,98 @@ import os
 import random
 import numpy as np
 
-# --- Config (Robust pathing) ---
-# עולה 4 שלבים מהתיקייה validation לתיקיית השורש finalPro
+# --- Config ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_PATH = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
 FIGURES_DIR = os.path.join(BASE_DIR, 'reports', 'figures')
 
 def identify_home_away(df):
-    """Simple heuristic to identify Home vs Away team codes based on scoring."""
     home_score_rows = df[df['scoreHome'].diff() > 0]
     if not home_score_rows.empty:
         home_team = home_score_rows.iloc[0]['teamTricode']
     else:
         home_team = df['teamTricode'].dropna().unique()[0]
-    
     all_teams = df['teamTricode'].dropna().unique()
     away_team = [t for t in all_teams if t != home_team][0]
     return home_team, away_team
 
 def plot_extended_dashboard():
-    # 1. Load
     if not os.path.exists(DATA_PATH):
-        print(f"❌ Data file not found at {DATA_PATH}. Run the Level 1 Build script first.")
+        print(f"❌ Data file not found at {DATA_PATH}.")
         return
     
     df = pd.read_csv(DATA_PATH, low_memory=False)
     
-    # 2. Select Game
+    # בחירת משחק
     game_ids = df['gameId'].unique()
     selected_game_id = random.choice(game_ids)
+    
+    # סינון ומיון חובה כדי שהציר יהיה כרונולוגי
     game_df = df[df['gameId'] == selected_game_id].copy()
     game_df.sort_values(by=['period', 'seconds_remaining'], ascending=[True, False], inplace=True)
+    game_df.reset_index(drop=True, inplace=True) # קריטי לסנכרון הגרף
     
-    # 3. Identify Teams
-    try:
-        home_team, away_team = identify_home_away(game_df)
-    except:
-        print("⚠️ Could not identify teams. Skipping.")
-        return
-
-    # Calculate global confidence for this specific game
+    home_team, away_team = identify_home_away(game_df)
     conf_score = game_df['lineup_confidence'].mean() * 100
 
-    print(f"🎨 Generating Hybrid Dashboard for: {home_team} vs {away_team} - Game {selected_game_id}")
+    print(f"🎨 Generating Dashboard v5: {home_team} vs {away_team} (Reliability: {conf_score:.1f}%)")
 
-    # --- Plotting (3x2) ---
     fig, axes = plt.subplots(3, 2, figsize=(18, 16))
-    fig.suptitle(f'Level 1 Hybrid Audit: {home_team} vs {away_team}\nGame Reliability: {conf_score:.1f}% Official Data', fontsize=16)
-    x_axis = np.arange(len(game_df))
+    fig.suptitle(f'Level 1 Tactical Audit: {home_team} vs {away_team}\nGame ID: {selected_game_id}', fontsize=18, weight='bold')
+    x_axis = game_df.index
 
     # 1. Score Margin
-    ax1 = axes[0, 0]
-    ax1.plot(x_axis, game_df['score_margin'], color='k', lw=1)
-    ax1.fill_between(x_axis, game_df['score_margin'], 0, where=(game_df['score_margin']>0), color='green', alpha=0.3, label=f'{home_team} Leads')
-    ax1.fill_between(x_axis, game_df['score_margin'], 0, where=(game_df['score_margin']<0), color='red', alpha=0.3, label=f'{away_team} Leads')
-    ax1.set_title('1. Game Flow & Score Margin')
-    ax1.legend(loc='upper left')
-    ax1.grid(alpha=0.3)
+    axes[0, 0].plot(x_axis, game_df['score_margin'], color='k', lw=1)
+    axes[0, 0].fill_between(x_axis, game_df['score_margin'], 0, where=(game_df['score_margin']>0), color='blue', alpha=0.2, label=f'{home_team} Lead')
+    axes[0, 0].fill_between(x_axis, game_df['score_margin'], 0, where=(game_df['score_margin']<0), color='red', alpha=0.2, label=f'{away_team} Lead')
+    axes[0, 0].set_title('1. Score Margin Flow')
+    axes[0, 0].legend()
 
-    # 2. Pace
-    ax2 = axes[0, 1]
-    ax2.plot(x_axis, game_df['possession_id'], color='purple', lw=2)
-    ax2.set_title('2. Game Pace (Cumulative Possessions)')
-    ax2.grid(alpha=0.3)
+    # 2. Possession Pace
+    axes[0, 1].plot(x_axis, game_df['possession_id'], color='purple')
+    axes[0, 1].set_title('2. Possession Count (Pace)')
 
-    # 3. Timeouts
-    # 3. Timeouts Inventory (עם סימון משקלים אסטרטגיים)
+    # 3. Strategic Timeouts (התיקון כאן)
     ax3 = axes[1, 0]
-    if 'timeouts_remaining_home' in game_df.columns:
-        # הקווים הרגילים
-        ax3.step(x_axis, game_df['timeouts_remaining_home'], label=f'{home_team}', where='post', color='blue', alpha=0.6)
-        ax3.step(x_axis, game_df['timeouts_remaining_away'], label=f'{away_team}', where='post', color='red', alpha=0.6)
-        
-        # הוספת נקודות המציינות את המשקל האסטרטגי
-        to_events = game_df[game_df['timeout_strategic_weight'] > 0]
-        if not to_events.empty:
-            # גודל הנקודה נקבע לפי המשקל (10, 50, 150)
-            sizes = to_events['timeout_strategic_weight'] * 50 
-            ax3.scatter(to_events.index, game_df.loc[to_events.index, 'timeouts_remaining_home'], 
-                        s=sizes, color='blue', edgecolors='black', label='Strategic TO (Home)', alpha=0.8)
+    ax3.step(x_axis, game_df['timeouts_remaining_home'], label=f'{home_team}', color='blue', where='post')
+    ax3.step(x_axis, game_df['timeouts_remaining_away'], label=f'{away_team}', color='red', where='post')
     
-    ax3.set_title('3. Strategic Timeouts Inventory (Point Size = Importance)')
+    # סימון פסקי זמן אסטרטגיים
+    to_events = game_df[game_df['timeout_strategic_weight'] > 0]
+    if not to_events.empty:
+        # גדלים לפי משקל: 1=40, 2=100, 3=250
+        sizes = to_events['timeout_strategic_weight'] * 80
+        ax3.scatter(to_events.index, game_df.loc[to_events.index, 'timeouts_remaining_home'], 
+                    s=sizes, color='gold', edgecolors='black', label='Strategic TO', zorder=5)
+    
+    ax3.set_title('3. Timeouts Inventory (Gold Dot = Strategic Weight)')
     ax3.set_ylim(-0.5, 7.5)
-    ax3.grid(alpha=0.3)
-    
+    ax3.legend()
 
     # 4. Cumulative Turnovers
-    ax4 = axes[1, 1]
-    for team, color in zip([home_team, away_team], ['blue', 'red']):
-        team_rows = game_df[game_df['teamTricode'] == team]
-        if not team_rows.empty and 'cum_turnoverTotal' in game_df.columns:
-             indices = [game_df.index.get_loc(i) for i in team_rows.index]
-             ax4.scatter(indices, team_rows['cum_turnoverTotal'], label=team, s=10, color=color)
-    ax4.set_title('4. Cumulative Turnovers')
-    ax4.legend()
-    ax4.grid(alpha=0.3)
+    axes[1, 1].plot(x_axis, game_df['cum_turnoverTotal'], color='orange')
+    axes[1, 1].set_title('4. Cumulative Game Turnovers')
 
-    # 5. Fatigue (WITH CONFIDENCE OVERLAY)
+    # 5. Fatigue & Confidence
     ax5 = axes[2, 0]
-    # צביעת הרקע לפי רמת האמינות
-    ax5.fill_between(x_axis, 0, game_df['time_since_last_sub'].max(), 
-                     where=(game_df['lineup_confidence'] == 1), color='green', alpha=0.07, label='Official API')
-    ax5.fill_between(x_axis, 0, game_df['time_since_last_sub'].max(), 
-                     where=(game_df['lineup_confidence'] == 0), color='orange', alpha=0.07, label='Inferred Logic')
-    
-    ax5.plot(x_axis, game_df['time_since_last_sub'], color='brown', alpha=0.8, lw=1.5)
-    ax5.set_title('5. Lineup Fatigue (Background = Confidence Source)')
+    ax5.fill_between(x_axis, 0, 720, where=(game_df['lineup_confidence'] == 1), color='green', alpha=0.1, label='Official API')
+    ax5.fill_between(x_axis, 0, 720, where=(game_df['lineup_confidence'] == 0), color='orange', alpha=0.1, label='Inferred Logic')
+    ax5.plot(x_axis, game_df['time_since_last_sub'], color='brown', lw=1.5)
+    ax5.set_title('5. Lineup Fatigue vs Data Source Reliability')
+    ax5.set_ylabel('Seconds Since Last Sub')
     ax5.legend(loc='upper left')
-    ax5.grid(alpha=0.3)
 
-    # 6. Shot Clock
-    ax6 = axes[2, 1]
-    sns.histplot(game_df['shot_clock_estimated'], bins=24, kde=True, ax=ax6, color='orange')
-    ax6.axvline(14, color='blue', linestyle='--')
-    ax6.set_title('6. Shot Clock Logic Check')
+    # 6. Shot Clock Dist
+    sns.histplot(game_df['shot_clock_estimated'], bins=24, kde=True, ax=axes[2, 1], color='teal')
+    axes[2, 1].axvline(14, color='red', linestyle='--')
+    axes[2, 1].set_title('6. Shot Clock Distribution (14s Reset Check)')
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    out_path = os.path.join(FIGURES_DIR, f'dashboard_v5_hybrid_{selected_game_id}.png')
+    out_path = os.path.join(FIGURES_DIR, f'dashboard_v5_tactical_{selected_game_id}.png')
     plt.savefig(out_path, dpi=150)
-    print(f"✅ Saved Hybrid Dashboard: {out_path}")
+    print(f"✅ Saved Fixed Dashboard: {out_path}")
     plt.show()
 
 if __name__ == "__main__":
