@@ -70,14 +70,25 @@ def plot_extended_dashboard():
     ax2.grid(alpha=0.3)
 
     # 3. Timeouts
+    # 3. Timeouts Inventory (עם סימון משקלים אסטרטגיים)
     ax3 = axes[1, 0]
     if 'timeouts_remaining_home' in game_df.columns:
-        ax3.step(x_axis, game_df['timeouts_remaining_home'], label=f'{home_team} (Home)', where='post', lw=2)
-        ax3.step(x_axis, game_df['timeouts_remaining_away'], label=f'{away_team} (Away)', where='post', lw=2)
-    ax3.set_title('3. Timeouts Inventory')
+        # הקווים הרגילים
+        ax3.step(x_axis, game_df['timeouts_remaining_home'], label=f'{home_team}', where='post', color='blue', alpha=0.6)
+        ax3.step(x_axis, game_df['timeouts_remaining_away'], label=f'{away_team}', where='post', color='red', alpha=0.6)
+        
+        # הוספת נקודות המציינות את המשקל האסטרטגי
+        to_events = game_df[game_df['timeout_strategic_weight'] > 0]
+        if not to_events.empty:
+            # גודל הנקודה נקבע לפי המשקל (10, 50, 150)
+            sizes = to_events['timeout_strategic_weight'] * 50 
+            ax3.scatter(to_events.index, game_df.loc[to_events.index, 'timeouts_remaining_home'], 
+                        s=sizes, color='blue', edgecolors='black', label='Strategic TO (Home)', alpha=0.8)
+    
+    ax3.set_title('3. Strategic Timeouts Inventory (Point Size = Importance)')
     ax3.set_ylim(-0.5, 7.5)
-    ax3.legend()
     ax3.grid(alpha=0.3)
+    
 
     # 4. Cumulative Turnovers
     ax4 = axes[1, 1]

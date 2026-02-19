@@ -120,6 +120,22 @@ class Level1Validator:
         min_val, max_val = self.df[cols].min().min(), self.df[cols].max().max()
         self._log("Timeouts Inventory", (min_val >= 0 and max_val <= 7), f"Inventory valid (Range: {min_val}-{max_val}).")
 
+    def check_timeout_strategic_weights(self):
+        """וואלידציה לסיווג החדש של פסקי הזמן"""
+        if 'timeout_strategic_weight' not in self.df.columns:
+            self._log("Timeout Weights", False, "Column 'timeout_strategic_weight' missing.")
+            return
+        
+        unique_vals = sorted(self.df['timeout_strategic_weight'].unique())
+        # בודק שהערכים הם רק 0, 1, 2, 3
+        is_valid_range = all(v in [0, 1, 2, 3] for v in unique_vals)
+        
+        # בודק אם "תפסנו" פסקי זמן משמעותיים (משקלים 2 ו-3)
+        has_heavy_tos = self.df['timeout_strategic_weight'].max() >= 2
+        
+        message = f"Values: {unique_vals}. Heavy timeouts (2+) detected: {has_heavy_tos}"
+        self._log("Timeout Weights", is_valid_range and has_heavy_tos, message)
+
     def check_cumulative_counters_monotonicity(self):
         """Verifies points accumulation."""
         if 'cum_pointsTotal' not in self.df.columns:
@@ -148,12 +164,13 @@ class Level1Validator:
         print("-" * 60)
         
         self.check_lineup_completeness()
-        self.check_lineup_turnover() # הבדיקה החדשה כאן
+        self.check_lineup_turnover()
         self.report_confidence_health()
         self.check_player_team_consistency()
         self.check_substitution_timer_sync()
         self.check_shot_clock_14s_rule()
         self.check_timeouts_inventory_integrity()
+        self.check_timeout_strategic_weights() # הבדיקה החדשה כאן
         self.check_cumulative_counters_monotonicity()
         self.check_critical_missing_values()
         
@@ -161,7 +178,7 @@ class Level1Validator:
         if all(self.results):
             print("🚀 STATUS: PASSED. Dataset is solid.")
         else:
-            print("⚠️ STATUS: WARNINGS DETECTED. Substitutions might be stuck.")
+            print("⚠️ STATUS: WARNINGS DETECTED. Review logs above.")
 
 if __name__ == "__main__":
     validator = Level1Validator(FILE_PATH)
