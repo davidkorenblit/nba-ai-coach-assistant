@@ -3,14 +3,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import random
+import numpy as np
 
 # --- Config ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH = os.path.join(BASE_DIR, '..', 'data', 'interim', 'level2_features.csv')
-FIGURES_DIR = os.path.join(BASE_DIR, '..', 'reports', 'figures')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_PATH = os.path.join(BASE_DIR, 'data', 'interim', 'level2_features.csv')
+FIGURES_DIR = os.path.join(BASE_DIR, 'reports', 'figures')
 
 def identify_home_away(df):
-    """Basic heuristic to identify teams."""
+    """Heuristic to identify team names from the data."""
     try:
         home_score_rows = df[df['scoreHome'].diff() > 0]
         if not home_score_rows.empty:
@@ -25,117 +26,117 @@ def identify_home_away(df):
     except:
         return "Home", "Away"
 
-def plot_level2_dashboard():
-    # 1. Load Data
-    if not os.path.exists(DATA_PATH):
-        print("❌ Data file not found."); return
+def create_diagnostic_dashboard(game_df, game_id, home_team, away_team):
+    """Generates the original 8-plot technical dashboard."""
+    fig, axes = plt.subplots(4, 2, figsize=(20, 24))
+    fig.suptitle(f'Diagnostic Dashboard: {home_team} vs {away_team} (Game {game_id})', fontsize=22, weight='bold')
+    x_axis = game_df.index
+
+    # 1. Explosiveness
+    axes[0, 0].plot(x_axis, game_df['explosiveness_index'], color='#e74c3c')
+    axes[0, 0].set_title('1. Explosiveness Index', fontsize=14)
+    axes[0, 0].axhline(0, color='black', lw=0.5, ls='--')
+
+    # 2. Style / Tempo
+    axes[0, 1].plot(x_axis, game_df['style_tempo_rolling'], color='#3498db')
+    axes[0, 1].set_title('2. Tempo Shift (Avg Shot Clock Used)', fontsize=14)
+
+    # 3. Instability
+    axes[1, 0].plot(x_axis, game_df['instability_index'], color='#9b59b6')
+    axes[1, 0].set_title('3. Instability Index (Game Chaos)', fontsize=14)
+
+    # 4. Lineup Fatigue (Timer)
+    axes[1, 1].plot(x_axis, game_df['time_since_last_sub'], color='#e67e22', label='Time w/o Sub')
+    axes[1, 1].axhline(550, color='red', ls='--')
+    axes[1, 1].fill_between(x_axis, game_df['time_since_last_sub'], 550, where=(game_df['time_since_last_sub'] > 550), color='red', alpha=0.3)
+    axes[1, 1].set_title('4. Substitution Timer', fontsize=14)
+
+    # 5. Star Resting (Original Binary)
+    axes[2, 0].step(x_axis, game_df['is_star_resting'], color='#34495e', where='post')
+    axes[2, 0].set_title('5. Star Player Resting (Binary)', fontsize=14)
+    axes[2, 0].set_yticks([0, 1])
+    axes[2, 0].set_yticklabels(['Playing', 'Resting'])
+
+    # 6. Clutch Time
+    clutch_col = 'is_clutch_time' if 'is_clutch_time' in game_df.columns else 'is_crunch_time'
+    axes[2, 1].plot(x_axis, game_df['score_margin'], color='gray', alpha=0.3)
+    if clutch_col in game_df.columns:
+        clutch_series = game_df['score_margin'].copy()
+        clutch_series[game_df[clutch_col] == 0] = np.nan
+        axes[2, 1].plot(x_axis, clutch_series, color='#c0392b', lw=3, label='Clutch')
+    axes[2, 1].set_title('6. Clutch Time Highlight', fontsize=14)
+
+    # 7. Correlation Heatmap
+    l2_cols = ['momentum_streak_rolling', 'explosiveness_index', 'style_tempo_rolling', 'instability_index', 'score_margin']
+    valid_cols = [c for c in l2_cols if c in game_df.columns]
+    sns.heatmap(game_df[valid_cols].corr(), annot=True, cmap='coolwarm', ax=axes[3, 0])
+    axes[3, 0].set_title('7. Feature Correlations', fontsize=14)
+
+    axes[3, 1].axis('off')
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     
+    out_path = os.path.join(FIGURES_DIR, f'dashboard_FULL_DIAGNOSTIC_{game_id}.png')
+    plt.savefig(out_path, dpi=150)
+    plt.close()
+    print(f"✅ Saved FULL DIAGNOSTIC Dashboard: {out_path}")
+
+def create_strategic_dashboard(game_df, game_id, home_team, away_team):
+    """Generates the 3-plot intuitive/strategic summary."""
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(18, 16), sharex=True)
+    fig.suptitle(f'Strategic Insights: {home_team} vs {away_team}', fontsize=20, weight='bold')
+    x_axis = game_df.index
+
+    # 1. Accumulated Fatigue (Area Chart)
+    home_f = game_df['home_cum_fatigue'] / 60
+    away_f = game_df['away_cum_fatigue'] / 60
+    ax1.fill_between(x_axis, home_f, color='blue', alpha=0.3, label=f'{home_team} Workload')
+    ax1.plot(x_axis, home_f, color='blue', lw=2)
+    ax1.fill_between(x_axis, away_f, color='red', alpha=0.3, label=f'{away_team} Workload')
+    ax1.plot(x_axis, away_f, color='red', lw=2)
+    ax1.set_title('1. Team Workload: Accumulated Minutes on Court', fontsize=14)
+    ax1.set_ylabel('Avg Cumulative Minutes')
+    ax1.legend()
+
+    # 2. Talent Gravity & Star Gaps
+    ax2.step(x_axis, game_df['home_usage_gravity'], color='blue', lw=2, label=f'{home_team} Gravity', where='post')
+    ax2.step(x_axis, game_df['away_usage_gravity'], color='red', lw=2, label=f'{away_team} Gravity', where='post')
+    star_resting = game_df['is_star_resting'] == 1
+    ax2.fill_between(x_axis, 0.6, 1.1, where=star_resting, color='gray', alpha=0.2, label='Star Resting', step='post')
+    ax2.set_title('2. Lineup Gravity (Offensive Talent) & Star Rest Windows', fontsize=14)
+    ax2.set_ylim(0.65, 1.05)
+    ax2.legend()
+
+    # 3. Outcome & Momentum
+    ax3.fill_between(x_axis, game_df['score_margin'], 0, color='gray', alpha=0.2, label='Score Margin')
+    ax3.plot(x_axis, game_df['momentum_streak_rolling'], color='purple', lw=2, label='Momentum Streak')
+    clutch_col = 'is_clutch_time' if 'is_clutch_time' in game_df.columns else 'is_crunch_time'
+    if clutch_col in game_df.columns:
+        cl_idx = x_axis[game_df[clutch_col] == 1]
+        if len(cl_idx) > 0:
+            ax3.scatter(cl_idx, [0]*len(cl_idx), color='orange', s=10, label='Clutch Window')
+    ax3.set_title('3. Momentum Impact on Score Margin', fontsize=14)
+    ax3.legend()
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    out_path = os.path.join(FIGURES_DIR, f'dashboard_STRATEGIC_SUMMARY_{game_id}.png')
+    plt.savefig(out_path, dpi=150)
+    plt.close()
+    print(f"✅ Saved STRATEGIC SUMMARY Dashboard: {out_path}")
+
+def main():
+    if not os.path.exists(DATA_PATH): return
     df = pd.read_csv(DATA_PATH, low_memory=False)
     
-    # 2. Select Random Game
-    game_ids = df['gameId'].unique()
-    selected_game_id = random.choice(game_ids)
-    
-    game_df = df[df['gameId'] == selected_game_id].copy()
-    # Ensure chronological order
+    gid = random.choice(df['gameId'].unique())
+    game_df = df[df['gameId'] == gid].copy()
     game_df.sort_values(by=['period', 'seconds_remaining'], ascending=[True, False], inplace=True)
     game_df.reset_index(drop=True, inplace=True)
     
-    home_team, away_team = identify_home_away(game_df)
-    print(f"🎨 Generating Level 2 Dashboard (Clean) for Game {selected_game_id}: {home_team} vs {away_team}")
-
-    # --- Plotting (4x2 Grid - 7 Plots) ---
-    fig, axes = plt.subplots(4, 2, figsize=(20, 24))
-    fig.suptitle(f'Level 2 Advanced Metrics: {home_team} vs {away_team}', fontsize=22, weight='bold')
-    
-    x_axis = game_df.index
-
-    # 1. Explosiveness (Score Slope)
-    ax1 = axes[0, 0]
-    ax1.plot(x_axis, game_df['explosiveness_index'], color='#e74c3c', lw=1.5)
-    ax1.set_title('1. Explosiveness Index (Sudden Runs)', fontsize=14)
-    ax1.set_ylabel('Points Delta Change')
-    ax1.axhline(0, color='black', lw=0.5, linestyle='--')
-    ax1.grid(alpha=0.3)
-
-    # 2. Style / Tempo
-    ax2 = axes[0, 1]
-    ax2.plot(x_axis, game_df['style_tempo_rolling'], color='#3498db', lw=2)
-    ax2.set_title('2. Tempo Shift (Avg Shot Clock Used)', fontsize=14)
-    ax2.set_ylabel('Seconds')
-    ax2.grid(alpha=0.3)
-
-    # 3. Instability
-    ax3 = axes[1, 0]
-    ax3.plot(x_axis, game_df['instability_index'], color='#9b59b6', lw=1.5)
-    ax3.set_title('3. Instability Index (Game Chaos)', fontsize=14)
-    ax3.set_ylabel('Time per 10 Events')
-    ax3.grid(alpha=0.3)
-
-    # 4. Lineup Fatigue (UPDATED: Continuous with Threshold)
-    ax4 = axes[1, 1]
-    # Plot the raw seconds counter
-    ax4.plot(x_axis, game_df['time_since_last_sub'], color='#e67e22', lw=1.5, label='Time w/o Sub')
-    # Add Threshold Line
-    ax4.axhline(550, color='red', linestyle='--', lw=2, label='Threshold (550s)')
-    # Highlight danger zone
-    ax4.fill_between(x_axis, game_df['time_since_last_sub'], 550,
-                     where=(game_df['time_since_last_sub'] > 550),
-                     color='red', alpha=0.3)
-    
-    ax4.set_title('4. Lineup Fatigue Accumulation', fontsize=14)
-    ax4.set_ylabel('Seconds Without Substitution')
-    ax4.legend(loc='upper left')
-    ax4.grid(alpha=0.3)
-
-    # 5. Star Resting
-    ax5 = axes[2, 0]
-    ax5.step(x_axis, game_df['is_star_resting'], color='#34495e', where='post', lw=2)
-    ax5.fill_between(x_axis, game_df['is_star_resting'], step='post', color='#34495e', alpha=0.3)
-    ax5.set_title('5. Star Player Resting', fontsize=14)
-    ax5.set_yticks([0, 1])
-    ax5.set_yticklabels(['Playing', 'Resting'])
-    ax5.grid(alpha=0.3)
-
-    # 6. Clutch Time (Renamed & Logic Updated)
-    ax6 = axes[2, 1]
-    # Background Margin
-    ax6.plot(x_axis, game_df['score_margin'], color='gray', alpha=0.3, label='Score Margin')
-    
-    # Check for new column name, fallback to old if needed
-    clutch_col = 'is_clutch_time' if 'is_clutch_time' in game_df.columns else 'is_crunch_time'
-    
-    if clutch_col in game_df.columns:
-        clutch_mask = game_df[clutch_col] == 1
-        if clutch_mask.any():
-            clutch_series = game_df['score_margin'].copy()
-            clutch_series[~clutch_mask] = float('nan')
-            ax6.plot(x_axis, clutch_series, color='#c0392b', lw=3, label='Clutch Time')
-    
-    ax6.set_title('6. Clutch Time (Last 5 mins, +/- 5 pts)', fontsize=14)
-    ax6.legend()
-    ax6.grid(alpha=0.3)
-
-    # 7. Correlations Heatmap
-    ax7 = axes[3, 0]
-    l2_cols = ['momentum_streak_rolling', 'explosiveness_index', 'style_tempo_rolling', 
-               'instability_index', 'score_margin']
-    # Filter only existing columns
-    valid_cols = [c for c in l2_cols if c in game_df.columns]
-    corr = game_df[valid_cols].corr()
-    sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f", ax=ax7, square=True)
-    ax7.set_title('7. Feature Correlations', fontsize=14)
-
-    # 8. Empty Slot (Clean up)
-    axes[3, 1].axis('off')
-
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    
+    h_team, a_team = identify_home_away(game_df)
     os.makedirs(FIGURES_DIR, exist_ok=True)
-    out_path = os.path.join(FIGURES_DIR, f'dashboard_level2_clean_{selected_game_id}.png')
-    plt.savefig(out_path, dpi=150)
-    print(f"✅ Saved Clean Dashboard: {out_path}")
-    plt.show()
+
+    create_diagnostic_dashboard(game_df, gid, h_team, a_team)
+    create_strategic_dashboard(game_df, gid, h_team, a_team)
 
 if __name__ == "__main__":
-    plot_level2_dashboard()
+    main()
