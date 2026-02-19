@@ -54,7 +54,23 @@ def enrich_state_counters_v4(df):
             if current_code != 'nan': return 'away'
         return 'none'
 
+    # זיהוי תפקיד פסק הזמן
     df['timeout_role'] = df.apply(_resolve_timeout_role, axis=1)
+
+    # --- תוספת: סיווג אסטרטגי של פסקי זמן ---
+    df['timeout_strategic_weight'] = 0
+    is_to = df['timeout_role'] != 'none'
+    
+    # 1. משקל בסיסי לכל פסק זמן
+    df.loc[is_to, 'timeout_strategic_weight'] = 1
+    
+    # 2. סוף רבע (2 דקות אחרונות של כל רבע) - משקל גבוה
+    df.loc[is_to & (df['seconds_remaining'] <= 120), 'timeout_strategic_weight'] = 2
+    
+    # 3. קלאץ' / סוף משחק (5 דקות אחרונות של רבע 4 ומעלה) - משקל קריטי
+    df.loc[is_to & (df['period'] >= 4) & (df['seconds_remaining'] <= 300), 'timeout_strategic_weight'] = 3
+    # ------------------------------------------
+
     for side in ['home', 'away']:
         is_side_to = (df['timeout_role'] == side).astype(int)
         used = is_side_to.groupby(df['gameId']).cumsum()
@@ -67,6 +83,7 @@ def enrich_state_counters_v4(df):
     for metric in cols_to_sum:
         df[metric] = pd.to_numeric(df[metric], errors='coerce').fillna(0)
         df[f'cum_{metric}'] = df.groupby(['gameId', 'teamId'])[metric].cumsum().fillna(0)
+        
     return df
 
 def calculate_temporal_metrics(df):
