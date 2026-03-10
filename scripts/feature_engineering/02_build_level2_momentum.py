@@ -39,9 +39,7 @@ def get_star_ids():
 # --- NEW: Advanced Features (Hybrid Architecture) ---
 
 def feature_usage_gravity(df):
-    """
-    מחשב את ה'כובד' ההתקפי של החמישיות על המגרש.
-    """
+   
     if not os.path.exists(LOOKUP_PATH): return df
     print("🔹 Running: Usage Gravity (Lineup Threat)...")
     
