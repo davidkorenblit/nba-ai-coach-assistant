@@ -39,27 +39,35 @@ df_future = df[['gameId', 'period', 'time_elapsed', col_margin, col_mom, col_exp
 df_future.rename(columns={col_margin: 'fut_margin', col_mom: 'fut_mom', col_exp: 'fut_exp'}, inplace=True)
 
 print("⏳ Merging future states (90s & 180s)...")
-# מיזוג חלון 90 שניות
+
+# הכנה ומיזוג חלון 90 שניות
+df = df.sort_values('target_time_90')
+df_future_90 = df_future.add_suffix('_90s').rename(columns={'gameId_90s': 'gameId', 'period_90s': 'period'}).sort_values('time_elapsed_90s')
+
 merged = pd.merge_asof(
     df, 
-    df_future.add_suffix('_90s').rename(columns={'gameId_90s': 'gameId', 'period_90s': 'period'}),
+    df_future_90,
     left_on='target_time_90', 
     right_on='time_elapsed_90s',
     by=['gameId', 'period'],
     direction='forward'
 )
 
-# מיזוג חלון 180 שניות
+# הכנה ומיזוג חלון 180 שניות
+merged = merged.sort_values('target_time_180')
+df_future_180 = df_future.add_suffix('_180s').rename(columns={'gameId_180s': 'gameId', 'period_180s': 'period'}).sort_values('time_elapsed_180s')
+
 merged = pd.merge_asof(
     merged, 
-    df_future.add_suffix('_180s').rename(columns={'gameId_180s': 'gameId', 'period_180s': 'period'}),
+    df_future_180,
     left_on='target_time_180', 
     right_on='time_elapsed_180s',
     by=['gameId', 'period'],
     direction='forward'
 )
 
-df = merged.copy()
+# החזרת המיון המקורי וההגיוני כדי שהכל יישאר מסודר
+df = merged.sort_values(by=['gameId', 'period', 'time_elapsed']).reset_index(drop=True)
 
 # אם המשחק/רבע נגמר לפני שעברו 90/180 שניות, נמלא את החסר במצב הנוכחי של אותו רגע
 for prefix in ['_90s', '_180s']:
