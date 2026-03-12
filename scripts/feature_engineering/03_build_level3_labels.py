@@ -95,7 +95,7 @@ df['target_improve_margin_180s'] = (df['delta_margin_180s'] > 0).astype(int)
 
 # Target 4: מחיר ההתעלמות (Danger Zone Penalty)
 # סכנה = עייפות קיצונית קיימת + ריצת אקספלוסיביות של היריבה ברבעון העליון (אחוזון 75)
-threshold_exp = df[col_exp].quantile(0.75)
+threshold_exp = df[col_exp].quantile(0.50)
 is_danger = (df[col_fatigue] == 1) & (df[col_exp] > threshold_exp)
 is_timeout = df['actionType'].str.contains('timeout', case=False, na=False)
 
