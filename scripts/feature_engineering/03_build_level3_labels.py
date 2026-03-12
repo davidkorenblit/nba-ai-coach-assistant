@@ -20,7 +20,6 @@ except FileNotFoundError:
 col_margin = 'score_margin'
 col_mom = 'momentum_streak_rolling'
 col_exp = 'explosiveness_index'
-col_fatigue = 'is_high_fatigue'
 
 print("⏳ Creating time indices for Lookahead...")
 # כדי לנוע קדימה בזמן ביעילות, ניצור עמודת "זמן שחלף" בתוך הרבע (מתחיל ב-0 ועולה)
@@ -93,21 +92,33 @@ df['delta_margin_180s'] = df['fut_margin_180s'] - df[col_margin]
 df['target_improve_margin_90s'] = (df['delta_margin_90s'] > 0).astype(int)
 df['target_improve_margin_180s'] = (df['delta_margin_180s'] > 0).astype(int)
 
-# Target 4: מחיר ההתעלמות (Danger Zone Penalty)
-# סכנה = עייפות קיצונית קיימת + ריצת אקספלוסיביות של היריבה ברבעון העליון (אחוזון 75)
-threshold_exp = df[col_exp].quantile(0.50)
-is_danger = (df[col_fatigue] == 1) & (df[col_exp] > threshold_exp)
+# Target 4: מחיר ההתעלמות (Danger Zone Penalty) - מבוסס עייפות מצטברת (Cum Fatigue)
+# חישוב עייפות מקסימלית על המגרש בין שתי הקבוצות
+df['max_fatigue'] = df[['home_cum_fatigue', 'away_cum_fatigue']].fillna(0).max(axis=1)
+
+# סכנה = עייפות גבוהה (אחוזון 75) + ריצת אקספלוסיביות (אחוזון 75 בערך מוחלט כדי לתפוס ריצות של שתיהן)
+threshold_fatigue = df['max_fatigue'].quantile(0.75)
+threshold_exp = df[col_exp].abs().quantile(0.75)
+
+is_danger = (df['max_fatigue'] > threshold_fatigue) & (df[col_exp].abs() > threshold_exp)
 is_timeout = df['actionType'].str.contains('timeout', case=False, na=False)
 
 # עונש = היינו בסכנה, המאמן *לא* התערב, וההפרש שלנו המשיך להצטמצם תוך 3 דקות
 df['target_danger_penalty'] = (is_danger & ~is_timeout & (df['delta_margin_180s'] < 0)).astype(int)
+
+print("--- DEBUG DANGER PENALTY ---")
+print("1. High Fatigue rows:", (df['max_fatigue'] > threshold_fatigue).sum())
+print("2. High Exp rows:", (df[col_exp].abs() > threshold_exp).sum())
+print("3. Margin Drop rows:", (df['delta_margin_180s'] < 0).sum())
+print("4. Intersection (Fatigue + Exp + Margin Drop):", (is_danger & (df['delta_margin_180s'] < 0)).sum())
+print("----------------------------")
 
 # 4. ניקוי וייצוא
 print("🧹 Cleaning up temporary columns...")
 cols_to_drop = [
     'period_start_time', 'time_elapsed', 'target_time_90', 'target_time_180', 
     'time_elapsed_90s', 'time_elapsed_180s', 'fut_margin_90s', 'fut_mom_90s', 
-    'fut_exp_90s', 'fut_margin_180s', 'fut_mom_180s', 'fut_exp_180s'
+    'fut_exp_90s', 'fut_margin_180s', 'fut_mom_180s', 'fut_exp_180s', 'max_fatigue'
 ]
 df.drop(columns=[c for c in cols_to_drop if c in df.columns], inplace=True)
 
