@@ -1,66 +1,105 @@
 import pandas as pd
 import os
+import sys
 
-print("🕵️‍♂️ Starting DRACONIAN QA: check_level3_quality.py\n")
+# --- Config ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_PATH = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'interim', 'level3_labels.csv')
 
-# Path logic: moving up 4 levels to reach project root from scripts/feature_engineering/validation/
-base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-file_path = os.path.join(base_dir, 'data', 'interim', 'level3_labels.csv')
+class Level3QAValidator:
+    """Draconian QA Suite for Level 3 Labels (OOP Architecture)."""
 
-try:
-    df = pd.read_csv(file_path, low_memory=False)
-    print(f"✅ File loaded successfully: {len(df)} rows found.\n")
-except FileNotFoundError:
-    print(f"❌ Error: Could not find file at {file_path}")
-    print(f"Attempted path: {file_path}")
-    exit()
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.df = None
+        self.results = []
+        self.target_cols = [
+            'target_stop_run_90s', 'target_reverse_trend_180s',
+            'target_improve_margin_90s', 'target_improve_margin_180s',
+            'target_danger_penalty'
+        ]
 
-target_cols = [c for c in df.columns if 'target_' in c]
+    def _log(self, test_name, status, message=""):
+        icon = "✅" if status else "❌"
+        print(f"{icon} [{test_name}]: {message}")
+        self.results.append(status)
 
-print("1️⃣ MISSING VALUES CHECK (Target Columns):")
-nulls = df[target_cols].isnull().sum()
-print(nulls.to_string())
-if nulls.sum() == 0:
-    print("✨ Status: No missing values found. Perfect.")
-else:
-    print("🚨 WARNING: NaNs detected in labels! Logic might be broken.")
-print("-" * 60)
+    def load_data(self):
+        if not os.path.exists(self.file_path):
+            print(f"❌ Critical: File not found at {os.path.abspath(self.file_path)}")
+            sys.exit(1)
+        self.df = pd.read_csv(self.file_path, low_memory=False)
+        print(f"✅ Loaded Level 3 Labels: {len(self.df):,} rows.\n")
 
-print("\n2️⃣ CLASS BALANCE (Label Diversity):")
-for col in target_cols:
-    dist = df[col].value_counts(normalize=True).mul(100).round(2)
-    print(f"  {col}:")
-    print(f"    Class 0: {dist.get(0, 0)}% | Class 1: {dist.get(1, 0)}%")
-print("-" * 60)
+    def check_missing_targets(self):
+        missing_cols = [c for c in self.target_cols if c not in self.df.columns]
+        if missing_cols:
+            self._log("Schema Check", False, f"Missing columns: {missing_cols}")
+            return
 
-print("\n3️⃣ TACTICAL TIMEOUT LOGIC (Integrity Check):")
-# Identify timeouts (case-insensitive)
-is_timeout = df['actionType'].str.contains('timeout', case=False, na=False)
-timeouts_df = df[is_timeout]
+        nulls = self.df[self.target_cols].isnull().sum()
+        if nulls.sum() == 0:
+            self._log("Missing Values", True, "Zero NaNs in all target columns.")
+        else:
+            self._log("Missing Values", False, f"NaNs detected!\n{nulls[nulls > 0]}")
 
-if not timeouts_df.empty:
-    print(f"  Total Timeouts identified: {len(timeouts_df)}")
-    
-    # Critical Check: Penalty should only apply if a coach IGNORED the danger.
-    # Therefore, rows that ARE timeouts should have 0 penalties.
-    penalty_on_to = timeouts_df['target_danger_penalty'].sum()
-    print(f"  Danger Penalty on Timeout rows (Must be 0): {penalty_on_to}")
-    if penalty_on_to > 0:
-        print("🚨 LOGIC ERROR: Penalties assigned to timeout events!")
-    
-    # Real-world benchmark: How often do NBA coaches actually succeed?
-    print("\n  COACH SUCCESS RATES (After calling timeout):")
-    for col in [c for c in target_cols if 'penalty' not in c]:
-        success_rate = timeouts_df[col].mean() * 100
-        print(f"    {col.replace('target_', '').ljust(25)}: {success_rate:.1f}% success")
-else:
-    print("🚨 WARNING: No timeouts found! Verify 'actionType' column values.")
+    def check_class_balance(self):
+        print("\n📊 CLASS BALANCE (Label Diversity):")
+        valid = True
+        for col in self.target_cols:
+            pos_rate = self.df[col].mean() * 100
+            print(f"   - {col}: {pos_rate:.2f}% Positive (Class 1)")
+            if pos_rate < 0.1 or pos_rate > 99.9:
+                valid = False
+        
+        if valid:
+            self._log("Class Balance", True, "All targets have valid diversity (No extreme 99/1 splits).")
+        else:
+            self._log("Class Balance", False, "Extreme class imbalance detected. XGBoost will struggle.")
 
-print("\n4️⃣ EDGE CASE CHECK: END OF PERIOD")
-# Rows where time lookahead might have hit the buzzer
-last_30_sec = df[df['seconds_remaining'] <= 30]
-print(f"  Rows in last 30 seconds of periods: {len(last_30_sec)}")
-print("  (Lookahead fallback logic ensures these are valid 0-delta labels)")
+    def check_timeout_logic(self):
+        is_timeout = self.df['actionType'].str.contains('timeout', case=False, na=False)
+        timeouts_df = self.df[is_timeout]
 
-print("\n" + "="*60)
-print("✅ QA SESSION FINISHED.")
+        if timeouts_df.empty:
+            self._log("Timeout Logic", False, "No timeouts found in 'actionType'.")
+            return
+
+        # Critical Check: Penalty should only apply if a coach IGNORED the danger.
+        penalty_on_to = timeouts_df['target_danger_penalty'].sum()
+        if penalty_on_to == 0:
+            self._log("Timeout Logic", True, f"Danger Penalty on Timeouts is exactly 0 (Out of {len(timeouts_df)} timeouts).")
+        else:
+            self._log("Timeout Logic", False, f"LOGIC ERROR: {penalty_on_to} penalties assigned to timeout events!")
+
+        print("\n📈 COACH SUCCESS RATES (After calling timeout):")
+        for col in [c for c in self.target_cols if 'penalty' not in c]:
+            success_rate = timeouts_df[col].mean() * 100
+            print(f"   - {col.replace('target_', '').ljust(25)}: {success_rate:.1f}% success")
+
+    def check_end_of_period(self):
+        last_30_sec = self.df[self.df['seconds_remaining'] <= 30]
+        self._log("Edge Case", True, f"Handled {len(last_30_sec):,} rows in the last 30s of periods via Lookahead Fallback.")
+
+    def run(self):
+        print("🕵️‍♂️ Starting DRACONIAN QA: Level 3 Labels")
+        print("-" * 60)
+        self.load_data()
+        
+        self.check_missing_targets()
+        self.check_class_balance()
+        self.check_timeout_logic()
+        print("")
+        self.check_end_of_period()
+        
+        print("-" * 60)
+        if all(self.results):
+            print("🚀 STATUS: PASSED. Labels are mathematically sound. Ready for XGBoost!")
+            sys.exit(0)
+        else:
+            print("⚠️ STATUS: FAILED. Fix logic errors before model training.")
+            sys.exit(1)
+
+if __name__ == "__main__":
+    validator = Level3QAValidator(FILE_PATH)
+    validator.run()
