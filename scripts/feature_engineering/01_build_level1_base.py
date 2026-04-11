@@ -195,7 +195,7 @@ def clean_sparse_columns(df):
 
 # --- Main (UNTOUCHED Pipeline) ---
 def main():
-    print(f"🚀 Starting DYNAMIC Level 1 Build (V9)...")
+    print(f" Starting DYNAMIC Level 1 Build (V9)...")
     if not os.path.exists(RAW_FILE_PATH): return
     df_rot = pd.read_csv(ROTATIONS_FILE_PATH) if os.path.exists(ROTATIONS_FILE_PATH) else None
     df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
@@ -210,7 +210,7 @@ def main():
     
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     df.to_csv(OUTPUT_FILE, index=False)
-    print(f"✅ Level 1 DONE. Dynamic Substitutions Captured.")
+    print(f" Level 1 DONE. Dynamic Substitutions Captured.")
 
 if __name__ == "__main__":
     main()

@@ -4,7 +4,9 @@ import os
 import sys
 
 # --- Config ---
-FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'data', 'interim', 'level2_features.csv')
+# מותאם לנתיב הריצה מתוך תיקיית validation
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_PATH = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'interim', 'level2_features.csv')
 
 class Level2Validator:
     """
@@ -20,7 +22,7 @@ class Level2Validator:
 
     def load_data(self):
         if not os.path.exists(self.file_path):
-            print(f"❌ Critical: File not found at {self.file_path}")
+            print(f"❌ Critical: File not found at {os.path.abspath(self.file_path)}")
             sys.exit(1)
         try:
             self.df = pd.read_csv(self.file_path, low_memory=False)
@@ -53,8 +55,8 @@ class Level2Validator:
         else:
             self._log("Schema Check", False, f"Missing columns: {missing}")
 
-    def check_strict_no_nans(self):
-        """STRICT: Ensures absolutely ZERO NaNs in the engineered features."""
+    def check_strict_clean_data(self):
+        """STRICT: Ensures absolutely ZERO NaNs or Infinite values in the engineered features."""
         cols_to_check = [
             'style_tempo_rolling', 'is_high_fatigue', 'momentum_streak_rolling', 
             'explosiveness_index', 'instability_index', 'is_clutch_time',
@@ -63,13 +65,22 @@ class Level2Validator:
         ]
         existing_cols = [c for c in cols_to_check if c in self.df.columns]
         
+        # Check NaNs
         nans_count = self.df[existing_cols].isna().sum()
-        failed_cols = nans_count[nans_count > 0]
+        failed_nan_cols = nans_count[nans_count > 0]
         
-        if failed_cols.empty:
-            self._log("Strict NaN Check", True, "Zero NaNs in all engineered features.")
+        # Check Infs
+        inf_mask = np.isinf(self.df[existing_cols])
+        inf_count = inf_mask.sum()
+        failed_inf_cols = inf_count[inf_count > 0]
+        
+        if failed_nan_cols.empty and failed_inf_cols.empty:
+            self._log("Strict Clean Data Check", True, "Zero NaNs and Zero Infs in all engineered features.")
         else:
-            self._log("Strict NaN Check", False, f"NaNs found in: {failed_cols.to_dict()}")
+            err_msg = ""
+            if not failed_nan_cols.empty: err_msg += f"NaNs in {failed_nan_cols.to_dict()}. "
+            if not failed_inf_cols.empty: err_msg += f"Infs in {failed_inf_cols.to_dict()}."
+            self._log("Strict Clean Data Check", False, err_msg)
 
     def check_binary_flags(self):
         """Verifies binary features contain only 0/1."""
@@ -78,7 +89,7 @@ class Level2Validator:
         
         for col in binary_cols:
             if col not in self.df.columns: continue
-            invalid_vals = [x for x in self.df[col].unique() if x not in [0, 1, 0.0, 1.0]]
+            invalid_vals = [x for x in self.df[col].unique() if pd.notna(x) and x not in [0, 1, 0.0, 1.0]]
             if invalid_vals:
                 valid = False
                 self._log("Binary Flags", False, f"Column '{col}' has invalid values: {invalid_vals}")
@@ -134,6 +145,7 @@ class Level2Validator:
         elif max_f == 0:
             self._log("Cum Fatigue Logic", False, "Accumulated fatigue is completely stuck at 0.")
         else:
+            # Assuming max fatigue for a player playing full 48 mins is 2880 seconds
             self._log("Cum Fatigue Logic", True, f"Fatigue accumulating properly (Max: {max_f:.1f} seconds).")
 
     def run(self):
@@ -143,20 +155,20 @@ class Level2Validator:
         print("-" * 60)
         
         self.check_feature_existence()
-        self.check_strict_no_nans()
+        self.check_strict_clean_data()
         self.check_binary_flags()
         self.check_clutch_time_logic()
         self.check_momentum_sanity()
-        
-        # New Hybrid Specific Checks
         self.check_usage_gravity_logic()
         self.check_cumulative_fatigue_logic()
         
         print("-" * 60)
         if all(self.results):
-            print("🚀 STATUS: PASSED. Level 2 dataset is mathematically sound and ready for ML.")
+            print("🚀 STATUS: PASSED. Level 2 dataset is mathematically sound and ready for Level 3/ML.")
+            sys.exit(0)
         else:
-            print("⚠️ STATUS: FAILED. Fix the logic errors before model training.")
+            print("⚠️ STATUS: FAILED. Fix the logic errors in 02_build_level2_momentum.py before proceeding.")
+            sys.exit(1)
 
 if __name__ == "__main__":
     validator = Level2Validator(FILE_PATH)

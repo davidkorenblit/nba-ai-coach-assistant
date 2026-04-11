@@ -92,18 +92,14 @@ df['delta_margin_180s'] = df['fut_margin_180s'] - df[col_margin]
 df['target_improve_margin_90s'] = (df['delta_margin_90s'] > 0).astype(int)
 df['target_improve_margin_180s'] = (df['delta_margin_180s'] > 0).astype(int)
 
-# Target 4: מחיר ההתעלמות (Danger Zone Penalty) - מבוסס עייפות מצטברת (Cum Fatigue)
-# חישוב עייפות מקסימלית על המגרש בין שתי הקבוצות
 df['max_fatigue'] = df[['home_cum_fatigue', 'away_cum_fatigue']].fillna(0).max(axis=1)
 
-# סכנה = עייפות גבוהה (אחוזון 75) + ריצת אקספלוסיביות (אחוזון 75 בערך מוחלט כדי לתפוס ריצות של שתיהן)
 threshold_fatigue = df['max_fatigue'].quantile(0.75)
 threshold_exp = df[col_exp].abs().quantile(0.75)
 
 is_danger = (df['max_fatigue'] > threshold_fatigue) & (df[col_exp].abs() > threshold_exp)
 is_timeout = df['actionType'].str.contains('timeout', case=False, na=False)
 
-# עונש = היינו בסכנה, המאמן *לא* התערב, וההפרש שלנו המשיך להצטמצם תוך 3 דקות
 df['target_danger_penalty'] = (is_danger & ~is_timeout & (df['delta_margin_180s'] < 0)).astype(int)
 
 print("--- DEBUG DANGER PENALTY ---")
