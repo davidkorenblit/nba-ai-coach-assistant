@@ -84,6 +84,9 @@ class MLDataPreparer:
         metadata_cols = [
             'actionType', 'actionSubtype', 'description', 'shotResult',
             'home_lineup', 'away_lineup', 'period_start_time', 'time_elapsed'
+            'jumpBallRecoverdPersonId', 'jumpBallWonPersonId', 'jumpBallLostPersonId',
+            'foulDrawnPersonId', 'foulTechnicalTotal', 'officialId', 
+            'shotActionNumber', 'teamId'
         ]
         # we may do need those bcasue of fe
         # נשמור רק את העמודות שרלוונטיות או מזהים שחייבים לחיתוך
