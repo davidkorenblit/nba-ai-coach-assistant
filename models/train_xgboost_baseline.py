@@ -34,8 +34,14 @@ class BaselineXGBoost:
 
     def prepare_xy(self, df: pd.DataFrame):
         """Separates features (X) and target (y), ignoring other targets/metadata."""
-        # נסנן החוצה את כל עמודות המטרה האחרות והמזהים שלא שייכים לאימון
-        cols_to_drop = [c for c in df.columns if c.startswith('target_')] + ['gameId']
+        # 1. סינון עמודות מטרה (Targets) שאינן חלק מהאימון
+        targets_to_drop = [c for c in df.columns if c.startswith('target_')]
+        
+        # 2. סינון רעשים וצ'יטים (Data Leakage & Noise Prevention)
+        # אנחנו מסירים את השעון ואת מספרי השורות כדי למנוע חמדנות ולמידת-סרק
+        leakage_cols = ['gameId', 'seconds_remaining', 'orderNumber', 'actionNumber', 'actionId']
+        
+        cols_to_drop = targets_to_drop + [c for c in leakage_cols if c in df.columns]
         
         X = df.drop(columns=cols_to_drop)
         y = df[self.target]
@@ -47,27 +53,30 @@ class BaselineXGBoost:
         return X, y
 
     def train(self, X_train, y_train, X_val, y_val):
-        print("\n🚀 Training Baseline XGBoost Model...")
+        print("\n🚀 Training Hardened Baseline XGBoost Model...")
         
-        # מכיוון שהתיוג שלנו הוא באזור ה-34%, כדאי לתת קצת משקל למחלקת המיעוט
         scale_pos_weight = (len(y_train) - sum(y_train)) / sum(y_train)
         
+        # --- אופטימיזציה נגד Overfitting (Regularization) ---
         self.model = xgb.XGBClassifier(
-            n_estimators=200,          # מספר העצים
-            learning_rate=0.05,        # קצב למידה (שמרני כדי לא לעשות Overfit)
-            max_depth=5,               # עומק עץ (מוגבל כדי ללמוד תבניות כלליות)
+            n_estimators=300,          # העלינו קצת את מספר העצים כי כל עץ עכשיו "חלש" יותר
+            learning_rate=0.05,        
+            max_depth=4,               # הוקשח (מ-5 ל-4): מונע מהעץ לזכור תבניות ספציפיות מדי
+            subsample=0.8,             # כל עץ רואה רק 80% מהדאטא (מונע תלות בשורות ספציפיות)
+            colsample_bytree=0.8,      # כל עץ רואה רק 80% מהעמודות (שובר את ה"חמדנות" לפיצ'ר אחד)
+            reg_alpha=1.0,             # קנס L1: מאפס משקולות של פיצ'רים חסרי משמעות
+            reg_lambda=5.0,            # קנס L2: מונע מפיצ'ר אחד לקבל כוח קיצוני (כמו שהיה לאקספלוסיביות)
             scale_pos_weight=scale_pos_weight,
-            early_stopping_rounds=20,  # עצירה אם אין שיפור
-            eval_metric='auc',         # אופטימיזציה לפי השטח מתחת לעקומה
+            early_stopping_rounds=20,  
+            eval_metric='auc',         
             random_state=42,
-            n_jobs=-1                  # שימוש בכל ליבות המעבד
+            n_jobs=-1                  
         )
         
-        # אימון עם שילוב של קבוצת האימות (Validation) למניעת זליגה
         self.model.fit(
             X_train, y_train,
             eval_set=[(X_train, y_train), (X_val, y_val)],
-            verbose=20 # הדפסת התקדמות כל 20 עצים
+            verbose=20 
         )
         print("✅ Training Complete.")
 
@@ -89,17 +98,15 @@ class BaselineXGBoost:
         print("\n🎨 Generating Feature Importance Plot...")
         importance = self.model.feature_importances_
         
-        # חיבור השמות לערכים ומיון
         feature_df = pd.DataFrame({'Feature': self.feature_cols, 'Importance': importance})
-        feature_df = feature_df.sort_values(by='Importance', ascending=True).tail(15) # ניקח את ה-15 הכי חזקים
+        feature_df = feature_df.sort_values(by='Importance', ascending=True).tail(15) 
         
         plt.figure(figsize=(10, 8))
-        plt.barh(feature_df['Feature'], feature_df['Importance'], color='skyblue')
+        plt.barh(feature_df['Feature'], feature_df['Importance'], color='coral') # שיניתי צבע שנדע שזה הגרף החדש
         plt.xlabel('XGBoost Feature Importance (Gain)')
-        plt.title('Top 15 Most Important Features for Stopping a Run (90s)')
+        plt.title('Top 15 Most Important Features for Stopping a Run (Hardened Model)')
         plt.tight_layout()
         
-        # שמירת הגרף בתיקיית המודלים
         plot_path = os.path.join(BASE_DIR, 'feature_importance_baseline.png')
         plt.savefig(plot_path)
         print(f"✅ Feature Importance plot saved to: {plot_path}")
@@ -107,17 +114,13 @@ class BaselineXGBoost:
 def main():
     pipeline = BaselineXGBoost(PROCESSED_DIR, TARGET_COL)
     
-    # 1. טעינת נתונים
     train_df, val_df = pipeline.load_splits()
     
-    # 2. הכנת X, Y
     X_train, y_train = pipeline.prepare_xy(train_df)
     X_val, y_val = pipeline.prepare_xy(val_df)
     
-    # 3. אימון
     pipeline.train(X_train, y_train, X_val, y_val)
     
-    # 4. הערכה והפקת תובנות
     pipeline.evaluate(X_val, y_val)
     pipeline.plot_feature_importance()
 
