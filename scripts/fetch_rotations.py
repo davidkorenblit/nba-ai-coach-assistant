@@ -10,8 +10,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW_PBP_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 OUTPUT_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
 
-MAX_WORKERS = 4      # מספר תהליכונים שמרני
-SAVE_INTERVAL = 20   # כל כמה משחקים שומרים לקובץ
+MAX_WORKERS = 4    
+SAVE_INTERVAL = 20 
 
 def get_existing_game_ids():
     """בודק איזה משחקים כבר שמרנו כדי לא להוריד שוב."""

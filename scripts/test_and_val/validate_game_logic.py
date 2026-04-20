@@ -10,7 +10,7 @@ BAD_GAMES_FILE = os.path.join(OUTPUT_DIR, 'invalid_games_blacklist.csv')
 
 # --- חוקי הסף (Thresholds) ---
 MIN_TIMEOUTS = 7       # מינימום פסקי זמן למשחק תקין
-MAX_TIMEOUTS = 30      # מקסימום (למנוע כפילויות משוגעות)
+MAX_TIMEOUTS = 14      # מקסימום (למנוע כפילויות משוגעות)
 MAX_SCORE_JUMP = 4     # מקסימום נקודות שאפשר לקלוע במהלך אחד
 
 def validate_game(df, game_id):
