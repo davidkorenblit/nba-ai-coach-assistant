@@ -38,9 +38,10 @@ class BaselineXGBoost:
         
         # Explicitly drop target leakage, non-ordinal categorical IDs, and proxy clocks
         leakage_cols = [
-            'gameId', 'seconds_remaining', 'orderNumber', 
-            'actionNumber', 'actionId', 'explosiveness_index', 
-            'teamId', 'possession_id', 'cum_pointsTotal'
+            'gameId', 'seconds_remaining', 'orderNumber', 'actionNumber', 'actionId',
+            'explosiveness_index', 'teamId', 'possession_id', 'cum_pointsTotal',
+            'possession', 'scoreHome', 'scoreAway', 'reboundTotal', 
+            'reboundDefensiveTotal', 'reboundOffensiveTotal', 'cum_reboundDefensiveTotal', 'personId'
         ]
         
         cols_to_drop = targets_to_drop + [c for c in leakage_cols if c in df.columns]
