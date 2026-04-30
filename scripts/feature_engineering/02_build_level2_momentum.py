@@ -47,7 +47,6 @@ class Level2FeatureEngineer:
             return {}
         try:
             stars_df = pd.read_csv(self.lookup_path)
-            # Returns a dict of PLAYER_ID: USG_PCT
             return dict(zip(stars_df['PLAYER_ID'], stars_df['USG_PCT']))
         except Exception as e:
             print(f"❌ Error loading star lookup: {e}")
@@ -67,52 +66,40 @@ class Level2FeatureEngineer:
 
     def build_usage_gravity(self):
         print("🔹 Building: Usage Gravity (Vectorized Lookup)...")
-        # Default usage is 0.15 (15%) for non-stars
-        def calc_gravity(lineup):
-            if not isinstance(lineup, list): return 0.75 
-            return sum([self.stars_map.get(pid, 0.15) for pid in lineup])
+        # אופטימיזציה: במקום apply עם לולאה פנימית, פירוק לרשומות, מיפוי מהיר, וקיבוץ חזרה
+        for prefix in ['home', 'away']:
+            lineup_col = f'{prefix}_lineup'
+            exploded = self.df[lineup_col].explode()
+            usg_mapped = exploded.map(self.stars_map).fillna(0.15)
+            # טיפול במקרי קצה של רשימות ריקות
+            usg_mapped[exploded.isna()] = 0.0
+            
+            gravity = usg_mapped.groupby(level=0).sum()
+            gravity[gravity == 0] = 0.75 # Default threshold
+            self.df[f'{prefix}_usage_gravity'] = gravity
 
-        self.df['home_usage_gravity'] = self.df['home_lineup'].apply(calc_gravity)
-        self.df['away_usage_gravity'] = self.df['away_lineup'].apply(calc_gravity)
         self.df['usage_delta'] = self.df['home_usage_gravity'] - self.df['away_usage_gravity']
 
     def build_accumulated_fatigue(self):
-        print("🔹 Building: Accumulated Fatigue Track (Optimized State Machine)...")
-        # Optimization: Avoid iterrows. Using a highly optimized list comprehension state tracker.
+        print("🔹 Building: Accumulated Fatigue Track (Vectorized Explode/Cumsum)...")
+        # אופטימיזציה: חיסול לולאת ה-for לחלוטין. 
+        # פירוק השחקנים, סכימה מצטברת וקטורית פר-שחקן, וממוצע חזרה ברמת החמישייה.
         
-        def compute_fatigue(group):
-            player_mins = {}
-            h_fatigue = np.zeros(len(group))
-            a_fatigue = np.zeros(len(group))
+        for prefix in ['home', 'away']:
+            lineup_col = f'{prefix}_lineup'
+            temp_exp = self.df[['gameId', 'play_duration', lineup_col]].explode(lineup_col)
             
-            durations = group['play_duration'].values
-            h_lineups = group['home_lineup'].values
-            a_lineups = group['away_lineup'].values
+            # חישוב זמן מצטבר פר שחקן באותו משחק
+            temp_exp['player_cum_dur'] = temp_exp.groupby(['gameId', lineup_col])['play_duration'].cumsum()
             
-            for i in range(len(group)):
-                dur = durations[i]
-                h_l = h_lineups[i] if isinstance(h_lineups[i], list) else []
-                a_l = a_lineups[i] if isinstance(a_lineups[i], list) else []
-                
-                # Accumulate
-                for pid in h_l + a_l:
-                    player_mins[pid] = player_mins.get(pid, 0) + dur
-                
-                # Calculate team average fatigue
-                h_fatigue[i] = sum([player_mins.get(p, 0) for p in h_l]) / 5 if h_l else 0
-                a_fatigue[i] = sum([player_mins.get(p, 0) for p in a_l]) / 5 if a_l else 0
-                
-            group['home_cum_fatigue'] = h_fatigue
-            group['away_cum_fatigue'] = a_fatigue
-            return group
-
-        self.df = self.df.groupby('gameId', group_keys=False).apply(compute_fatigue)
+            # קיבוץ בחזרה לממוצע החמישייה באותה שורה
+            self.df[f'{prefix}_cum_fatigue'] = temp_exp.groupby(level=0)['player_cum_dur'].mean().fillna(0)
 
     def build_smart_streak(self):
-        print("🔹 Building: Smart Momentum Streak (Vectorized)...")
+        print("🔹 Building: Smart Momentum Streak (Vectorized Action/SubType)...")
         self.df['event_momentum_val'] = 0.0
         
-        # Vectorized assignments
+        # וקטוריזציה מלאה על בסיס מזהים קשיחים (actionType/subType/shotResult) 
         self.df.loc[(self.df['actionType'] == '3pt') & (self.df['shotResult'] == 'Made'), 'event_momentum_val'] += 1.5
         self.df.loc[(self.df['actionType'] == '2pt') & (self.df['shotResult'] == 'Made'), 'event_momentum_val'] += 1.0
         self.df.loc[self.df['actionType'] == 'steal', 'event_momentum_val'] += 2.0
@@ -135,38 +122,33 @@ class Level2FeatureEngineer:
 
     def build_context_features(self):
         print("🔹 Building: Contextual & Shift Features...")
-        # Style Shift
         self.df['style_tempo_rolling'] = self.df.groupby('gameId')['shot_clock_estimated'].transform(
             lambda x: x.rolling(window=15, min_periods=1).mean()
         ).fillna(14.0)
         
-        # Shared Fatigue Calibrated
         self.df['is_high_fatigue'] = np.where(self.df['time_since_last_sub'] > 550, 1, 0)
         
-        # Instability Index
         self.df['time_lag'] = self.df.groupby(['gameId', 'period'])['seconds_remaining'].shift(10)
         self.df['instability_index'] = (self.df['time_lag'] - self.df['seconds_remaining']).fillna(60)
         self.df.drop(columns=['time_lag'], inplace=True)
         
-        # Clutch Time
         self.df['is_clutch_time'] = np.where(
             (self.df['seconds_remaining'] <= 300) & (self.df['score_margin'].abs() <= 5), 1, 0
         )
 
     def build_star_resting(self):
-        print("🔹 Building: Star Resting...")
-        star_ids = set(self.stars_map.keys())
+        print("🔹 Building: Star Resting (Vectorized Matrix Operation)...")
+        star_ids = list(self.stars_map.keys())
         if not star_ids:
             self.df['is_star_resting'] = 0
             return
 
-        def is_star_on(row):
-            combined = set(row.get('home_lineup', [])) | set(row.get('away_lineup', []))
-            return 1 if not combined.isdisjoint(star_ids) else 0
-
-        self.df['has_star_on_court'] = self.df.apply(is_star_on, axis=1)
-        self.df['is_star_resting'] = 1 - self.df['has_star_on_court']
-        self.df.drop(columns=['has_star_on_court'], inplace=True)
+        # אופטימיזציה: ללא apply ו-axis=1. בדיקה מטריציונית מהירה.
+        home_has_star = self.df['home_lineup'].explode().isin(star_ids).groupby(level=0).any()
+        away_has_star = self.df['away_lineup'].explode().isin(star_ids).groupby(level=0).any()
+        
+        # אם אין כוכבים לאף אחת מהקבוצות כרגע במגרש = 1
+        self.df['is_star_resting'] = (~(home_has_star | away_has_star)).astype(int)
 
     def run_pipeline(self) -> pd.DataFrame:
         self.build_usage_gravity()
@@ -179,16 +161,15 @@ class Level2FeatureEngineer:
 
 # --- Main Execution ---
 def main():
-    print("🚀 Starting Level 2 Feature Engineering (OOP Architecture)...")
+    print("🚀 Starting Level 2 Feature Engineering (Optimized OOP Architecture)...")
     try:
         engineer = Level2FeatureEngineer(INPUT_PATH, LOOKUP_PATH)
         df_features = engineer.run_pipeline()
         
-        # Validate Data Integrity
         Level2Validator.validate(df_features)
         
         df_features.to_csv(OUTPUT_PATH, index=False)
-        print(f"✅ Saved Upgraded Level 2 to: {OUTPUT_PATH}")
+        print(f"✅ Saved Optimized Level 2 to: {OUTPUT_PATH}")
         print(f"📊 Final Dataset Shape: {df_features.shape}")
         
     except Exception as e:
