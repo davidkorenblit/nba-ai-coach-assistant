@@ -13,7 +13,7 @@ class NBACausalLearner:
     the true impact of taking a timeout on stopping an opponent's run.
     """
     
-    def __init__(self, data_path: str, target_col: str = 'target_90s', treatment_col: str = 'is_timeout'):
+    def __init__(self, data_path: str, target_col: str = 'target_stop_run_90s', treatment_col: str = 'timeout_strategic_weight'):
         self.data_path = data_path
         self.target_col = target_col
         self.treatment_col = treatment_col # The Treatment (T) - Subtask 3.1
@@ -37,10 +37,10 @@ class NBACausalLearner:
 
     def load_and_prepare_data(self):
         """Loads data and removes proxy clocks/categorical leakage."""
-        print("Loading data and sanitizing features...")
+        print(f"Loading data from: {self.data_path}")
         df = pd.read_parquet(self.data_path)
         
-        # Absolute purge list from our Baseline Hardening
+        # Absolute purge list to ensure tactical signal only
         leakage_cols = [
             'gameId', 'seconds_remaining', 'orderNumber', 'actionNumber', 'actionId',
             'explosiveness_index', 'teamId', 'possession_id', 'cum_pointsTotal',
@@ -49,16 +49,23 @@ class NBACausalLearner:
             'personId'
         ]
         
+        # Identify target columns to drop (all except the current one being analyzed)
         targets_to_drop = [c for c in df.columns if c.startswith('target_') and c != self.target_col]
         cols_to_drop = targets_to_drop + [c for c in leakage_cols if c in df.columns]
         
+        print(f"Sanitizing features. Dropping {len(cols_to_drop)} leakage/target columns...")
         df = df.drop(columns=cols_to_drop)
+        
+        # Ensure treatment is binary (0 or 1)
+        df[self.treatment_col] = (df[self.treatment_col] > 0).astype(int)
+        
         df = df.dropna(subset=[self.target_col, self.treatment_col])
         
         X = df.drop(columns=[self.target_col, self.treatment_col])
         T = df[self.treatment_col]
         Y = df[self.target_col]
         
+        # Split into training and testing sets (80/20)
         self.X_train, self.X_test, self.T_train, self.T_test, self.Y_train, self.Y_test = train_test_split(
             X, T, Y, test_size=0.2, random_state=42, stratify=Y
         )
@@ -66,7 +73,7 @@ class NBACausalLearner:
 
     def stage_1_propensity(self):
         """Sub-task 3.2: Train Propensity Score model e(x) = P(T=1|X)"""
-        print("Stage 1: Training Propensity Model...")
+        print("Stage 1: Training Propensity Model (Coach Psychology)...")
         self.propensity_model.fit(self.X_train, self.T_train)
         
         # Calculate propensity scores (g_x)
@@ -80,8 +87,8 @@ class NBACausalLearner:
 
     def stage_2_outcome_modeling(self):
         """Trains models for Control (mu0) and Treatment (mu1)."""
-        print("Stage 2: Training Outcome Models (mu0, mu1)...")
-        # Split Data by Treatment
+        print("Stage 2: Training Outcome Models (mu0: Control, mu1: Treatment)...")
+        # Split Data by Treatment status
         X0, Y0 = self.X_train[self.T_train == 0], self.Y_train[self.T_train == 0]
         X1, Y1 = self.X_train[self.T_train == 1], self.Y_train[self.T_train == 1]
         
@@ -95,10 +102,10 @@ class NBACausalLearner:
         X0, Y0 = self.X_train[self.T_train == 0], self.Y_train[self.T_train == 0]
         X1, Y1 = self.X_train[self.T_train == 1], self.Y_train[self.T_train == 1]
         
-        # Imputed treatment effects (Differences in probability)
-        # What if the control group got treated?
+        # Imputed treatment effects (Differences in stopping probability)
+        # What would have happened if the control group had taken a timeout?
         D0 = self.mu1_model.predict_proba(X0)[:, 1] - Y0 
-        # What if the treated group wasn't treated?
+        # What would have happened if the treated group had NOT taken a timeout?
         D1 = Y1 - self.mu0_model.predict_proba(X1)[:, 1] 
         
         self.tau0_model.fit(X0, D0)
@@ -110,7 +117,7 @@ class NBACausalLearner:
         tau1_pred = self.tau1_model.predict(X_eval)
         g_x_eval = np.clip(self.propensity_model.predict_proba(X_eval)[:, 1], 0.01, 0.99)
         
-        # Final CATE calculation: Weighted average based on propensity
+        # Final CATE calculation: Weighted average based on propensity score
         cate = g_x_eval * tau0_pred + (1 - g_x_eval) * tau1_pred
         return cate
 
@@ -125,15 +132,15 @@ class NBACausalLearner:
         cate_test = self.estimate_cate(self.X_test)
         
         avg_treatment_effect = np.mean(cate_test)
-        print(f"Average Treatment Effect (ATE): {avg_treatment_effect * 100:.2f}%")
-        print("Positive ATE means timeouts generally increase the probability of stopping a run.")
+        print(f"Average Treatment Effect (ATE) for '{self.target_col}': {avg_treatment_effect * 100:.2f}%")
+        print("Positive ATE means timeouts increase the probability of a successful outcome.")
         
         return cate_test
 
 if __name__ == "__main__":
-    # Adjust paths as needed based on your project structure
-    DATA_PATH = os.path.join('..', 'data', 'processed', 'train.parquet')
+    # Updated path for running from project root
+    DATA_PATH = os.path.join('data', 'processed', 'train.parquet')
     
-    # Initialize and run
+    # Initialize and run for the 90s stop-run window
     causal_learner = NBACausalLearner(data_path=DATA_PATH)
     cate_results = causal_learner.run_pipeline()
