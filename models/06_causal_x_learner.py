@@ -138,9 +138,16 @@ class NBACausalLearner:
         return cate_test
 
 if __name__ == "__main__":
-    # Updated path for running from project root
-    DATA_PATH = os.path.join('data', 'processed', 'train.parquet')
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
-    # Initialize and run for the 90s stop-run window
-    causal_learner = NBACausalLearner(data_path=DATA_PATH)
+    DATA_PATH = os.path.join(base_dir, 'data', 'processed', 'train.parquet')
+    
+    print(f"Working with absolute path: {DATA_PATH}")
+    
+    causal_learner = NBACausalLearner(
+        data_path=DATA_PATH,
+        target_col='target_stop_run_90s',
+        treatment_col='timeout_strategic_weight'
+    )
+    
     cate_results = causal_learner.run_pipeline()
