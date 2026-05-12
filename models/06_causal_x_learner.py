@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, brier_score_loss     
 import matplotlib.pyplot as plt
 import os
+import json
 
 class NBACausalLearner:
     """
@@ -40,13 +41,17 @@ class NBACausalLearner:
         print(f"Loading data from: {self.data_path}")
         df = pd.read_parquet(self.data_path)
         
-        # Absolute purge list to ensure tactical signal only
+        # Absolute purge list to ensure tactical signal only - UPDATED with "להעיף דחוף" list
         leakage_cols = [
             'gameId', 'seconds_remaining', 'orderNumber', 'actionNumber', 'actionId',
             'explosiveness_index', 'teamId', 'possession_id', 'cum_pointsTotal',
             'possession', 'scoreHome', 'scoreAway', 'reboundTotal', 
             'reboundDefensiveTotal', 'reboundOffensiveTotal', 'cum_reboundDefensiveTotal',
-            'personId', 'shotActionNumber', 'officialId', 'x', 'y'
+            'personId', 'shotActionNumber', 'officialId', 'x', 'y',
+            'xLegacy', 'yLegacy', 'jumpBallRecoverdPersonId', 'jumpBallWonPersonId', 
+            'jumpBallLostPersonId', 'foulDrawnPersonId', 'is_poss_change', 
+            'play_duration', 'isTargetScoreLastPeriod', 'pointsTotal', 
+            'turnoverTotal', 'foulPersonalTotal', 'foulTechnicalTotal'
         ]
         
         # Identify target columns to drop (all except the current one being analyzed)
@@ -70,11 +75,8 @@ class NBACausalLearner:
             X, T, Y, test_size=0.2, random_state=42, stratify=Y
         )
         print(f"Data ready. Training size: {self.X_train.shape[0]} possessions.")
-        
-
         print(f"Final Training Features: {self.X_train.columns.tolist()}")
 
-        
     def stage_1_propensity(self):
         """Sub-task 3.2: Train Propensity Score model e(x) = P(T=1|X)"""
         print("Stage 1: Training Propensity Model (Coach Psychology)...")
@@ -84,9 +86,24 @@ class NBACausalLearner:
         self.g_x_train = self.propensity_model.predict_proba(self.X_train)[:, 1]
         self.g_x_test = self.propensity_model.predict_proba(self.X_test)[:, 1]
 
-        print("\n--- Leakage Check: Top 5 Propensity Features ---")
-        importance = pd.Series(self.propensity_model.feature_importances_, index=self.X_train.columns)
-        print(importance.sort_values(ascending=False).head(5))
+        # --- EXPORT FULL FEATURE IMPORTANCE TO JSON ---
+        print("\n--- Exporting Full Propensity Feature Importance ---")
+        importance_series = pd.Series(self.propensity_model.feature_importances_, index=self.X_train.columns)
+        importance_series = importance_series.sort_values(ascending=False)
+        
+        # Print top 5 to terminal for quick check
+        print("Top 5:")
+        print(importance_series.head(5))
+        
+        # Save full list to JSON
+        reports_dir = os.path.join(os.path.dirname(self.data_path), '..', 'reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        report_path = os.path.join(reports_dir, 'propensity_features.json')
+        
+        with open(report_path, 'w') as f:
+            json.dump(importance_series.to_dict(), f, indent=4)
+        print(f"Full feature importance report saved to: {report_path}")
+        # ----------------------------------------------
         
         # Clip to prevent division by zero in weighting
         self.g_x_train = np.clip(self.g_x_train, 0.01, 0.99)
