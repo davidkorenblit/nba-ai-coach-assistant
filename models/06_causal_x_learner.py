@@ -79,6 +79,10 @@ class NBACausalLearner:
         # Calculate propensity scores (g_x)
         self.g_x_train = self.propensity_model.predict_proba(self.X_train)[:, 1]
         self.g_x_test = self.propensity_model.predict_proba(self.X_test)[:, 1]
+
+        print("\n--- Leakage Check: Top 5 Propensity Features ---")
+        importance = pd.Series(self.propensity_model.feature_importances_, index=self.X_train.columns)
+        print(importance.sort_values(ascending=False).head(5))
         
         # Clip to prevent division by zero in weighting
         self.g_x_train = np.clip(self.g_x_train, 0.01, 0.99)
