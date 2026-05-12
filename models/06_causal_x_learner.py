@@ -46,7 +46,7 @@ class NBACausalLearner:
             'explosiveness_index', 'teamId', 'possession_id', 'cum_pointsTotal',
             'possession', 'scoreHome', 'scoreAway', 'reboundTotal', 
             'reboundDefensiveTotal', 'reboundOffensiveTotal', 'cum_reboundDefensiveTotal',
-            'personId'
+            'personId', 'shotActionNumber', 'officialId', 'x', 'y'
         ]
         
         # Identify target columns to drop (all except the current one being analyzed)
@@ -70,7 +70,11 @@ class NBACausalLearner:
             X, T, Y, test_size=0.2, random_state=42, stratify=Y
         )
         print(f"Data ready. Training size: {self.X_train.shape[0]} possessions.")
+        
 
+        print(f"Final Training Features: {self.X_train.columns.tolist()}")
+
+        
     def stage_1_propensity(self):
         """Sub-task 3.2: Train Propensity Score model e(x) = P(T=1|X)"""
         print("Stage 1: Training Propensity Model (Coach Psychology)...")
