@@ -75,9 +75,35 @@ class NBACausalLearner:
             X, T, Y, test_size=0.2, random_state=42, stratify=Y
         )
         print(f"Data ready. Training size: {self.X_train.shape[0]} possessions.")
+        print("---------------------------------\n")
         print(f"Final Training Features: {self.X_train.columns.tolist()}")
+        print("---------------------------------\n")
+
+    def quick_ab_test(self):
+        # רשימת החשודים שלנו
+        suspects = ['timeouts_remaining_home', 'timeouts_remaining_away', 'shot_clock_estimated']
+        
+        print("\n--- 🔬 Quick & Dirty A/B Test ---")
+        # אימון בייסליין (עם כל הפיצ'רים)
+        self.propensity_model.fit(self.X_train, self.T_train)
+        base_auc = roc_auc_score(self.T_test, self.propensity_model.predict_proba(self.X_test)[:, 1])
+        print(f"Base Propensity AUC: {base_auc:.4f}")
+
+        # לולאה שמעיפה כל פעם חשוד אחד ובודקת מה קרה
+        for col in suspects:
+            if col in self.X_train.columns:
+                xt_train = self.X_train.drop(columns=[col])
+                xt_test = self.X_test.drop(columns=[col])
+                
+                self.propensity_model.fit(xt_train, self.T_train)
+                new_auc = roc_auc_score(self.T_test, self.propensity_model.predict_proba(xt_test)[:, 1])
+                diff = new_auc - base_auc
+                
+                print(f"Without '{col}': AUC = {new_auc:.4f} (Change: {diff:.4f})")
+        print("---------------------------------\n")
 
     def stage_1_propensity(self):
+        
         """Sub-task 3.2: Train Propensity Score model e(x) = P(T=1|X)"""
         print("Stage 1: Training Propensity Model (Coach Psychology)...")
         self.propensity_model.fit(self.X_train, self.T_train)
@@ -149,6 +175,7 @@ class NBACausalLearner:
     def run_pipeline(self):
         """Executes the full Causal Inference flow."""
         self.load_and_prepare_data()
+        self.quick_ab_test()
         self.stage_1_propensity()
         self.stage_2_outcome_modeling()
         self.stage_3_x_learning()
