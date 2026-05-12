@@ -41,7 +41,7 @@ class NBACausalLearner:
         print(f"Loading data from: {self.data_path}")
         df = pd.read_parquet(self.data_path)
         
-        # Absolute purge list to ensure tactical signal only - UPDATED with "להעיף דחוף" list
+        # Absolute purge list to ensure tactical signal only
         leakage_cols = [
             'gameId', 'seconds_remaining', 'orderNumber', 'actionNumber', 'actionId',
             'explosiveness_index', 'teamId', 'possession_id', 'cum_pointsTotal',
@@ -51,7 +51,8 @@ class NBACausalLearner:
             'xLegacy', 'yLegacy', 'jumpBallRecoverdPersonId', 'jumpBallWonPersonId', 
             'jumpBallLostPersonId', 'foulDrawnPersonId', 'is_poss_change', 
             'play_duration', 'isTargetScoreLastPeriod', 'pointsTotal', 
-            'turnoverTotal', 'foulPersonalTotal', 'foulTechnicalTotal'
+            'turnoverTotal', 'foulPersonalTotal', 'foulTechnicalTotal',
+            'shot_clock_estimated' # הוסף לחסימה
         ]
         
         # Identify target columns to drop (all except the current one being analyzed)
@@ -76,31 +77,6 @@ class NBACausalLearner:
         )
         print(f"Data ready. Training size: {self.X_train.shape[0]} possessions.")
         print("---------------------------------\n")
-        print(f"Final Training Features: {self.X_train.columns.tolist()}")
-        print("---------------------------------\n")
-
-    def quick_ab_test(self):
-        # רשימת החשודים שלנו
-        suspects = ['timeouts_remaining_home', 'timeouts_remaining_away', 'shot_clock_estimated']
-        
-        print("\n--- 🔬 Quick & Dirty A/B Test ---")
-        # אימון בייסליין (עם כל הפיצ'רים)
-        self.propensity_model.fit(self.X_train, self.T_train)
-        base_auc = roc_auc_score(self.T_test, self.propensity_model.predict_proba(self.X_test)[:, 1])
-        print(f"Base Propensity AUC: {base_auc:.4f}")
-
-        # לולאה שמעיפה כל פעם חשוד אחד ובודקת מה קרה
-        for col in suspects:
-            if col in self.X_train.columns:
-                xt_train = self.X_train.drop(columns=[col])
-                xt_test = self.X_test.drop(columns=[col])
-                
-                self.propensity_model.fit(xt_train, self.T_train)
-                new_auc = roc_auc_score(self.T_test, self.propensity_model.predict_proba(xt_test)[:, 1])
-                diff = new_auc - base_auc
-                
-                print(f"Without '{col}': AUC = {new_auc:.4f} (Change: {diff:.4f})")
-        print("---------------------------------\n")
 
     def stage_1_propensity(self):
         
@@ -113,14 +89,10 @@ class NBACausalLearner:
         self.g_x_test = self.propensity_model.predict_proba(self.X_test)[:, 1]
 
         # --- EXPORT FULL FEATURE IMPORTANCE TO JSON ---
-        print("\n--- Exporting Full Propensity Feature Importance ---")
         importance_series = pd.Series(self.propensity_model.feature_importances_, index=self.X_train.columns)
         importance_series = importance_series.sort_values(ascending=False)
         
-        # Print top 5 to terminal for quick check
-        print("Top 5:")
-        print(importance_series.head(5))
-        
+    
         # Save full list to JSON
         reports_dir = os.path.join(os.path.dirname(self.data_path), '..', 'reports')
         os.makedirs(reports_dir, exist_ok=True)
@@ -175,7 +147,6 @@ class NBACausalLearner:
     def run_pipeline(self):
         """Executes the full Causal Inference flow."""
         self.load_and_prepare_data()
-        self.quick_ab_test()
         self.stage_1_propensity()
         self.stage_2_outcome_modeling()
         self.stage_3_x_learning()

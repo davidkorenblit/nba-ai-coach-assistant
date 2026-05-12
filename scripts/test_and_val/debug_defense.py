@@ -5,6 +5,9 @@ import os
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData')
 INPUT_FILE = os.path.join(DATA_DIR, "season_2024_25.csv")
+
+
+
 def verify_defense_structure():
     if not os.path.exists(INPUT_FILE):
         print(f"Error: File not found at {INPUT_FILE}")
@@ -13,7 +16,6 @@ def verify_defense_structure():
     print(f"Loading data from {INPUT_FILE}...")
     df = pd.read_csv(INPUT_FILE, low_memory=False)
     
-    # --- בדיקה 1: האם העמודות קיימות בכלל? ---
     print("\n=== 1. COLUMN EXISTENCE CHECK ===")
     target_cols = ['stealPlayerName', 'blockPlayerName', 'stealPersonId', 'blockPersonId']
     
