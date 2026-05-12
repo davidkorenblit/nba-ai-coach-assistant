@@ -14,7 +14,7 @@ class NBACausalLearner:
     the true impact of taking a timeout on stopping an opponent's run.
     """
     
-    def __init__(self, data_path: str, target_col: str = 'target_stop_run_90s', treatment_col: str = 'timeout_strategic_weight'):
+    def __init__(self, data_path: str, target_col: str = 'target_stop_run_180s', treatment_col: str = 'timeout_strategic_weight'):
         self.data_path = data_path
         self.target_col = target_col
         self.treatment_col = treatment_col # The Treatment (T) - Subtask 3.1
@@ -23,6 +23,10 @@ class NBACausalLearner:
         self.X_train, self.X_test = None, None
         self.T_train, self.T_test = None, None
         self.Y_train, self.Y_test = None, None
+        
+        # Metrics to save for summary
+        self.auc = None
+        self.ate = None
         
         # M-Models Configuration
         # Stage 1: Propensity Model (Predicts Probability of Timeout)
@@ -38,6 +42,7 @@ class NBACausalLearner:
 
     def load_and_prepare_data(self):
         """Loads data and removes proxy clocks/categorical leakage."""
+        print(f"\n--- Processing Target: {self.target_col} ---")
         print(f"Loading data from: {self.data_path}")
         df = pd.read_parquet(self.data_path)
         
@@ -92,11 +97,10 @@ class NBACausalLearner:
         importance_series = pd.Series(self.propensity_model.feature_importances_, index=self.X_train.columns)
         importance_series = importance_series.sort_values(ascending=False)
         
-    
-        # Save full list to JSON
+        # Save full list to JSON (unique name per target)
         reports_dir = os.path.join(os.path.dirname(self.data_path), '..', 'reports')
         os.makedirs(reports_dir, exist_ok=True)
-        report_path = os.path.join(reports_dir, 'propensity_features.json')
+        report_path = os.path.join(reports_dir, f'propensity_features_{self.target_col}.json')
         
         with open(report_path, 'w') as f:
             json.dump(importance_series.to_dict(), f, indent=4)
@@ -106,7 +110,9 @@ class NBACausalLearner:
         # Clip to prevent division by zero in weighting
         self.g_x_train = np.clip(self.g_x_train, 0.01, 0.99)
         self.g_x_test = np.clip(self.g_x_test, 0.01, 0.99)
-        print(f"Propensity AUC: {roc_auc_score(self.T_test, self.g_x_test):.4f}")
+        
+        self.auc = roc_auc_score(self.T_test, self.g_x_test)
+        print(f"Propensity AUC: {self.auc:.4f}")
 
     def stage_2_outcome_modeling(self):
         """Trains models for Control (mu0) and Treatment (mu1)."""
@@ -155,6 +161,7 @@ class NBACausalLearner:
         cate_test = self.estimate_cate(self.X_test)
         
         avg_treatment_effect = np.mean(cate_test)
+        self.ate = avg_treatment_effect
         print(f"Average Treatment Effect (ATE) for '{self.target_col}': {avg_treatment_effect * 100:.2f}%")
         print("Positive ATE means timeouts increase the probability of a successful outcome.")
         
@@ -164,13 +171,67 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     DATA_PATH = os.path.join(base_dir, 'data', 'processed', 'train.parquet')
+    REPORTS_DIR = os.path.join(base_dir, 'reports')
+    os.makedirs(REPORTS_DIR, exist_ok=True)
     
     print(f"Working with absolute path: {DATA_PATH}")
     
-    causal_learner = NBACausalLearner(
-        data_path=DATA_PATH,
-        target_col='target_stop_run_90s',
-        treatment_col='timeout_strategic_weight'
-    )
+    targets = [
+        'target_stop_run_90s', 
+        'target_reverse_trend_180s', 
+        'target_improve_margin_90s', 
+        'target_improve_margin_180s'
+    ]
     
-    cate_results = causal_learner.run_pipeline()
+    summary_results = {}
+
+    # Run pipeline for each target
+    for target in targets:
+        causal_learner = NBACausalLearner(
+            data_path=DATA_PATH,
+            target_col=target,
+            treatment_col='timeout_strategic_weight'
+        )
+        cate_results = causal_learner.run_pipeline()
+        
+        # Save metrics for summary
+        summary_results[target] = {
+            "ate": float(causal_learner.ate),
+            "auc": float(causal_learner.auc)
+        }
+
+    # --- Generate Final Reports ---
+    print("\n" + "="*55)
+    print(f"{'Target':<30} | {'ATE (%)':<10} | {'AUC':<10}")
+    print("-" * 55)
+    for t, res in summary_results.items():
+        print(f"{t:<30} | {res['ate']*100:>8.2f}% | {res['auc']:>8.4f}")
+    print("="*55)
+
+    # 1. Save JSON Summary
+    summary_path = os.path.join(REPORTS_DIR, 'causal_multi_target_summary.json')
+    with open(summary_path, 'w') as f:
+        json.dump(summary_results, f, indent=4)
+
+    # 2. Create Plot
+    names = [t.replace('target_', '') for t in targets]
+    ates = [res['ate'] * 100 for res in summary_results.values()]
+    
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(names, ates, color='coral')
+    plt.axhline(0, color='black', linewidth=0.8)
+    plt.ylabel('Average Treatment Effect (ATE %)')
+    plt.title('Timeout Impact Across Different Strategic Goals')
+    plt.xticks(rotation=15)
+    
+    for bar in bars:
+        yval = bar.get_height()
+        offset = 0.5 if yval >= 0 else -1.5
+        plt.text(bar.get_x() + bar.get_width()/2, yval + offset, f'{yval:.2f}%', ha='center', va='bottom')
+
+    plt.tight_layout()
+    plot_path = os.path.join(REPORTS_DIR, 'ate_comparison_profile.png')
+    plt.savefig(plot_path)
+    
+    print(f"\n✅ Summary saved to JSON: {summary_path}")
+    print(f"✅ Plot generated: {plot_path}")
