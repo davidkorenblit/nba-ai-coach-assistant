@@ -36,32 +36,45 @@ class ExplainabilityDashboard:
         df = pd.read_csv(self.csv_path)
         if df.empty: return
 
-        # אנחנו מנתחים את מודל ה-Tau1 (השפעת פסק זמן בקבוצת הטיפול) כאינדיקטור מרכזי
-        explainer = shap.TreeExplainer(self.tau1_model)
-        
-        # ניקח את ה-5 המקרים הכי קיצוניים
+        # שליפת רשימת הפיצ'רים המדויקת שהמודל אומן עליהם
+        # זה הפתרון לבעיית הממדים שקיבלת (35 vs 120)
+        try:
+            model_features = self.tau1_model.get_booster().feature_names
+        except AttributeError:
+            # גיבוי למקרה שהמודל עטוף ב-Scikit-Learn Wrapper בגרסה מסוימת
+            model_features = self.tau1_model.feature_names_in_.tolist()
+
+        # ניקח את ה-N המקרים הכי קיצוניים
         top_cases = df.head(top_n)
         
-        # הכנת הדאטה ל-SHAP (הסרת עמודות הציון)
-        cols_to_drop = ['predicted_cate', 'actual_treatment', 'target_danger_penalty', 'gameId']
-        X_explain = top_cases.drop(columns=[c for c in cols_to_drop if c in top_cases.columns])
+        # יצירת X_explain שמכיל אך ורק את הפיצ'רים שהמודל מכיר ובסדר הנכון
+        X_explain = top_cases[model_features]
         
+        # אנחנו מנתחים את מודל ה-Tau1 (השפעת פסק זמן) כאינדיקטור מרכזי
+        explainer = shap.TreeExplainer(self.tau1_model)
+        
+        # חישוב ערכי SHAP
         shap_values = explainer.shap_values(X_explain)
 
         for i in range(len(top_cases)):
             row = top_cases.iloc[i]
             print(f"\n🚨 ALERT #{i+1} (Impact: {row['predicted_cate']*100:.1f}%)")
             
-            # מציאת הפיצ'ר הכי משפיע במקרה הזה
-            idx = i
-            feature_idx = np.argmax(np.abs(shap_values[idx]))
+            # שליפת ערכי ה-SHAP עבור השורה הנוכחית
+            # (בגרסאות SHAP חדשות זה עשוי להחזיר אובייקט Explanation, לכן נשתמש בגישה בטוחה)
+            current_shap = shap_values.values[i] if hasattr(shap_values, "values") else shap_values[i]
+            
+            # מציאת הפיצ'ר הכי משפיע במקרה הספציפי הזה
+            feature_idx = np.argmax(np.abs(current_shap))
             feature_name = X_explain.columns[feature_idx]
-            impact_direction = "increased" if shap_values[idx][feature_idx] > 0 else "decreased"
+            impact_direction = "increased" if current_shap[feature_idx] > 0 else "decreased"
             
             scout_msg = f"   Scout Note: {self.translate_to_basketball(feature_name)} is the primary driver. " \
                         f"It {impact_direction} the recommendation urgency."
             print(scout_msg)
 
+
+            
     def hunt_hero_case(self):
         """מוצא משחק ספציפי שבו המאמן טעה והמודל צדק."""
         df = pd.read_csv(self.csv_path)
