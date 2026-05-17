@@ -149,19 +149,13 @@ class RecommendationEngine:
         print(f"📊 Distribution Graph saved to: {plot_path}")
         
         if len(recommendations) > 0:
+            # מיון לפי ההשפעה הגבוהה ביותר
             recommendations = recommendations.sort_values(by='predicted_cate', ascending=False)
             
-            # --- הוספת gameId לרשימת העמודות ב-CSV ---
-            explain_cols = [
-                'gameId', 'predicted_cate', 'actual_treatment', self.penalty_col, 'period', 'score_margin', 
-                'event_momentum_val', 'momentum_streak_rolling', 
-                'home_cum_fatigue', 'away_cum_fatigue'
-            ]
-            
-            final_cols = [c for c in explain_cols if c in recommendations.columns]
-            
+            # --- עדכון: שמירת כל העמודות עבור SHAP ---
+            # אנחנו לא מסננים יותר עמודות ידנית כדי למנוע KeyError בשלב ההסברתיות
             report_path = os.path.join(output_dir, f'timeout_recommendations_report_{self.target_col}.csv')
-            recommendations[final_cols].to_csv(report_path, index=False)
+            recommendations.to_csv(report_path, index=False)
             print(f"📝 Explainability Report (Alerts) saved to: {report_path}")
         else:
             print("⚠️ No recommendations crossed the threshold.")
