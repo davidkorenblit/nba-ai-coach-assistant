@@ -114,7 +114,7 @@ class RecommendationEngine:
         results_df[self.penalty_col] = self.P_test 
         results_df['gameId'] = self.G_test # הצמדת המזהה לתוצאות
         
-        self.dynamic_threshold = np.percentile(cate_scores, 95)
+        self.dynamic_threshold = np.percentile(cate_scores, 90.0)
         recommendations = results_df[results_df['predicted_cate'] >= self.dynamic_threshold].copy()
         
         print(f"Total Test Possessions: {len(results_df):,}")
