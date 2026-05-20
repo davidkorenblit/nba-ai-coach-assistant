@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import json  # הוספנו כדי לשמור את המטא-דאטה
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -83,7 +84,7 @@ class MLDataPreparer:
         # עמודות שלא נכנסות לחישובי המודל (מחרוזות, מערכים, או מזהים טכניים)
         metadata_cols = [
             'actionType', 'actionSubtype', 'description', 'shotResult',
-            'home_lineup', 'away_lineup', 'period_start_time', 'time_elapsed'
+            'home_lineup', 'away_lineup', 'period_start_time', 'time_elapsed',  # <--- תוקן: הוסף הפסיק החסר!
             'jumpBallRecoverdPersonId', 'jumpBallWonPersonId', 'jumpBallLostPersonId',
             'foulDrawnPersonId', 'foulTechnicalTotal', 'officialId', 
             'shotActionNumber', 'teamId'
@@ -133,6 +134,17 @@ class MLDataPreparer:
         train_df.to_parquet(train_path, index=False)
         val_df.to_parquet(val_path, index=False)
         test_df.to_parquet(test_path, index=False)
+
+        # --- STEP 6: תיקון BUG-09 - ייצוא מטא-דאטה של העונש והמטרות ---
+        print("STEP 6: Exporting Metadata JSON (Tracking Penalty and Targets)...")
+        all_targets = [c for c in train_df.columns if c.startswith('target_')]
+        metadata = {
+            "features": [c for c in train_df.columns if c not in all_targets],
+            "targets": [c for c in all_targets if c != 'target_danger_penalty'],
+            "penalty_col": "target_danger_penalty" if 'target_danger_penalty' in train_df.columns else None
+        }
+        with open(os.path.join(self.output_dir, 'split_metadata.json'), 'w') as f:
+            json.dump(metadata, f, indent=4)
         
         print(f"✅ Success! Data is ready for XGBoost at: {self.output_dir}")
         print(f"   Train: {len(train_df):,} rows")
