@@ -14,11 +14,14 @@ class Level3Validator:
     @staticmethod
     def validate(df: pd.DataFrame) -> bool:
         print("🛡️ Running Level 3 Label Validation...")
-        target_cols = [
+        
+        # הפרדה בין טרגטים רציפים לבינאריים כדי לא לזרוק אזהרות שווא על חוסר איזון
+        continuous_targets = [
             'target_stop_run_90s', 'target_reverse_trend_180s', 
-            'target_improve_margin_90s', 'target_improve_margin_180s', 
-            'target_danger_penalty'
+            'target_improve_margin_90s', 'target_improve_margin_180s'
         ]
+        binary_targets = ['target_danger_penalty']
+        target_cols = continuous_targets + binary_targets
         
         # 1. Missing columns
         missing = [col for col in target_cols if col not in df.columns]
@@ -30,8 +33,8 @@ class Level3Validator:
         if nan_counts.sum() > 0:
             raise ValueError(f"Validator Error: Found NaNs in targets!\n{nan_counts[nan_counts > 0]}")
             
-        # 3. Class Imbalance Check (Warning only, not fatal)
-        for col in target_cols:
+        # 3. Class Imbalance Check (Only for binary penalty)
+        for col in binary_targets:
             positive_rate = df[col].mean()
             if positive_rate < 0.001 or positive_rate > 0.999:
                 print(f"⚠️ Warning: Severe class imbalance in {col} ({positive_rate*100:.2f}% positive). XGBoost might struggle.")
@@ -104,31 +107,38 @@ class Level3Labeler:
     def build_targets(self):
         print("🎯 Generating Machine Learning Targets (Labels)...")
 
-        # Target 1: Stop Run (Has the absolute explosiveness decreased?)
+        # --- הוספת דגל הגארבג' טיים ---
+        self.df['is_garbage_time'] = (
+            ((self.df['period'] == 4) & (self.df['seconds_remaining'] <= 180) & (self.df['score_margin'].abs() >= 15)) |
+            ((self.df['period'] == 4) & (self.df['seconds_remaining'] > 180) & (self.df['score_margin'].abs() >= 30)) |
+            ((self.df['period'] > 4) & (self.df['score_margin'].abs() >= 20))
+        ).astype(int)
+
+        # Target 1: Stop Run (Continuous -> Positive value means explosiveness went down, which is good)
         self.df['delta_exp_abs_90s'] = self.df['fut_exp_90s'].abs() - self.df[self.col_exp].abs()
-        self.df['target_stop_run_90s'] = (self.df['delta_exp_abs_90s'] < 0).astype(int)
+        self.df['target_stop_run_90s'] = -self.df['delta_exp_abs_90s']
 
-        # Target 2: Reverse Trend 180s
+        # Target 2: Reverse Trend 180s (Continuous)
         self.df['delta_mom_180s'] = self.df['fut_mom_180s'] - self.df[self.col_mom]
-        self.df['target_reverse_trend_180s'] = (self.df['delta_mom_180s'] > 0).astype(int)
+        self.df['target_reverse_trend_180s'] = self.df['delta_mom_180s']
 
-        # Target 3 & 4: Improve Margin (FIXED RELATIVITY BUG)
+        # Target 3 & 4: Improve Margin (Continuous)
         # If score_margin > 0 (Home leading), Away is in pressure (interest_sign = -1)
         # If score_margin < 0 (Away leading), Home is in pressure (interest_sign = 1)
         self.df['interest_sign'] = np.where(self.df['score_margin'] > 0, -1, 1)
         
         self.df['delta_margin_90s'] = self.df['fut_margin_90s'] - self.df[self.col_margin]
         self.df['norm_delta_margin_90s'] = self.df['delta_margin_90s'] * self.df['interest_sign']
-        self.df['target_improve_margin_90s'] = (self.df['norm_delta_margin_90s'] > 0).astype(int)
+        self.df['target_improve_margin_90s'] = self.df['norm_delta_margin_90s']
 
         self.df['delta_margin_180s'] = self.df['fut_margin_180s'] - self.df[self.col_margin]
         self.df['norm_delta_margin_180s'] = self.df['delta_margin_180s'] * self.df['interest_sign']
-        self.df['target_improve_margin_180s'] = (self.df['norm_delta_margin_180s'] > 0).astype(int)
+        self.df['target_improve_margin_180s'] = self.df['norm_delta_margin_180s']
 
     def build_danger_penalty(self):
-        # Target 5: Danger Penalty (FIXED DATA LEAKAGE - Domain Thresholds)
-        FATIGUE_THRESHOLD = 1500 # Absolute ~25 mins instead of quantile
-        EXP_THRESHOLD = 6.0      # Absolute 6-0 run instead of quantile
+        # Target 5: Danger Penalty
+        FATIGUE_THRESHOLD = 1500 
+        EXP_THRESHOLD = 6.0      
         
         self.df['max_fatigue'] = self.df[['home_cum_fatigue', 'away_cum_fatigue']].fillna(0).max(axis=1)
         is_danger = (self.df['max_fatigue'] > FATIGUE_THRESHOLD) & (self.df[self.col_exp].abs() > EXP_THRESHOLD)

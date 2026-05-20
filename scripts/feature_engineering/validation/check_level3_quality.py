@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import os
 import sys
 
@@ -13,11 +14,14 @@ class Level3QAValidator:
         self.file_path = file_path
         self.df = None
         self.results = []
-        self.target_cols = [
+        
+        # הפרדה לוגית בין סוגי הטרגטים
+        self.continuous_targets = [
             'target_stop_run_90s', 'target_reverse_trend_180s',
-            'target_improve_margin_90s', 'target_improve_margin_180s',
-            'target_danger_penalty'
+            'target_improve_margin_90s', 'target_improve_margin_180s'
         ]
+        self.binary_targets = ['target_danger_penalty']
+        self.target_cols = self.continuous_targets + self.binary_targets
 
     def _log(self, test_name, status, message=""):
         icon = "✅" if status else "❌"
@@ -44,18 +48,25 @@ class Level3QAValidator:
             self._log("Missing Values", False, f"NaNs detected!\n{nulls[nulls > 0]}")
 
     def check_class_balance(self):
-        print("\n📊 CLASS BALANCE (Label Diversity):")
+        print("\n📊 DATA DISTRIBUTIONS:")
         valid = True
-        for col in self.target_cols:
+        
+        print("   --- Continuous Targets (Average Delta) ---")
+        for col in self.continuous_targets:
+            mean_val = self.df[col].mean()
+            print(f"   - {col}: {mean_val:+.2f} average shift")
+            
+        print("\n   --- Binary Targets (Class Balance) ---")
+        for col in self.binary_targets:
             pos_rate = self.df[col].mean() * 100
             print(f"   - {col}: {pos_rate:.2f}% Positive (Class 1)")
             if pos_rate < 0.1 or pos_rate > 99.9:
                 valid = False
         
         if valid:
-            self._log("Class Balance", True, "All targets have valid diversity (No extreme 99/1 splits).")
+            self._log("Class Balance", True, "Binary targets have valid diversity.")
         else:
-            self._log("Class Balance", False, "Extreme class imbalance detected. XGBoost will struggle.")
+            self._log("Class Balance", False, "Extreme class imbalance detected in binary targets. XGBoost will struggle.")
 
     def check_timeout_logic(self):
         is_timeout = self.df['actionType'].str.contains('timeout', case=False, na=False)
@@ -72,10 +83,11 @@ class Level3QAValidator:
         else:
             self._log("Timeout Logic", False, f"LOGIC ERROR: {penalty_on_to} penalties assigned to timeout events!")
 
-        print("\n📈 COACH SUCCESS RATES (After calling timeout):")
-        for col in [c for c in self.target_cols if 'penalty' not in c]:
-            success_rate = timeouts_df[col].mean() * 100
-            print(f"   - {col.replace('target_', '').ljust(25)}: {success_rate:.1f}% success")
+        print("\n📈 COACH TIMEOUT IMPACT (Average Delta when Timeout called):")
+        for col in self.continuous_targets:
+            avg_impact = timeouts_df[col].mean()
+            # הערך פה הוא רציף - כמה השתפר/החמיר המומנטום או ההפרש בממוצע
+            print(f"   - {col.replace('target_', '').ljust(25)}: {avg_impact:+.2f} average impact")
 
     def check_end_of_period(self):
         last_30_sec = self.df[self.df['seconds_remaining'] <= 30]
@@ -94,7 +106,7 @@ class Level3QAValidator:
         
         print("-" * 60)
         if all(self.results):
-            print("🚀 STATUS: PASSED. Labels are mathematically sound. Ready for XGBoost!")
+            print("🚀 STATUS: PASSED. Labels are mathematically sound. Ready for ML!")
             sys.exit(0)
         else:
             print("⚠️ STATUS: FAILED. Fix logic errors before model training.")
