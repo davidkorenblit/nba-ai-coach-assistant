@@ -3,6 +3,7 @@ import numpy as np
 import xgboost as xgb
 import os
 import sys
+import json
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 
@@ -33,24 +34,25 @@ class BaselineXGBoostRegressor:
         return train_df, val_df
 
     def prepare_xy(self, df: pd.DataFrame):
-        """Separates features (X) and target (y), ignoring other targets/metadata and removing leakage."""
-        targets_to_drop = [c for c in df.columns if c.startswith('target_')]
+        """Separates features (X) and target (y), using the CLEAN JSON metadata."""
         
-        # Explicitly drop target leakage, non-ordinal categorical IDs, and proxy clocks
-        leakage_cols = [
-            'gameId', 'seconds_remaining', 'orderNumber', 'actionNumber', 'actionId',
-            'explosiveness_index', 'teamId', 'possession_id', 'cum_pointsTotal',
-            'possession', 'scoreHome', 'scoreAway', 'reboundTotal', 
-            'reboundDefensiveTotal', 'reboundOffensiveTotal', 'cum_reboundDefensiveTotal', 'personId'
-        ]
+        metadata_path = os.path.join(self.data_dir, 'split_metadata.json')
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+            
+        clean_features = [c for c in metadata['features'] if c in df.columns]
         
-        cols_to_drop = targets_to_drop + [c for c in leakage_cols if c in df.columns]
+        # סינון גארבג' טיים ליישור קו עם מודל ההסקה
+        if 'is_garbage_time' in df.columns:
+            df = df[df['is_garbage_time'] == 0]
+            
+        df = df.dropna(subset=[self.target])
         
-        X = df.drop(columns=cols_to_drop)
+        X = df[clean_features]
         y = df[self.target]
         
         if not self.feature_cols:
-            self.feature_cols = X.columns.tolist()
+            self.feature_cols = clean_features
             
         return X, y
 
@@ -105,7 +107,7 @@ class BaselineXGBoostRegressor:
         
         plot_path = os.path.join(BASE_DIR, 'feature_importance_baseline.png')
         plt.savefig(plot_path)
-        plt.close()  # Fix for resource leakage
+        plt.close()
         print(f"Feature Importance plot saved to: {plot_path}")
 
 def main():

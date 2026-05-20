@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 import os
 import sys
-import json  # הוספנו כדי לשמור את המטא-דאטה
+import json
+# הייבוא החדש של קובץ הקבועים שלנו!
+from pipeline_constants import get_blacklisted_features
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,7 +24,6 @@ class SplitValidator:
         
         is_valid = True
         
-        # 1. 🔍 זיהוי מדויק של מקור הכישלון (Data Leakage)
         train_val_leak = train_games.intersection(val_games)
         train_test_leak = train_games.intersection(test_games)
         val_test_leak = val_games.intersection(test_games)
@@ -37,7 +38,6 @@ class SplitValidator:
             print(f"❌ [FAIL] Leakage Val/Test! Caused by Game IDs: {list(val_test_leak)[:5]}...")
             is_valid = False
             
-        # 2. 📊 מיפוי דאטא חסר (Missing Data Heatmap)
         print("\n🔎 DIAGNOSTICS: Missing Data Report (NaNs expected by XGBoost)")
         nan_counts = original_df.isna().sum()
         missing_data = nan_counts[nan_counts > 0].sort_values(ascending=False)
@@ -50,7 +50,6 @@ class SplitValidator:
         else:
             print("   ✨ Zero missing data. The dataset is incredibly dense.")
 
-        # 3. הפלת הריצה רק אם יש Leakage (כי NaNs מותרים ב-XGBoost)
         if not is_valid:
             raise ValueError("🚨 CRITICAL: Pipeline halted due to Data Leakage. Check the diagnostic report above.")
             
@@ -58,7 +57,6 @@ class SplitValidator:
         print(f"\n✅ Diagnostic Passed: Sets are strictly disjoint. Total rows: {total_rows:,}\n")
         return True
     
-
 class MLDataPreparer:
     """Prepares and splits Level 3 data for XGBoost modeling."""
     
@@ -66,42 +64,32 @@ class MLDataPreparer:
         self.input_path = input_path
         self.output_dir = output_dir
         self.df = None
-        
-        # Create output dir if not exists
         os.makedirs(self.output_dir, exist_ok=True)
 
     def run_pipeline(self):
         print("Starting ML Data Preparation Pipeline...")
         
-        # --- STEP 1:  (Loading Level 3 Data) ---
         print("STEP 1: Loading Level 3 Data...")
         if not os.path.exists(self.input_path):
             raise FileNotFoundError(f"Missing: {self.input_path}")
         self.df = pd.read_csv(self.input_path, low_memory=False)
         
-        # --- STEP 2: (Feature Selection) ---
         print(" STEP 2: Feature Selection (Dropping incompatible strings/objects)...")
-        # עמודות שלא נכנסות לחישובי המודל (מחרוזות, מערכים, או מזהים טכניים)
         metadata_cols = [
             'actionType', 'actionSubtype', 'description', 'shotResult',
-            'home_lineup', 'away_lineup', 'period_start_time', 'time_elapsed',  # <--- תוקן: הוסף הפסיק החסר!
+            'home_lineup', 'away_lineup', 'period_start_time', 'time_elapsed',
             'jumpBallRecoverdPersonId', 'jumpBallWonPersonId', 'jumpBallLostPersonId',
             'foulDrawnPersonId', 'foulTechnicalTotal', 'officialId', 
             'shotActionNumber', 'teamId'
         ]
-        # we may do need those bcasue of fe
-        # נשמור רק את העמודות שרלוונטיות או מזהים שחייבים לחיתוך
         self.df.drop(columns=[c for c in metadata_cols if c in self.df.columns], inplace=True)
         
-        # וידוא שאין עמודות Object (String) שנשארו ויפילו את XGBoost
         object_cols = self.df.select_dtypes(include=['object']).columns
         if len(object_cols) > 0:
             print(f"⚠️ Warning: String columns detected and will be dropped: {list(object_cols)}")
             self.df.drop(columns=object_cols, inplace=True)
 
-        # --- STEP 3: מיון וקיבוץ כרונולוגי (Sorting & Grouping) ---
         print("STEP 3: Chronological Sorting by Game ID...")
-        # מיון כדי להבטיח שמשחקים בתחילת העונה יהיו ב-Train ומשחקי הסוף ב-Test
         self.df.sort_values(by=['gameId', 'period', 'seconds_remaining'], 
                             ascending=[True, True, False], inplace=True)
         
@@ -109,7 +97,6 @@ class MLDataPreparer:
         total_games = len(unique_games)
         print(f"   Found {total_games} unique games.")
 
-        # --- STEP 4: חיתוך מתמטי לפי משחקים (Mathematical Split) ---
         print("STEP 4: Splitting into Train (70%), Val (15%), Test (15%)...")
         train_idx = int(total_games * 0.70)
         val_idx = int(total_games * 0.85)
@@ -122,10 +109,8 @@ class MLDataPreparer:
         val_df = self.df[self.df['gameId'].isin(val_games)].copy()
         test_df = self.df[self.df['gameId'].isin(test_games)].copy()
         
-        # הפעלת ולידציה
         SplitValidator.validate(train_df, val_df, test_df, self.df)
 
-        # --- STEP 5: ייצוא אופטימלי לזיכרון (Optimal Export to Parquet) ---
         print("STEP 5: Exporting splits to Parquet format...")
         train_path = os.path.join(self.output_dir, 'train.parquet')
         val_path = os.path.join(self.output_dir, 'val.parquet')
@@ -135,21 +120,27 @@ class MLDataPreparer:
         val_df.to_parquet(val_path, index=False)
         test_df.to_parquet(test_path, index=False)
 
-        # --- STEP 6: תיקון BUG-09 - ייצוא מטא-דאטה של העונש והמטרות ---
-        print("STEP 6: Exporting Metadata JSON (Tracking Penalty and Targets)...")
+        print("STEP 6: Exporting Metadata JSON (With Aggressive Leakage Prevention)...")
         all_targets = [c for c in train_df.columns if c.startswith('target_')]
+        
+        # --- כאן המטא-דאטה הופך לסטרילי ---
+        blacklisted = get_blacklisted_features()
+        clean_features = [
+            c for c in train_df.columns 
+            if c not in all_targets 
+            and c not in blacklisted 
+            and c != 'is_garbage_time'
+        ]
+
         metadata = {
-            "features": [c for c in train_df.columns if c not in all_targets],
+            "features": clean_features,
             "targets": [c for c in all_targets if c != 'target_danger_penalty'],
             "penalty_col": "target_danger_penalty" if 'target_danger_penalty' in train_df.columns else None
         }
         with open(os.path.join(self.output_dir, 'split_metadata.json'), 'w') as f:
             json.dump(metadata, f, indent=4)
         
-        print(f"✅ Success! Data is ready for XGBoost at: {self.output_dir}")
-        print(f"   Train: {len(train_df):,} rows")
-        print(f"   Val:   {len(val_df):,} rows")
-        print(f"   Test:  {len(test_df):,} rows")
+        print(f"✅ Success! Clean JSON and Parquets ready at: {self.output_dir}")
 
 def main():
     try:
