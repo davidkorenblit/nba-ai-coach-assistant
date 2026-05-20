@@ -3,7 +3,7 @@ import numpy as np
 import xgboost as xgb
 import os
 import sys
-from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 
 # --- Config ---
@@ -11,8 +11,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROCESSED_DIR = os.path.join(BASE_DIR, '..', 'data', 'processed')
 TARGET_COL = 'target_stop_run_90s' 
 
-class BaselineXGBoost:
-    """Baseline XGBoost Model to validate Feature Engineering and establish benchmarks."""
+class BaselineXGBoostRegressor:
+    """Baseline XGBoost Model (Regression) to validate Feature Engineering."""
     
     def __init__(self, data_dir: str, target: str):
         self.data_dir = data_dir
@@ -55,11 +55,9 @@ class BaselineXGBoost:
         return X, y
 
     def train(self, X_train, y_train, X_val, y_val):
-        print("\nTraining Hardened Baseline XGBoost Model...")
+        print("\nTraining Hardened Baseline XGBoost Regressor...")
         
-        scale_pos_weight = (len(y_train) - sum(y_train)) / sum(y_train)
-        
-        self.model = xgb.XGBClassifier(
+        self.model = xgb.XGBRegressor(
             n_estimators=300,          
             learning_rate=0.05,        
             max_depth=4,               
@@ -67,9 +65,8 @@ class BaselineXGBoost:
             colsample_bytree=0.8,      
             reg_alpha=1.0,             
             reg_lambda=5.0,            
-            scale_pos_weight=scale_pos_weight,
             early_stopping_rounds=20,  
-            eval_metric='auc',         
+            eval_metric='rmse',        
             random_state=42,
             n_jobs=-1                  
         )
@@ -84,16 +81,14 @@ class BaselineXGBoost:
     def evaluate(self, X_val, y_val):
         print("\nEvaluating on Validation Set...")
         y_pred = self.model.predict(X_val)
-        y_proba = self.model.predict_proba(X_val)[:, 1]
         
-        auc = roc_auc_score(y_val, y_proba)
-        print(f"ROC-AUC Score: {auc:.4f}")
+        rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+        mae = mean_absolute_error(y_val, y_pred)
+        r2 = r2_score(y_val, y_pred)
         
-        print("\n--- Classification Report ---")
-        print(classification_report(y_val, y_pred))
-        
-        print("--- Confusion Matrix ---")
-        print(confusion_matrix(y_val, y_pred))
+        print(f"RMSE (Root Mean Squared Error): {rmse:.4f}")
+        print(f"MAE (Mean Absolute Error): {mae:.4f}")
+        print(f"R² Score: {r2:.4f}")
 
     def plot_feature_importance(self):
         print("\nGenerating Feature Importance Plot...")
@@ -105,15 +100,16 @@ class BaselineXGBoost:
         plt.figure(figsize=(10, 8))
         plt.barh(feature_df['Feature'], feature_df['Importance'], color='coral') 
         plt.xlabel('XGBoost Feature Importance (Gain)')
-        plt.title('Top 15 Most Important Features for Stopping a Run (Hardened Model)')
+        plt.title(f'Top 15 Most Important Features for {self.target} (Regression)')
         plt.tight_layout()
         
         plot_path = os.path.join(BASE_DIR, 'feature_importance_baseline.png')
         plt.savefig(plot_path)
+        plt.close()  # Fix for resource leakage
         print(f"Feature Importance plot saved to: {plot_path}")
 
 def main():
-    pipeline = BaselineXGBoost(PROCESSED_DIR, TARGET_COL)
+    pipeline = BaselineXGBoostRegressor(PROCESSED_DIR, TARGET_COL)
     
     train_df, val_df = pipeline.load_splits()
     
