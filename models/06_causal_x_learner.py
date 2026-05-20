@@ -1,3 +1,4 @@
+import joblib
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -20,20 +21,31 @@ class NBACausalLearner:
         self.auc = None
         self.ate = None
         
-        # מודל הנטייה נשאר קלסיפייר (כי הטיפול הוא כן/לא פסק זמן)
+        # Propensity model is a classifier (Treatment is binary: timeout taken or not)
         self.propensity_model = xgb.XGBClassifier(eval_metric='logloss', random_state=42)
         
-        # מודלי התוצאה הפכו ל-Regressor כי הטרגט שלנו עכשיו רציף!
+        # Outcome models are regressors (Target is continuous impact)
         self.mu0_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
         self.mu1_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
         
         self.tau0_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
         self.tau1_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
 
+    def save_models(self, save_dir='models/saved_models'):
+        os.makedirs(save_dir, exist_ok=True)
+        # שמירה של כל אחד מהמודלים שאימנו
+        joblib.dump(self.propensity_model, os.path.join(save_dir, f'propensity_{self.target_col}.joblib'))
+        joblib.dump(self.mu0_model, os.path.join(save_dir, f'mu0_{self.target_col}.joblib'))
+        joblib.dump(self.mu1_model, os.path.join(save_dir, f'mu1_{self.target_col}.joblib'))
+        joblib.dump(self.tau0_model, os.path.join(save_dir, f'tau0_{self.target_col}.joblib'))
+        joblib.dump(self.tau1_model, os.path.join(save_dir, f'tau1_{self.target_col}.joblib'))
+        print(f"💾 Models saved to {save_dir}")
+
+
     def load_and_prepare_data(self):
         print(f"\n--- Processing Target: {self.target_col} ---")
         
-        # טעינת Train ו-Test אמיתיים
+        # Load genuine Train and Test sets
         test_path = self.data_path.replace('train.parquet', 'test.parquet')
         print(f"Loading TRAIN from: {self.data_path}")
         print(f"Loading TEST from: {test_path}")
@@ -41,28 +53,27 @@ class NBACausalLearner:
         train_df = pd.read_parquet(self.data_path)
         test_df = pd.read_parquet(test_path)
         
-        # קריאת הפיצ'רים מה-JSON (שהוא כבר סטרילי מכל דליפה!)
+        # Read clean features from JSON metadata
         metadata_path = os.path.join(os.path.dirname(self.data_path), 'split_metadata.json')
         with open(metadata_path, 'r') as f:
             metadata = json.load(f)
             
         feature_cols = [c for c in metadata['features'] if c in train_df.columns]
         
-        # --- סינון גארבג' טיים ---
+        # Filter Garbage Time
         if 'is_garbage_time' in train_df.columns:
             train_df = train_df[train_df['is_garbage_time'] == 0]
             test_df = test_df[test_df['is_garbage_time'] == 0]
         
-        # פונקציית עזר להכנת הסטים
         def prepare_split(df):
-            # מוודאים שאין NaN במטרות או בטיפול
+            # Drop NaN in specific target or treatment
             df = df.dropna(subset=[self.target_col, self.treatment_col])
             
-            # בינאריזציה של הטיפול (פסק זמן נלקח או לא)
+            # Binarize treatment
             T = (df[self.treatment_col] > 0).astype(int)
             Y = df[self.target_col]
             
-            # לוקחים רק את הפיצ'רים הנקיים (ומוודאים שהטיפול לא בתוכם)
+            # Keep only clean features
             X_cols = [c for c in feature_cols if c != self.treatment_col]
             X = df[X_cols]
             
@@ -83,9 +94,6 @@ class NBACausalLearner:
 
         importance_series = pd.Series(self.propensity_model.feature_importances_, index=self.X_train.columns)
         importance_series = importance_series.sort_values(ascending=False)
-        
-        print("\n🚨 TOP 5 LEAKAGE SUSPECTS (Propensity Model) 🚨")
-        print(importance_series.head(5))
         
         reports_dir = os.path.join(os.path.dirname(self.data_path), '..', 'reports')
         os.makedirs(reports_dir, exist_ok=True)
@@ -113,7 +121,6 @@ class NBACausalLearner:
         X0, Y0 = self.X_train[self.T_train == 0], self.Y_train[self.T_train == 0]
         X1, Y1 = self.X_train[self.T_train == 1], self.Y_train[self.T_train == 1]
         
-        # התאמה ל-Regressor: משתמשים ב-predict() ולא ב-predict_proba()
         D0 = self.mu1_model.predict(X0) - Y0 
         D1 = Y1 - self.mu0_model.predict(X1) 
         
@@ -125,7 +132,6 @@ class NBACausalLearner:
         tau1_pred = self.tau1_model.predict(X_eval)
         g_x_eval = np.clip(self.propensity_model.predict_proba(X_eval)[:, 1], 0.01, 0.99)
         
-        # --- BUG-04: תיקון הנוסחה של ה-X-Learner (המשקולות עכשיו נכונות) ---
         cate = (1 - g_x_eval) * tau0_pred + g_x_eval * tau1_pred
         return cate
 
@@ -138,7 +144,6 @@ class NBACausalLearner:
         
         eval_df['cate_bucket'] = pd.qcut(eval_df['cate_score'], q=5, labels=['Lowest 20%', 'Low-Mid', 'Medium', 'Mid-High', 'Top 20%'])
         
-        # ממוצע התוצאות הרציפות לכל דלי
         actual_rates = eval_df.groupby(['cate_bucket', 'treatment'], observed=True)['outcome'].mean().unstack()
         actual_rates.columns = ['No_TO', 'With_TO']
         
