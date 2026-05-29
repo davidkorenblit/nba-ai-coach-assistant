@@ -7,6 +7,7 @@ from sklearn.metrics import roc_auc_score, mean_squared_error
 import matplotlib.pyplot as plt
 import os
 import json
+from pipeline_constants import get_blacklisted_features
 
 class NBACausalLearner:
     def __init__(self, data_path: str, target_col: str = 'target_stop_run_90s', treatment_col: str = 'timeout_strategic_weight'):
@@ -58,8 +59,9 @@ class NBACausalLearner:
         with open(metadata_path, 'r') as f:
             metadata = json.load(f)
             
-        feature_cols = [c for c in metadata['features'] if c in train_df.columns]
-        
+        blacklist = get_blacklisted_features()   
+        feature_cols = [c for c in metadata['features'] if c in train_df.columns and c not in blacklist]
+
         # Filter Garbage Time
         if 'is_garbage_time' in train_df.columns:
             train_df = train_df[train_df['is_garbage_time'] == 0]
