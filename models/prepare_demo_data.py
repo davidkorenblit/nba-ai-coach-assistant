@@ -225,12 +225,19 @@ class NBADemoDataArchitect:
         df.loc[tactical_idx_q1, 'play_description'] = "Tactical Timeout: End-of-quarter spacing adjustment"
         
         # --- Q2 Simulation ---
-        fp_idx_q2 = q2_idx[int(len(q2_idx) * 0.40)]
-        df.loc[fp_idx_q2, 'propensity_score'] = 0.78
-        df.loc[fp_idx_q2, 'play_description'] = "False Positive: Propensity alert, coach chose to play through"
+        alarm_idx_q2 = 204
+        df.loc[alarm_idx_q2, 'propensity_score'] = 0.88
+        df.loc[alarm_idx_q2, 'play_description'] = "Propensity Alarm: High propensity detected on run"
+        
+        timeout_idx_q2 = 207
+        df.loc[timeout_idx_q2, 'timeout_team'] = "INDIANA"
+        df.loc[timeout_idx_q2, 'timeout_strategic_weight'] = 1
+        df.loc[timeout_idx_q2, 'play_description'] = "TIMEOUT: Strategic timeout called by coach to stop run"
         
         # --- Q3 Simulation & Extreme Collapse ---
-        prop_fail_slice = q3_idx[-int(len(q3_idx) * 0.30):-6]
+        self._apply_positive_margin_offset(home_offset, away_offset, q3_idx[-7], -12, real_home, real_away, start_boundary_idx=q3_idx[0], window=20)
+        
+        prop_fail_slice = q3_idx[-18:-6]
         df.loc[prop_fail_slice, 'propensity_score'] = 0.82 + np.random.uniform(0.0, 0.05, len(prop_fail_slice))
         df.loc[prop_fail_slice, 'play_description'] = "Propensity Alarm: Persistent high propensity to call timeout (Ignored)"
         
@@ -244,17 +251,17 @@ class NBADemoDataArchitect:
         df.loc[cate_fail_slice, 'shap_explosiveness'] = 0.85
         df.loc[cate_fail_slice, 'shap_fatigue'] = 0.81
         
-        away_offset[cate_fail_slice[0]] += 2
-        away_offset[cate_fail_slice[1]] += 3
-        away_offset[cate_fail_slice[2]] += 2
-        away_offset[cate_fail_slice[3]] += 3
-        away_offset[cate_fail_slice[4]] += 2
-        away_offset[cate_fail_slice[5]] += 3
+        away_offset[cate_fail_slice[0]] += 1
+        away_offset[cate_fail_slice[1]] += 1
+        away_offset[cate_fail_slice[2]] += 1
+        away_offset[cate_fail_slice[3]] += 1
+        away_offset[cate_fail_slice[4]] += 1
+        away_offset[cate_fail_slice[5]] += 1
         
-        self._apply_positive_margin_offset(home_offset, away_offset, q3_idx[-7], -10, real_home, real_away, start_boundary_idx=q3_idx[0], window=20)
+        self._apply_positive_margin_offset(home_offset, away_offset, q3_idx[-1], -18, real_home, real_away, start_boundary_idx=q3_idx[0], window=1)
         
         # --- Q4 Lock Deficit Corridor ---
-        self._apply_positive_margin_offset(home_offset, away_offset, N - 1, -25, real_home, real_away, start_boundary_idx=q4_idx[0], window=len(q4_idx))
+        self._apply_positive_margin_offset(home_offset, away_offset, N - 1, -18, real_home, real_away, start_boundary_idx=q4_idx[0], window=len(q4_idx))
         
         home_offset_cumulative = home_offset.cumsum()
         away_offset_cumulative = away_offset.cumsum()
@@ -383,9 +390,9 @@ class NBADemoDataArchitect:
         print(f"Asserting margins: Game 1 Final Margin = {final_margin_g1}, Game 2 Final Margin = {final_margin_g2}")
         
         # Force final frames if small variations happen in rounding/accumulations
-        if final_margin_g1 != -25:
-            game_1_data[-1]['score_margin'] = -25
-            game_1_data[-1]['away_score'] = game_1_data[-1]['home_score'] + 25
+        if final_margin_g1 != -18:
+            game_1_data[-1]['score_margin'] = -18
+            game_1_data[-1]['away_score'] = game_1_data[-1]['home_score'] + 18
         if final_margin_g2 != 2:
             game_2_data[-1]['score_margin'] = 2
             game_2_data[-1]['home_score'] = game_2_data[-1]['away_score'] + 2
