@@ -34,7 +34,7 @@ class NBACausalLearner:
 
     def save_models(self, save_dir='models/saved_models'):
         os.makedirs(save_dir, exist_ok=True)
-        # שמירה של כל אחד מהמודלים שאימנו
+        # save for any kinf of model  
         joblib.dump(self.propensity_model, os.path.join(save_dir, f'propensity_{self.target_col}.joblib'))
         joblib.dump(self.mu0_model, os.path.join(save_dir, f'mu0_{self.target_col}.joblib'))
         joblib.dump(self.mu1_model, os.path.join(save_dir, f'mu1_{self.target_col}.joblib'))
