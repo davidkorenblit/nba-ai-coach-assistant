@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Timeout DSS - SimCast Arena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="data/demo/demo_data.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="overflow-x-hidden overflow-y-auto">
+
+    <header class="bg-slate-900 border-b border-slate-700 px-6 py-3 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-6">
+            <h1 class="text-xl font-black tracking-wider text-amber-500 font-digital">NBA 2K SIMCAST // DSS</h1>
+            <nav class="flex space-x-4">
+                <button onclick="switchView('simcast')" id="tab-simcast"
+                    class="px-4 py-1 rounded bg-amber-500 text-slate-950 font-bold transition">SIMCAST ARENA</button>
+                <button onclick="switchView('roi')" id="tab-roi"
+                    class="px-4 py-1 rounded text-slate-400 hover:text-white font-bold transition">FRONT OFFICE
+                    ROI</button>
+            </nav>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="exportSimLog()" id="btn-export-log"
+                class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-600 rounded px-3 py-1 font-bold transition text-sm">
+                📥 EXPORT LOG
+            </button>
+            <span class="text-sm font-bold text-slate-400">Select Scenario:</span>
+            <select id="game-selector" onchange="changeGameContext()"
+                class="bg-slate-800 border border-slate-600 rounded px-3 py-1 font-bold text-amber-400 focus:outline-none">
+                <option value="game_1">Game 1: Micro Proof & False Alarms</option>
+                <option value="game_2">Game 2: Clutch Collapse & ROI</option>
+            </select>
+        </div>
+    </header>
+
+    <div id="file-picker-bar"
+        class="hidden bg-amber-500/10 border-b border-amber-500/30 px-6 py-2 justify-between items-center text-sm">
+        <span class="text-amber-400 font-bold">⚠️ If simulation does not load automatically, load JSON file:</span>
+        <input type="file" id="json-upload" accept=".json" class="hidden" onchange="handleJsonUpload(event)">
+        <label for="json-upload"
+            class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-1 rounded cursor-pointer transition">LOAD
+            ROSTER DATA (.JSON)</label>
+    </div>
+
+    <main id="view-simcast" class="p-6 max-w-7xl mx-auto space-y-6">
+        <div class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl relative overflow-hidden">
+            <div class="flex justify-between items-start w-full relative z-10 px-2">
+                <div class="flex flex-col items-center space-y-1">
+                    <span class="text-[9px] md:text-xs font-bold tracking-widest text-slate-400 whitespace-nowrap bg-slate-900 px-1">COACH PRED</span>
+                    <div id="light-coach" class="w-5 h-5 md:w-7 md:h-7 rounded-full led-indicator transition duration-300"></div>
+                </div>
+                <div class="flex flex-col items-center space-y-1">
+                    <span class="text-[9px] md:text-xs font-bold tracking-widest text-slate-400 whitespace-nowrap bg-slate-900 px-1">SYS ALARM</span>
+                    <div id="light-system" class="w-5 h-5 md:w-7 md:h-7 rounded-full led-indicator transition duration-300"></div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-6 md:gap-12 py-6 mt-4 sm:mt-0">
+                <div class="text-center w-full sm:w-1/3">
+                    <h2 id="team-home-label" class="text-2xl md:text-4xl font-black tracking-wide text-white">IND</h2>
+                    <p id="team-home-name" class="text-[10px] md:text-xs text-slate-400 mt-1 uppercase tracking-wider">
+                        Indiana Pacers</p>
+                    <div class="text-xs md:text-sm font-bold text-slate-400 mt-2">Fatigue: <span id="home-fatigue"
+                            class="font-digital text-amber-500">0s</span></div>
+                </div>
+
+                <div
+                    class="flex items-center gap-4 bg-black/50 px-6 py-3 md:px-8 md:py-4 rounded-xl border border-slate-800/80 shadow-inner">
+                    <span id="score-home"
+                        class="text-4xl md:text-6xl font-black font-digital tracking-wider text-white">0</span>
+                    <span class="text-xl md:text-2xl font-bold text-slate-600 font-digital">:</span>
+                    <span id="score-away"
+                        class="text-4xl md:text-6xl font-black font-digital tracking-wider text-white">0</span>
+                </div>
+
+                <div class="text-center w-full sm:w-1/3">
+                    <h2 id="team-away-label" class="text-2xl md:text-4xl font-black tracking-wide text-slate-300">TOR
+                    </h2>
+                    <p id="team-away-name" class="text-[10px] md:text-xs text-slate-400 mt-1 uppercase tracking-wider">
+                        Toronto Raptors</p>
+                    <div class="text-xs md:text-sm font-bold text-slate-400 mt-2">Fatigue: <span id="away-fatigue"
+                            class="font-digital text-amber-500">0s</span></div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/80 mt-2 pt-4 grid grid-cols-3 gap-2 text-center">
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold tracking-wider">PERIOD</p>
+                    <p id="hud-period" class="text-base md:text-xl font-black text-amber-500 font-digital">1</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold tracking-wider">SCORE MARGIN</p>
+                    <p id="hud-margin" class="text-base md:text-xl font-black font-digital text-white">0</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-500 font-bold tracking-wider">POSSESSION INDEX</p>
+                    <p id="hud-possession" class="text-base md:text-xl font-black text-slate-300 font-digital">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+                class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-center items-center space-y-4 shadow-xl">
+                <h4
+                    class="text-xs font-bold tracking-widest text-slate-400 text-center w-full border-b border-slate-800 pb-2">
+                    SIMULATION ENGINE</h4>
+                <div class="flex space-x-3 space-x-reverse">
+                    <button onclick="playSimulation()"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-2 rounded transition">▶
+                        PLAY</button>
+                    <button onclick="pauseSimulation()"
+                        class="bg-slate-700 hover:bg-slate-600 text-white font-bold px-6 py-2 rounded transition">⏸
+                        PAUSE</button>
+                    <button onclick="resetSimulation()"
+                        class="bg-rose-900/60 hover:bg-rose-900 text-rose-200 font-bold px-4 py-2 rounded transition">🔄
+                        RESET</button>
+                </div>
+                <div class="w-full px-4">
+                    <label class="block text-xs text-slate-400 font-bold mb-1">SimCast Speed:</label>
+                    <input type="range" id="speed-slider" min="50" max="1000" value="200" step="50"
+                        class="w-full accent-amber-500 bg-slate-800">
+                </div>
+            </div>
+
+            <div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col h-56">
+                <h4 class="text-xs font-bold tracking-widest text-slate-400 border-b border-slate-800 pb-2 mb-2">LIVE
+                    SIMCAST TICKER</h4>
+                <div id="live-ticker-feed"
+                    class="flex-1 overflow-y-auto space-y-1 text-sm font-mono text-slate-400 no-scrollbar flex flex-col-reverse">
+                    <div class="text-amber-500 font-bold">> Arena initialized. Ready to simulate roster...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="timeout-overlay"
+            class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex flex-col justify-center items-center transition duration-300">
+            <div class="bg-gradient-to-b from-slate-900 to-black border border-amber-500/50 px-12 md:px-24 py-12 md:py-16 rounded-3xl text-center shadow-[0_0_80px_rgba(245,158,11,0.25)] transform transition-all duration-500 mx-auto max-w-[90vw]">
+                <h1 class="text-5xl md:text-7xl font-black tracking-widest text-amber-500 font-digital animate-pulse mb-6 drop-shadow-[0_0_15px_rgba(245,158,11,0.8)]">TIMEOUT</h1>
+                <h3 id="timeout-team-banner" class="text-2xl md:text-4xl font-bold text-white tracking-widest uppercase">INDIANA PACERS</h3>
+                <div class="mt-8 pt-6 border-t border-slate-800/80">
+                    <p id="timeout-desc-banner" class="text-[10px] md:text-xs text-slate-400 tracking-[0.2em] font-digital">DSS AUTOMATIC CAPTURE PROCESS ACTIVE</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-breakout"
+            class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-4">
+            <div
+                class="relative max-w-3xl w-full max-h-modal flex flex-col mx-auto bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden">
+
+                <!-- Modal Header - always visible -->
+                <div class="flex items-center justify-between px-4 md:px-5 py-3 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-black text-amber-500 flex items-center gap-2">
+                            <span>🔬 Tactical Deep Dive</span>
+                            <span
+                                class="text-xs bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-1 rounded font-mono">Tactical
+                                Breakout</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">Causal analysis and real-time model explainability</p>
+                    </div>
+                    <button onclick="closeBreakout()"
+                        class="bg-slate-700 hover:bg-slate-600 text-white font-black w-9 h-9 rounded-lg transition text-xl leading-none shadow-lg">✕</button>
+                </div>
+
+                <!-- Modal Body - scrollable -->
+                <div class="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
+                    <div id="breakout-main-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="bg-slate-950 rounded-xl p-4 border border-slate-800 flex flex-col justify-between min-h-card">
+                            <div class="flex-1">
+                                <h4
+                                    class="text-xs font-bold text-white border-b border-slate-800 pb-2 mb-2 tracking-wider">
+                                    Research Question &amp; Narrative</h4>
+                                <div id="breakout-text-area" class="text-slate-300 space-y-2 text-xs leading-relaxed">
+                                </div>
+                            </div>
+                            <div id="breakout-lookahead-container" class="mt-3 pt-3 border-t border-slate-800/60">
+                                <span class="text-xs font-bold text-slate-400 block mb-1 font-digital">90s / 180s
+                                    Lookahead:</span>
+                                <div class="h-32 relative">
+                                    <canvas id="chart-lookahead"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="breakout-shap-container"
+                            class="bg-slate-950 rounded-xl p-4 border border-slate-800 min-h-card flex flex-col">
+                            <h4 class="text-xs font-bold text-white border-b border-slate-800 pb-2 mb-2 tracking-wider">
+                                SHAP Feature Decomposition</h4>
+                            <div class="h-48 flex-1 relative">
+                                <canvas id="chart-shap"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer Removed -->
+            </div>
+        </div>
+        <div id="modal-score-focus"
+            class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-4">
+            <div class="relative max-w-2xl w-full flex flex-col mx-auto my-auto bg-gradient-to-b from-slate-900 to-slate-950 border border-rose-500/40 rounded-3xl shadow-[0_0_60px_rgba(225,29,72,0.2)] overflow-hidden">
+                
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800/80">
+                    <span class="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-full font-mono tracking-widest uppercase">Alert</span>
+                    <button onclick="closeScoreFocus()"
+                        class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-black w-8 h-8 rounded-full transition text-lg flex items-center justify-center leading-none">✕</button>
+                </div>
+
+                <div class="p-6 md:p-8 space-y-8 text-center overflow-y-auto max-h-modal">
+                    <div class="space-y-3">
+                        <h2 class="text-2xl md:text-4xl font-black text-rose-500 tracking-widest uppercase drop-shadow-md" id="score-focus-title">
+                            CRITICAL RUN DETECTED</h2>
+                        <p class="text-slate-400 font-mono text-xs md:text-sm tracking-wide bg-slate-950/50 inline-block px-4 py-1.5 rounded-full border border-slate-800" id="score-focus-subtitle">15-0 Unanswered Points</p>
+                    </div>
+
+                    <div class="flex justify-center items-center gap-6 md:gap-12 py-8 border-y border-slate-800/60 bg-black/20 rounded-2xl">
+                        <div class="text-center w-20 md:w-24">
+                            <span class="block text-slate-500 text-[10px] md:text-xs font-bold uppercase mb-3 tracking-wider"
+                                id="score-focus-home-team">Home</span>
+                            <span class="text-5xl md:text-6xl font-digital text-white drop-shadow-lg" id="score-focus-home">0</span>
+                        </div>
+                        <div class="text-rose-600/80 font-black text-2xl md:text-3xl italic">VS</div>
+                        <div class="text-center w-20 md:w-24">
+                            <span class="block text-slate-500 text-[10px] md:text-xs font-bold uppercase mb-3 tracking-wider"
+                                id="score-focus-away-team">Away</span>
+                            <span class="text-5xl md:text-6xl font-digital text-white drop-shadow-lg" id="score-focus-away">0</span>
+                        </div>
+                    </div>
+
+                    <div class="text-left bg-slate-800/30 p-5 rounded-2xl border border-slate-700/50">
+                        <h4 class="text-sm font-bold text-rose-300 mb-2 tracking-wide uppercase" id="score-focus-forecast-title">System Forecast
+                        </h4>
+                        <p class="text-slate-300 text-xs md:text-sm leading-relaxed" id="score-focus-forecast-text">Without intervention, momentum
+                            projects the margin to increase significantly. The scoreboard is the primary failure
+                            indicator at this stage.</p>
+                    </div>
+                </div>
+                
+                <div class="px-6 py-4 border-t border-slate-800/80 bg-slate-950/50 text-center">
+                    <button onclick="closeScoreFocus()"
+                        class="bg-rose-600 hover:bg-rose-500 text-white font-black px-10 py-3 rounded-xl transition text-sm tracking-widest uppercase shadow-lg shadow-rose-900/50">▶
+                        Resume Simulation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tactical Toast -->
+        <div id="toast-tactical"
+            class="hidden fixed bottom-8 inset-x-0 mx-auto w-max bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-3 md:p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 max-w-[90vw] md:max-w-sm flex items-center gap-4 transition-all duration-300">
+            <div class="bg-amber-500/20 text-amber-500 w-10 h-10 rounded-full flex items-center justify-center text-lg border border-amber-500/30 shrink-0">⚠️</div>
+            <div class="flex-1 pr-2">
+                <h4 class="text-sm font-bold text-white mb-0.5 tracking-wide">Tactical Decision</h4>
+                <p class="text-[10px] md:text-xs text-slate-400" id="toast-tactical-text">Log text goes here.</p>
+            </div>
+            <button onclick="closeTacticalToast()" class="text-slate-500 hover:text-white transition bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center shrink-0">✕</button>
+        </div>
+    </main>
+
+    <main id="view-roi" class="hidden p-6 max-w-5xl mx-auto space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-6">
+            <div class="border-b border-slate-800 pb-4">
+                <h2 class="text-3xl font-black text-amber-500 text-center">📊 Strategic Summary & Front Office ROI
+                    Evaluation</h2>
+                <p class="text-sm text-slate-400 text-center mt-1">Translating micro-level outlier error reduction to
+                    marginal win expectancy at the seasonal macro-level</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div
+                    class="bg-slate-950 p-6 rounded-xl border border-slate-800 space-y-4 text-sm text-slate-300 leading-relaxed">
+                    <h4 class="text-md font-bold text-white border-b border-slate-800 pb-2">Causal Inference Framework
+                        Conclusions</h4>
+                    <p>
+                        As proven in the demo across different quarters, the average overall impact of a timeout is
+                        secondary and decays rapidly back to the baseline in the long term (<span
+                            class="font-digital text-amber-400">Mean Reversion</span>). The system does not generate
+                        "tactical magic bullets".
+                    </p>
+                    <p>
+                        The high scientific value and innovation of this tool lie in **identifying and measuring extreme
+                        breakpoints in acute edge cases (<span class="font-digital text-rose-400">Top 5%
+                            Outliers</span>)** – scenarios where mental pressure causes human coaches to suffer from
+                        statistical blindness or freeze.
+                    </p>
+                    <p class="border-t border-slate-800/80 pt-3">
+                        Preventing those single extreme errors (such as the horrific collapse in the 3rd quarter of Game
+                        1, compared to its total prevention in Game 2 thanks to a timely timeout at -7) directly
+                        translates to a significant improvement in the club's seasonal win-record stability.
+                    </p>
+                </div>
+                <div class="bg-slate-950 p-6 rounded-xl border border-slate-800 h-64 relative">
+                    <canvas id="chart-roi"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>

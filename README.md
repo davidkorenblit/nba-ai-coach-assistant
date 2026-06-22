@@ -3,6 +3,42 @@
 ## Project Executive Summary
 A Machine Learning-driven Decision Support System (DSS) designed to assist NBA coaching staffs in making data-validated timeout calls. By transforming raw event-stream data into a multi-layered analytical framework, the system quantifies game momentum and player fatigue, utilizing predictive modeling and **Causal Inference** to isolate the true treatment effect of a timeout and predict the optimal moment to intervene.
 
+---
+
+## 🚀 Interactive Live Demos
+
+To showcase the decision-support engine in action, the project includes two interactive demo environments that simulate game scenarios and display real-time tactical recommendations.
+
+> [!NOTE]
+> **Demo Data Note:** The demos use curated, simulated game scenarios designed to highlight specific tactical moments (e.g., clutch collapses, momentum stops, and fatigue threshold breaches) while complying with proprietary NBA data license restrictions.
+
+### 1. SimCast Arena Dashboard (`index.html`)
+A premium, web-based visual dashboard mimicking a live game broadcast feed.
+* **Features:** Live score margin tracking, player lineup fatigue bars, real-time "System Alarms" (when fatigue/momentum thresholds are crossed), and interactive scenario switching (e.g., *Micro Proof & False Alarms* vs. *Clutch Collapse & ROI*).
+* **How to Run:** 
+  * Simply open [index.html](file:///c:/Users/david/finalPro/index.html) directly in any web browser.
+  * *Or* run a local server in the project directory:
+    ```bash
+    # Python 3
+    python -m http.server 8000
+    ```
+    Then visit `http://localhost:8000` in your browser.
+
+### 2. Streamlit Live Simulation (`app.py`)
+An interactive Python-based dashboard showcasing the data science and causal inference outputs.
+* **Features:** Dynamic playback control (Play/Pause/Reset), period-by-period breakdown, and real-time visualization of CATE (Conditional Average Treatment Effect) scores and propensity weights.
+* **How to Run:**
+  1. Install the required dependencies:
+     ```bash
+     pip install streamlit pandas numpy matplotlib pyarrow
+     ```
+  2. Run the application:
+     ```bash
+     streamlit run app.py
+     ```
+
+---
+
 ## System Architecture: The Pipeline
 
 ### Layer 1: Base State Engine (ETL & Infrastructure)
@@ -29,8 +65,11 @@ Transitioning from predictive to prescriptive analytics to answer: *"What happen
 * **Propensity Scoring:** Modeling the probability of a coach calling a timeout in any given game state.
 * **X-Learner Implementation:** Calculating the Conditional Average Treatment Effect (CATE) to provide actionable, situation-specific timeout recommendations.
 
+---
+
 ## Tech Stack & Standards
-* **Core:** Python (Pandas, NumPy, Scikit-Learn, XGBoost)
+* **Core:** Python (Pandas, NumPy, Scikit-Learn, XGBoost, Streamlit)
+* **Frontend:** HTML5, TailwindCSS, JavaScript (Chart.js)
 * **Design:** Object-Oriented Programming (OOP) with modular logic handlers.
 * **Validation:** Integrated QA Validators (`Level3QAValidator`, `SplitValidator`) enforcing strict diagnostic checks prior to model training.
 * **Efficiency:** 100% Vectorized data processing (no Python loops) for low-latency operations.

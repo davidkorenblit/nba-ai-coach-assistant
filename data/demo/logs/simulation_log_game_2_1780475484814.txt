@@ -1,0 +1,539 @@
+[Q1 - P:0] IND 0 : TOR 0 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:1] IND 0 : TOR 0 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:2] IND 2 : TOR 0 | IND: Beautiful driving layup scored in transition!
+[Q1 - P:3] IND 2 : TOR 2 | TOR: Scores a heavily contested mid-range jumper.
+[Q1 - P:4] IND 5 : TOR 2 | IND: Hits a magnificent deep 3-pointer!
+[Q1 - P:5] IND 5 : TOR 5 | TOR: Fast-break pullback 3-pointer made!
+[Q1 - P:6] IND 5 : TOR 5 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:7] IND 5 : TOR 5 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:8] IND 5 : TOR 5 | Turnover! Live-ball steal by active defense.
+[Q1 - P:9] IND 5 : TOR 5 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:10] IND 5 : TOR 5 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:11] IND 5 : TOR 5 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:12] IND 5 : TOR 5 | Turnover! Live-ball steal by active defense.
+[Q1 - P:13] IND 5 : TOR 5 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:14] IND 5 : TOR 5 | Turnover! Live-ball steal by active defense.
+[Q1 - P:15] IND 5 : TOR 5 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:16] IND 5 : TOR 8 | TOR: Fast-break pullback 3-pointer made!
+[Q1 - P:17] IND 7 : TOR 8 | IND: Beautiful driving layup scored in transition!
+[Q1 - P:18] IND 7 : TOR 8 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:19] IND 7 : TOR 8 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:20] IND 7 : TOR 8 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:21] IND 7 : TOR 8 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:22] IND 7 : TOR 8 | Personal foul called on the floor. Inbound play.
+[Q1 - P:23] IND 7 : TOR 8 | Turnover! Live-ball steal by active defense.
+[Q1 - P:24] IND 7 : TOR 8 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:25] IND 7 : TOR 8 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:26] IND 7 : TOR 8 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:27] IND 7 : TOR 8 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:28] IND 7 : TOR 8 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:29] IND 7 : TOR 10 | TOR: Scores a heavily contested mid-range jumper.
+[Q1 - P:30] IND 7 : TOR 10 | Personal foul called on the floor. Inbound play.
+[Q1 - P:31] IND 7 : TOR 10 | Turnover! Live-ball steal by active defense.
+[Q1 - P:32] IND 7 : TOR 12 | TOR: Scores a heavily contested mid-range jumper.
+[Q1 - P:33] IND 7 : TOR 12 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:34] IND 7 : TOR 12 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:35] IND 7 : TOR 12 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:36] IND 7 : TOR 12 | Turnover! Live-ball steal by active defense.
+[Q1 - P:37] IND 7 : TOR 12 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:38] IND 7 : TOR 12 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:39] IND 7 : TOR 12 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:40] IND 10 : TOR 12 | IND: Hits a magnificent deep 3-pointer!
+[Q1 - P:41] IND 10 : TOR 12 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:42] IND 10 : TOR 12 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:43] IND 10 : TOR 12 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:44] IND 10 : TOR 12 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:45] IND 10 : TOR 12 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:46] IND 10 : TOR 12 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:47] IND 10 : TOR 12 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:48] IND 10 : TOR 12 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:49] IND 10 : TOR 14 | TOR: Scores a heavily contested mid-range jumper.
+[Q1 - P:50] IND 10 : TOR 14 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:51] IND 10 : TOR 14 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:52] IND 12 : TOR 14 | IND: Beautiful driving layup scored in transition!
+[Q1 - P:53] IND 12 : TOR 16 | TOR: Scores a heavily contested mid-range jumper.
+[Q1 - P:54] IND 12 : TOR 16 | Turnover! Live-ball steal by active defense.
+[Q1 - P:55] IND 12 : TOR 16 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:56] IND 12 : TOR 16 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:57] IND 12 : TOR 16 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:58] IND 12 : TOR 16 | Turnover! Live-ball steal by active defense.
+[Q1 - P:59] IND 12 : TOR 16 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:60] IND 12 : TOR 16 | Turnover! Live-ball steal by active defense.
+[Q1 - P:61] IND 12 : TOR 16 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:62] IND 15 : TOR 16 | IND: Hits a magnificent deep 3-pointer!
+[Q1 - P:63] IND 15 : TOR 16 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:64] IND 15 : TOR 16 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:65] IND 15 : TOR 16 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:66] IND 15 : TOR 16 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:67] IND 15 : TOR 16 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:68] IND 15 : TOR 16 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:69] IND 15 : TOR 16 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:70] IND 15 : TOR 16 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:71] IND 15 : TOR 16 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:72] IND 15 : TOR 16 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:73] IND 15 : TOR 16 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:74] IND 15 : TOR 16 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:75] IND 15 : TOR 16 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:76] IND 15 : TOR 16 | Turnover! Live-ball steal by active defense.
+[Q1 - P:77] IND 15 : TOR 16 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:78] IND 15 : TOR 16 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:79] IND 15 : TOR 16 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:80] IND 15 : TOR 16 | Personal foul called on the floor. Inbound play.
+[Q1 - P:81] IND 15 : TOR 17 | TOR: Sinks the technical free throw cleanly.
+[Q1 - P:82] IND 15 : TOR 17 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:83] IND 15 : TOR 17 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:84] IND 15 : TOR 18 | TOR: Sinks the technical free throw cleanly.
+[Q1 - P:85] IND 17 : TOR 18 | IND: Beautiful driving layup scored in transition!
+[Q1 - P:86] IND 17 : TOR 21 | TOR: Fast-break pullback 3-pointer made!
+[Q1 - P:87] IND 17 : TOR 21 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:88] IND 17 : TOR 21 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:89] IND 17 : TOR 21 | Personal foul called on the floor. Inbound play.
+[Q1 - P:90] IND 17 : TOR 22 | TOR: Sinks the technical free throw cleanly.
+[Q1 - P:91] IND 17 : TOR 23 | TIMEOUT: Successful tactical timeout based on propensity indicator
+[Q1 - P:92] IND 17 : TOR 23 | Personal foul called on the floor. Inbound play.
+[Q1 - P:93] IND 17 : TOR 23 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:94] IND 17 : TOR 23 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:95] IND 17 : TOR 26 | TOR: Fast-break pullback 3-pointer made!
+[Q1 - P:96] IND 19 : TOR 26 | IND: Beautiful driving layup scored in transition!
+[Q1 - P:97] IND 19 : TOR 26 | Personal foul called on the floor. Inbound play.
+[Q1 - P:98] IND 19 : TOR 26 | Turnover! Live-ball steal by active defense.
+[Q1 - P:99] IND 19 : TOR 26 | Turnover! Live-ball steal by active defense.
+[Q1 - P:100] IND 19 : TOR 26 | Personal foul called on the floor. Inbound play.
+[Q1 - P:101] IND 19 : TOR 27 | TOR: Sinks the technical free throw cleanly.
+[Q1 - P:102] IND 19 : TOR 28 | TOR: Sinks the technical free throw cleanly.
+[Q1 - P:103] IND 19 : TOR 28 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:104] IND 19 : TOR 28 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:105] IND 19 : TOR 28 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:106] IND 19 : TOR 28 | Offensive rebound by TOR, resetting the attack clock.
+[Q1 - P:107] IND 19 : TOR 31 | TOR: Fast-break pullback 3-pointer made!
+[Q1 - P:108] IND 19 : TOR 31 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:109] IND 19 : TOR 31 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:110] IND 19 : TOR 31 | Personal foul called on the floor. Inbound play.
+[Q1 - P:111] IND 20 : TOR 31 | IND: Draws a shooting foul, converts the free throw.
+[Q1 - P:112] IND 20 : TOR 31 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:113] IND 20 : TOR 31 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:114] IND 20 : TOR 31 | Heavy defensive pressure forces a contested shot clock violation.
+[Q1 - P:115] IND 20 : TOR 31 | Defensive stop! Safe defensive rebound secured by IND.
+[Q1 - P:116] IND 21 : TOR 31 | IND: Draws a shooting foul, converts the free throw.
+[Q1 - P:117] IND 21 : TOR 31 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q1 - P:118] IND 21 : TOR 31 | Raptors executing a structured half-court pick-and-roll set.
+[Q1 - P:119] IND 21 : TOR 31 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:120] IND 21 : TOR 31 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:121] IND 21 : TOR 31 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:122] IND 21 : TOR 31 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:123] IND 21 : TOR 31 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:124] IND 21 : TOR 31 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:125] IND 21 : TOR 31 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:126] IND 21 : TOR 31 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:127] IND 21 : TOR 31 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:128] IND 21 : TOR 31 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:129] IND 21 : TOR 33 | TOR: Scores a heavily contested mid-range jumper.
+[Q2 - P:130] IND 21 : TOR 33 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:131] IND 21 : TOR 33 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:132] IND 21 : TOR 35 | TOR: Scores a heavily contested mid-range jumper.
+[Q2 - P:133] IND 21 : TOR 35 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:134] IND 21 : TOR 35 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:135] IND 21 : TOR 35 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:136] IND 21 : TOR 35 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:137] IND 21 : TOR 35 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:138] IND 21 : TOR 35 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:139] IND 21 : TOR 35 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:140] IND 21 : TOR 35 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:141] IND 21 : TOR 35 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:142] IND 21 : TOR 35 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:143] IND 21 : TOR 35 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:144] IND 21 : TOR 35 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:145] IND 23 : TOR 35 | IND: Beautiful driving layup scored in transition!
+[Q2 - P:146] IND 23 : TOR 35 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:147] IND 23 : TOR 35 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:148] IND 23 : TOR 35 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:149] IND 23 : TOR 35 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:150] IND 23 : TOR 35 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:151] IND 23 : TOR 35 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:152] IND 23 : TOR 35 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:153] IND 23 : TOR 35 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:154] IND 23 : TOR 35 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:155] IND 23 : TOR 38 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:156] IND 25 : TOR 38 | IND: Beautiful driving layup scored in transition!
+[Q2 - P:157] IND 25 : TOR 38 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:158] IND 25 : TOR 38 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:159] IND 25 : TOR 38 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:160] IND 25 : TOR 38 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:161] IND 25 : TOR 38 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:162] IND 25 : TOR 38 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:163] IND 25 : TOR 38 | Personal foul called on the floor. Inbound play.
+[Q2 - P:164] IND 25 : TOR 38 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:165] IND 25 : TOR 38 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:166] IND 25 : TOR 38 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:167] IND 25 : TOR 38 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:168] IND 25 : TOR 38 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:169] IND 25 : TOR 38 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:170] IND 25 : TOR 38 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:171] IND 25 : TOR 38 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:172] IND 25 : TOR 38 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:173] IND 25 : TOR 40 | TOR: Scores a heavily contested mid-range jumper.
+[Q2 - P:174] IND 25 : TOR 40 | Turnover! Live-ball steal by active defense.
+[Q2 - P:175] IND 25 : TOR 40 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:176] IND 25 : TOR 43 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:177] IND 25 : TOR 43 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:178] IND 25 : TOR 43 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:179] IND 25 : TOR 43 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:180] IND 25 : TOR 43 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:181] IND 25 : TOR 43 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:182] IND 25 : TOR 45 | TOR: Scores a heavily contested mid-range jumper.
+[Q2 - P:183] IND 28 : TOR 45 | IND: Hits a magnificent deep 3-pointer!
+[Q2 - P:184] IND 28 : TOR 45 | TIMEOUT: Successful defensive grouping called by DSS recommendation
+[Q2 - P:185] IND 28 : TOR 45 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:186] IND 28 : TOR 45 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:187] IND 28 : TOR 45 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:188] IND 28 : TOR 45 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:189] IND 28 : TOR 45 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:190] IND 28 : TOR 45 | Personal foul called on the floor. Inbound play.
+[Q2 - P:191] IND 28 : TOR 45 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:192] IND 28 : TOR 45 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:193] IND 28 : TOR 45 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:194] IND 28 : TOR 45 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:195] IND 28 : TOR 45 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:196] IND 28 : TOR 45 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:197] IND 28 : TOR 45 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:198] IND 28 : TOR 45 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:199] IND 28 : TOR 48 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:200] IND 28 : TOR 48 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:201] IND 28 : TOR 48 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:202] IND 28 : TOR 48 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:203] IND 28 : TOR 48 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:204] IND 28 : TOR 51 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:205] IND 31 : TOR 51 | IND: Hits a magnificent deep 3-pointer!
+[Q2 - P:206] IND 31 : TOR 53 | TOR: Scores a heavily contested mid-range jumper.
+[Q2 - P:207] IND 31 : TOR 53 | Personal foul called on the floor. Inbound play.
+[Q2 - P:208] IND 31 : TOR 53 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:209] IND 31 : TOR 53 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:210] IND 31 : TOR 53 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:211] IND 31 : TOR 53 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:212] IND 31 : TOR 53 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:213] IND 31 : TOR 53 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:214] IND 31 : TOR 53 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:215] IND 31 : TOR 53 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:216] IND 34 : TOR 53 | IND: Hits a magnificent deep 3-pointer!
+[Q2 - P:217] IND 34 : TOR 53 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:218] IND 34 : TOR 53 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:219] IND 37 : TOR 53 | IND: Hits a magnificent deep 3-pointer!
+[Q2 - P:220] IND 37 : TOR 53 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:221] IND 37 : TOR 53 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:222] IND 37 : TOR 53 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:223] IND 37 : TOR 53 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:224] IND 37 : TOR 53 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:225] IND 37 : TOR 53 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:226] IND 37 : TOR 53 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:227] IND 37 : TOR 56 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:228] IND 37 : TOR 56 | Personal foul called on the floor. Inbound play.
+[Q2 - P:229] IND 37 : TOR 56 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:230] IND 37 : TOR 56 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:231] IND 37 : TOR 58 | TOR: Scores a heavily contested mid-range jumper.
+[Q2 - P:232] IND 37 : TOR 58 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:233] IND 37 : TOR 58 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:234] IND 37 : TOR 61 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:235] IND 40 : TOR 61 | IND: Hits a magnificent deep 3-pointer!
+[Q2 - P:236] IND 40 : TOR 64 | TOR: Fast-break pullback 3-pointer made!
+[Q2 - P:237] IND 42 : TOR 64 | IND: Beautiful driving layup scored in transition!
+[Q2 - P:238] IND 42 : TOR 64 | Personal foul called on the floor. Inbound play.
+[Q2 - P:239] IND 42 : TOR 64 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:240] IND 42 : TOR 64 | Defensive stop! Safe defensive rebound secured by IND.
+[Q2 - P:241] IND 42 : TOR 64 | Offensive rebound by TOR, resetting the attack clock.
+[Q2 - P:242] IND 42 : TOR 64 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q2 - P:243] IND 42 : TOR 64 | Raptors executing a structured half-court pick-and-roll set.
+[Q2 - P:244] IND 42 : TOR 64 | Heavy defensive pressure forces a contested shot clock violation.
+[Q2 - P:245] IND 42 : TOR 64 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:246] IND 42 : TOR 64 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:247] IND 42 : TOR 64 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:248] IND 42 : TOR 64 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:249] IND 42 : TOR 64 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:250] IND 42 : TOR 64 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:251] IND 42 : TOR 64 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:252] IND 42 : TOR 64 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:253] IND 42 : TOR 64 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:254] IND 42 : TOR 64 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:255] IND 42 : TOR 66 | TOR: Scores a heavily contested mid-range jumper.
+[Q3 - P:256] IND 42 : TOR 66 | Personal foul called on the floor. Inbound play.
+[Q3 - P:257] IND 42 : TOR 66 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:258] IND 42 : TOR 66 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:259] IND 44 : TOR 66 | IND: Beautiful driving layup scored in transition!
+[Q3 - P:260] IND 44 : TOR 66 | Turnover! Live-ball steal by active defense.
+[Q3 - P:261] IND 44 : TOR 66 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:262] IND 44 : TOR 66 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:263] IND 44 : TOR 66 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:264] IND 44 : TOR 66 | Personal foul called on the floor. Inbound play.
+[Q3 - P:265] IND 44 : TOR 66 | Turnover! Live-ball steal by active defense.
+[Q3 - P:266] IND 44 : TOR 66 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:267] IND 44 : TOR 66 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:268] IND 44 : TOR 66 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:269] IND 44 : TOR 66 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:270] IND 44 : TOR 66 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:271] IND 44 : TOR 66 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:272] IND 44 : TOR 66 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:273] IND 44 : TOR 66 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:274] IND 44 : TOR 66 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:275] IND 45 : TOR 66 | IND: Draws a shooting foul, converts the free throw.
+[Q3 - P:276] IND 45 : TOR 68 | TOR: Scores a heavily contested mid-range jumper.
+[Q3 - P:277] IND 48 : TOR 68 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:278] IND 48 : TOR 68 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:279] IND 48 : TOR 68 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:280] IND 51 : TOR 68 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:281] IND 51 : TOR 68 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:282] IND 51 : TOR 68 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:283] IND 51 : TOR 68 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:284] IND 54 : TOR 68 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:285] IND 54 : TOR 68 | Turnover! Live-ball steal by active defense.
+[Q3 - P:286] IND 54 : TOR 68 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:287] IND 54 : TOR 68 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:288] IND 54 : TOR 68 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:289] IND 54 : TOR 68 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:290] IND 54 : TOR 68 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:291] IND 54 : TOR 68 | Personal foul called on the floor. Inbound play.
+[Q3 - P:292] IND 54 : TOR 68 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:293] IND 54 : TOR 68 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:294] IND 55 : TOR 68 | IND: Draws a shooting foul, converts the free throw.
+[Q3 - P:295] IND 55 : TOR 68 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:296] IND 55 : TOR 68 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:297] IND 58 : TOR 68 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:298] IND 58 : TOR 68 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:299] IND 58 : TOR 68 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:300] IND 58 : TOR 68 | Personal foul called on the floor. Inbound play.
+[Q3 - P:301] IND 58 : TOR 68 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:302] IND 61 : TOR 68 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:303] IND 61 : TOR 70 | TOR: Scores a heavily contested mid-range jumper.
+[Q3 - P:304] IND 61 : TOR 70 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:305] IND 61 : TOR 70 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:306] IND 61 : TOR 70 | Personal foul called on the floor. Inbound play.
+[Q3 - P:307] IND 61 : TOR 71 | TOR: Sinks the technical free throw cleanly.
+[Q3 - P:308] IND 61 : TOR 72 | TOR: Sinks the technical free throw cleanly.
+[Q3 - P:309] IND 61 : TOR 72 | Personal foul called on the floor. Inbound play.
+[Q3 - P:310] IND 61 : TOR 72 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:311] IND 61 : TOR 72 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:312] IND 61 : TOR 74 | TOR: Scores a heavily contested mid-range jumper.
+[Q3 - P:313] IND 64 : TOR 74 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:314] IND 64 : TOR 74 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:315] IND 64 : TOR 74 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:316] IND 64 : TOR 76 | TOR: Scores a heavily contested mid-range jumper.
+[Q3 - P:317] IND 64 : TOR 76 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:318] IND 64 : TOR 76 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:319] IND 64 : TOR 76 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:320] IND 64 : TOR 76 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:321] IND 64 : TOR 76 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:322] IND 64 : TOR 76 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:323] IND 64 : TOR 76 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:324] IND 67 : TOR 76 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:325] IND 67 : TOR 79 | TOR: Fast-break pullback 3-pointer made!
+[Q3 - P:326] IND 67 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:327] IND 67 : TOR 79 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:328] IND 67 : TOR 79 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:329] IND 67 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:330] IND 67 : TOR 79 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:331] IND 67 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:332] IND 67 : TOR 79 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:333] IND 67 : TOR 79 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:334] IND 67 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:335] IND 67 : TOR 79 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:336] IND 67 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:337] IND 67 : TOR 79 | Personal foul called on the floor. Inbound play.
+[Q3 - P:338] IND 67 : TOR 79 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:339] IND 67 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:340] IND 67 : TOR 79 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:341] IND 67 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:342] IND 67 : TOR 79 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:343] IND 67 : TOR 79 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:344] IND 67 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:345] IND 67 : TOR 79 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:346] IND 67 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:347] IND 67 : TOR 79 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:348] IND 67 : TOR 79 | Turnover! Live-ball steal by active defense.
+[Q3 - P:349] IND 67 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:350] IND 70 : TOR 79 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:351] IND 70 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:352] IND 70 : TOR 79 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:353] IND 70 : TOR 79 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:354] IND 72 : TOR 79 | IND: Beautiful driving layup scored in transition!
+[Q3 - P:355] IND 72 : TOR 79 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:356] IND 72 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:357] IND 72 : TOR 79 | Personal foul called on the floor. Inbound play.
+[Q3 - P:358] IND 73 : TOR 79 | IND: Draws a shooting foul, converts the free throw.
+[Q3 - P:359] IND 73 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:360] IND 73 : TOR 79 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:361] IND 73 : TOR 79 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:362] IND 73 : TOR 79 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q3 - P:363] IND 73 : TOR 79 | Turnover! Live-ball steal by active defense.
+[Q3 - P:364] IND 73 : TOR 79 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:365] IND 73 : TOR 82 | TOR: Fast-break pullback 3-pointer made!
+[Q3 - P:366] IND 73 : TOR 82 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:367] IND 76 : TOR 82 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:368] IND 76 : TOR 84 | TOR: Scores a heavily contested mid-range jumper.
+[Q3 - P:369] IND 76 : TOR 84 | Personal foul called on the floor. Inbound play.
+[Q3 - P:370] IND 77 : TOR 84 | IND: Draws a shooting foul, converts the free throw.
+[Q3 - P:371] IND 78 : TOR 84 | IND: Draws a shooting foul, converts the free throw.
+[Q3 - P:372] IND 78 : TOR 84 | Personal foul called on the floor. Inbound play.
+[Q3 - P:373] IND 78 : TOR 85 | TOR: Sinks the technical free throw cleanly.
+[Q3 - P:374] IND 78 : TOR 86 | TOR: Sinks the technical free throw cleanly.
+[Q3 - P:375] IND 78 : TOR 86 | Defensive stop! Safe defensive rebound secured by IND.
+[Q3 - P:376] IND 78 : TOR 86 | Offensive rebound by TOR, resetting the attack clock.
+[Q3 - P:377] IND 78 : TOR 89 | TOR: Fast-break pullback 3-pointer made!
+[Q3 - P:378] IND 78 : TOR 89 | Raptors executing a structured half-court pick-and-roll set.
+[Q3 - P:379] IND 78 : TOR 89 | Heavy defensive pressure forces a contested shot clock violation.
+[Q3 - P:380] IND 81 : TOR 89 | IND: Hits a magnificent deep 3-pointer!
+[Q3 - P:381] IND 81 : TOR 89 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:382] IND 81 : TOR 89 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:383] IND 81 : TOR 89 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:384] IND 81 : TOR 89 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:385] IND 81 : TOR 89 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:386] IND 81 : TOR 89 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:387] IND 81 : TOR 89 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:388] IND 81 : TOR 89 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:389] IND 81 : TOR 89 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:390] IND 81 : TOR 89 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:391] IND 81 : TOR 89 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:392] IND 81 : TOR 89 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:393] IND 81 : TOR 89 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:394] IND 81 : TOR 89 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:395] IND 81 : TOR 91 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:396] IND 81 : TOR 91 | Personal foul called on the floor. Inbound play.
+[Q4 - P:397] IND 81 : TOR 92 | TOR: Sinks the technical free throw cleanly.
+[Q4 - P:398] IND 81 : TOR 92 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:399] IND 81 : TOR 92 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:400] IND 81 : TOR 94 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:401] IND 81 : TOR 94 | Personal foul called on the floor. Inbound play.
+[Q4 - P:402] IND 81 : TOR 94 | Turnover! Live-ball steal by active defense.
+[Q4 - P:403] IND 81 : TOR 94 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:404] IND 81 : TOR 94 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:405] IND 84 : TOR 94 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:406] IND 84 : TOR 94 | Personal foul called on the floor. Inbound play.
+[Q4 - P:407] IND 84 : TOR 95 | TOR: Sinks the technical free throw cleanly.
+[Q4 - P:408] IND 84 : TOR 95 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:409] IND 84 : TOR 95 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:410] IND 84 : TOR 95 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:411] IND 84 : TOR 95 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:412] IND 84 : TOR 96 | TOR: Sinks the technical free throw cleanly.
+[Q4 - P:413] IND 87 : TOR 96 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:414] IND 90 : TOR 96 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:415] IND 90 : TOR 96 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:416] IND 90 : TOR 96 | Turnover! Live-ball steal by active defense.
+[Q4 - P:417] IND 90 : TOR 96 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:418] IND 90 : TOR 96 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:419] IND 90 : TOR 96 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:420] IND 90 : TOR 96 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:421] IND 90 : TOR 96 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:422] IND 90 : TOR 96 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:423] IND 92 : TOR 96 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:424] IND 92 : TOR 99 | TOR: Fast-break pullback 3-pointer made!
+[Q4 - P:425] IND 92 : TOR 99 | Turnover! Live-ball steal by active defense.
+[Q4 - P:426] IND 92 : TOR 99 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:427] IND 92 : TOR 99 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:428] IND 92 : TOR 99 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:429] IND 92 : TOR 99 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:430] IND 92 : TOR 99 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:431] IND 92 : TOR 99 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:432] IND 92 : TOR 99 | CRITICAL ALARM: Opponent scoring run detected. Timeout highly recommended!
+[Q4 - P:433] IND 92 : TOR 99 | TIMEOUT: Coach reaction to CATE alarm. Spacing and lineup optimized!
+[Q4 - P:434] IND 92 : TOR 99 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:435] IND 94 : TOR 99 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:436] IND 94 : TOR 100 | TOR: Sinks the technical free throw cleanly.
+[Q4 - P:437] IND 100 : TOR 100 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:438] IND 100 : TOR 100 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:439] IND 102 : TOR 100 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:440] IND 102 : TOR 100 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:441] IND 104 : TOR 100 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:442] IND 104 : TOR 100 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:443] IND 104 : TOR 100 | Turnover! Live-ball steal by active defense.
+[Q4 - P:444] IND 104 : TOR 100 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:445] IND 106 : TOR 100 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:446] IND 106 : TOR 100 | Personal foul called on the floor. Inbound play.
+[Q4 - P:447] IND 107 : TOR 100 | IND: Draws a shooting foul, converts the free throw.
+[Q4 - P:448] IND 107 : TOR 102 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:449] IND 107 : TOR 102 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:450] IND 107 : TOR 102 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:451] IND 107 : TOR 105 | TOR: Fast-break pullback 3-pointer made!
+[Q4 - P:452] IND 107 : TOR 105 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:453] IND 107 : TOR 105 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:454] IND 107 : TOR 105 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:455] IND 110 : TOR 105 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:456] IND 110 : TOR 105 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:457] IND 110 : TOR 105 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:458] IND 110 : TOR 105 | Turnover! Live-ball steal by active defense.
+[Q4 - P:459] IND 110 : TOR 105 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:460] IND 110 : TOR 105 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:461] IND 110 : TOR 105 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:462] IND 110 : TOR 105 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:463] IND 110 : TOR 105 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:464] IND 110 : TOR 107 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:465] IND 112 : TOR 107 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:466] IND 112 : TOR 107 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:467] IND 112 : TOR 107 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:468] IND 112 : TOR 107 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:469] IND 112 : TOR 107 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:470] IND 112 : TOR 107 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:471] IND 112 : TOR 107 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:472] IND 112 : TOR 107 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:473] IND 112 : TOR 107 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:474] IND 112 : TOR 107 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:475] IND 112 : TOR 107 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:476] IND 112 : TOR 107 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:477] IND 112 : TOR 107 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:478] IND 112 : TOR 107 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:479] IND 112 : TOR 107 | Personal foul called on the floor. Inbound play.
+[Q4 - P:480] IND 112 : TOR 108 | TOR: Sinks the technical free throw cleanly.
+[Q4 - P:481] IND 112 : TOR 108 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:482] IND 112 : TOR 108 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:483] IND 112 : TOR 108 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:484] IND 112 : TOR 108 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:485] IND 112 : TOR 108 | Turnover! Live-ball steal by active defense.
+[Q4 - P:486] IND 112 : TOR 108 | Personal foul called on the floor. Inbound play.
+[Q4 - P:487] IND 112 : TOR 108 | Turnover! Live-ball steal by active defense.
+[Q4 - P:488] IND 112 : TOR 108 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:489] IND 112 : TOR 108 | Personal foul called on the floor. Inbound play.
+[Q4 - P:490] IND 112 : TOR 108 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:491] IND 112 : TOR 108 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:492] IND 112 : TOR 109 | TOR: Sinks the technical free throw cleanly.
+[Q4 - P:493] IND 112 : TOR 109 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:494] IND 112 : TOR 109 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:495] IND 112 : TOR 109 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:496] IND 112 : TOR 109 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:497] IND 112 : TOR 109 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:498] IND 112 : TOR 109 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:499] IND 112 : TOR 111 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:500] IND 112 : TOR 111 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:501] IND 112 : TOR 111 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:502] IND 112 : TOR 114 | TOR: Fast-break pullback 3-pointer made!
+[Q4 - P:503] IND 112 : TOR 114 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:504] IND 112 : TOR 114 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:505] IND 112 : TOR 117 | TOR: Fast-break pullback 3-pointer made!
+[Q4 - P:506] IND 112 : TOR 117 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:507] IND 112 : TOR 117 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:508] IND 112 : TOR 117 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:509] IND 112 : TOR 119 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:510] IND 112 : TOR 119 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:511] IND 112 : TOR 119 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:512] IND 112 : TOR 119 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:513] IND 112 : TOR 119 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:514] IND 112 : TOR 119 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:515] IND 112 : TOR 119 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:516] IND 112 : TOR 119 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:517] IND 112 : TOR 119 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:518] IND 112 : TOR 119 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:519] IND 112 : TOR 119 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:520] IND 112 : TOR 119 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:521] IND 112 : TOR 119 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:522] IND 112 : TOR 119 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:523] IND 112 : TOR 119 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:524] IND 112 : TOR 119 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:525] IND 112 : TOR 119 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:526] IND 112 : TOR 119 | Offensive rebound by TOR, resetting the attack clock.
+[Q4 - P:527] IND 114 : TOR 119 | IND: Beautiful driving layup scored in transition!
+[Q4 - P:528] IND 114 : TOR 121 | TOR: Scores a heavily contested mid-range jumper.
+[Q4 - P:529] IND 117 : TOR 121 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:530] IND 117 : TOR 121 | Defensive stop! Safe defensive rebound secured by IND.
+[Q4 - P:531] IND 117 : TOR 121 | Tactical Timeout: Drawing up play for the final game possession
+[Q4 - P:532] IND 120 : TOR 121 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:533] IND 120 : TOR 121 | Raptors executing a structured half-court pick-and-roll set.
+[Q4 - P:534] IND 120 : TOR 121 | Heavy defensive pressure forces a contested shot clock violation.
+[Q4 - P:535] IND 123 : TOR 121 | IND: Hits a magnificent deep 3-pointer!
+[Q4 - P:536] IND 123 : TOR 121 | Tactical Timeout: Opponent out-of-bounds defensive alignment
+[Q4 - P:537] IND 123 : TOR 121 | Pacers swinging the ball around the perimeter looking for an opening.
+[Q4 - P:538] IND 123 : TOR 121 | Raptors executing a structured half-court pick-and-roll set.

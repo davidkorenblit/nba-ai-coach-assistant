@@ -120,7 +120,7 @@ class NBADemoDataArchitect:
             # Add points to Away to decrease margin (make it more negative)
             self._distribute_points(away_offset, target_idx, abs(required_diff), start_boundary_idx, window)
 
-    def _generate_play_descriptions(self, df: pd.DataFrame) -> list:
+    def _generate_play_descriptions(self, df: pd.DataFrame, home_code: str = "IND", away_code: str = "TOR") -> list:
         """
         Generates realistic play descriptions based on scores and events.
         """
@@ -148,28 +148,28 @@ class NBADemoDataArchitect:
             
             if home_delta > 0:
                 if home_delta >= 3:
-                    desc = f"IND: Hits a magnificent deep 3-pointer!"
+                    desc = f"{home_code}: Hits a magnificent deep 3-pointer!"
                 elif home_delta == 1:
-                    desc = "IND: Draws a shooting foul, converts the free throw."
+                    desc = f"{home_code}: Draws a shooting foul, converts the free throw."
                 else:
-                    desc = f"IND: Beautiful driving layup scored in transition!"
+                    desc = f"{home_code}: Beautiful driving layup scored in transition!"
             elif away_delta > 0:
                 if away_delta >= 3:
-                    desc = f"TOR: Fast-break pullback 3-pointer made!"
+                    desc = f"{away_code}: Fast-break pullback 3-pointer made!"
                 elif away_delta == 1:
-                    desc = "TOR: Sinks the technical free throw cleanly."
+                    desc = f"{away_code}: Sinks the technical free throw cleanly."
                 else:
-                    desc = f"TOR: Scores a heavily contested mid-range jumper."
+                    desc = f"{away_code}: Scores a heavily contested mid-range jumper."
             elif is_to > 0:
                 desc = "Turnover! Live-ball steal by active defense."
             elif is_foul > 0:
                 desc = "Personal foul called on the floor. Inbound play."
             else:
                 choices = [
-                    "Defensive stop! Safe defensive rebound secured by IND.",
-                    "Offensive rebound by TOR, resetting the attack clock.",
-                    "Pacers swinging the ball around the perimeter looking for an opening.",
-                    "Raptors executing a structured half-court pick-and-roll set.",
+                    f"Defensive stop! Safe defensive rebound secured by {home_code}.",
+                    f"Offensive rebound by {away_code}, resetting the attack clock.",
+                    f"{home_code} swinging the ball around the perimeter looking for an opening.",
+                    f"{away_code} executing a structured half-court pick-and-roll set.",
                     "Heavy defensive pressure forces a contested shot clock violation."
                 ]
                 desc = choices[idx % len(choices)]
@@ -274,7 +274,7 @@ class NBADemoDataArchitect:
         df['away_score'] = np.maximum.accumulate(df['away_score'])
         df['score_margin'] = df['home_score'] - df['away_score']
         
-        df['play_description'] = self._generate_play_descriptions(df)
+        df['play_description'] = self._generate_play_descriptions(df, "IND", "TOR")
         
         return df[['period', 'home_score', 'away_score', 'score_margin', 
                   'cate_score', 'propensity_score', 'timeout_team', 
@@ -284,9 +284,9 @@ class NBADemoDataArchitect:
 
     def simulate_game_2(self, template_df: pd.DataFrame) -> list:
         """
-        Generates Game 2 (Strategic Coach - ROI Success Scenario)
+        Generates Game 2 (Strategic Coach - Boston vs Miami - Q4 focused)
         """
-        df = template_df.copy()
+        df = template_df[template_df['period'] == 4].copy().reset_index(drop=True)
         N = len(df)
         
         np.random.seed(202)
@@ -302,10 +302,7 @@ class NBADemoDataArchitect:
         df['shap_explosiveness'] = 0.08 + np.random.uniform(0.0, 0.03, N)
         df['shap_fatigue'] = 0.10 + np.random.uniform(0.0, 0.03, N)
         
-        q1_idx = df[df['period'] == 1].index.values
-        q2_idx = df[df['period'] == 2].index.values
-        q3_idx = df[df['period'] == 3].index.values
-        q4_idx = df[df['period'] == 4].index.values
+        q4_idx = df.index.values
         
         real_home = df['scoreHome'].values.copy() if 'scoreHome' in df.columns else df['home_score'].values.copy()
         real_away = df['scoreAway'].values.copy() if 'scoreAway' in df.columns else df['away_score'].values.copy()
@@ -313,46 +310,52 @@ class NBADemoDataArchitect:
         home_offset = np.zeros(N, dtype=float)
         away_offset = np.zeros(N, dtype=float)
         
-        # --- Q1-Q3 Normal Flow Patches ---
-        normal_trigger_1 = q1_idx[int(len(q1_idx) * 0.75)]
-        df.loc[normal_trigger_1, 'propensity_score'] = 0.81
-        df.loc[normal_trigger_1 + 1, 'timeout_team'] = "INDIANA"
-        df.loc[normal_trigger_1 + 1, 'play_description'] = "TIMEOUT: Successful tactical timeout based on propensity indicator"
+        # 1. Start of Q4: keep margin around -4 (trail by 4)
+        self._apply_positive_margin_offset(home_offset, away_offset, 0, -4, real_home, real_away, start_boundary_idx=0, window=1)
+        self._apply_positive_margin_offset(home_offset, away_offset, 25, -4, real_home, real_away, start_boundary_idx=0, window=25)
         
-        normal_trigger_2 = q2_idx[int(len(q2_idx) * 0.50)]
-        df.loc[normal_trigger_2, 'cate_score'] = 0.72
-        df.loc[normal_trigger_2 + 1, 'timeout_team'] = "INDIANA"
-        df.loc[normal_trigger_2 + 1, 'play_description'] = "TIMEOUT: Successful defensive grouping called by DSS recommendation"
+        # 2. Opponent Run (Miami starts to run away):
+        target_idx_q4 = 35
+        self._apply_positive_margin_offset(home_offset, away_offset, target_idx_q4, -11, real_home, real_away, start_boundary_idx=0, window=10)
         
-        # --- Q4 Climax Management ---
-        target_idx_q4 = q4_idx[50]
-        self._apply_positive_margin_offset(home_offset, away_offset, target_idx_q4, -7, real_home, real_away, start_boundary_idx=q4_idx[0], window=20)
+        df.loc[target_idx_q4, 'propensity_score'] = 0.85
+        df.loc[target_idx_q4, 'play_description'] = "Propensity Alarm: Coach model strongly suggests timeout"
         
-        df.loc[target_idx_q4, 'cate_score'] = 0.94
-        df.loc[target_idx_q4, 'target_stop_run_90s'] = 1
-        df.loc[target_idx_q4, 'play_description'] = "CRITICAL ALARM: Opponent scoring run detected. Timeout highly recommended!"
+        # One possession later, margin drops to -13. Red Alert triggers.
+        c_idx = target_idx_q4 + 1
+        self._apply_positive_margin_offset(home_offset, away_offset, c_idx, -13, real_home, real_away, start_boundary_idx=0, window=1)
+        df.loc[c_idx, 'cate_score'] = 0.94
+        df.loc[c_idx, 'target_stop_run_90s'] = 1
+        df.loc[c_idx, 'play_description'] = "CRITICAL ALARM: Opponent scoring run detected. Timeout highly recommended!"
         
-        timeout_idx_q4 = target_idx_q4 + 1
-        df.loc[timeout_idx_q4, 'timeout_team'] = "INDIANA"
+        # One possession later, margin is -15. Boston takes a strategic timeout.
+        timeout_idx_q4 = target_idx_q4 + 2
+        self._apply_positive_margin_offset(home_offset, away_offset, timeout_idx_q4, -15, real_home, real_away, start_boundary_idx=0, window=1)
+        df.loc[timeout_idx_q4, 'timeout_team'] = "BOSTON"
         df.loc[timeout_idx_q4, 'timeout_strategic_weight'] = 1
-        df.loc[timeout_idx_q4, 'play_description'] = "TIMEOUT: Coach reaction to CATE alarm. Spacing and lineup optimized!"
+        df.loc[timeout_idx_q4, 'play_description'] = "TIMEOUT: Boston requests Timeout (Strategic weight = 1)"
         
-        # Comeback run: Add exclusively to IND (Home team) to erase the gap and take the lead
-        home_offset[timeout_idx_q4 + 2] += 2
-        home_offset[timeout_idx_q4 + 4] += 3
-        home_offset[timeout_idx_q4 + 6] += 2
-        home_offset[timeout_idx_q4 + 8] += 2
+        # Comeback run: Boston scores. Deficit drops to -10 at timeout_idx_q4 + 5.
+        self._apply_positive_margin_offset(home_offset, away_offset, timeout_idx_q4 + 5, -10, real_home, real_away, start_boundary_idx=0, window=3)
         
-        tactical_1 = q4_idx[-8]
-        df.loc[tactical_1, 'timeout_team'] = "INDIANA"
+        # Opponent (Miami) takes a timeout at timeout_idx_q4 + 6 to stop Boston's run.
+        df.loc[timeout_idx_q4 + 6, 'timeout_team'] = "MIAMI"
+        df.loc[timeout_idx_q4 + 6, 'play_description'] = "TIMEOUT: Miami requests Timeout (Tactical response)"
+        
+        # Keep margin around -5 until the final minute (last 15 possessions)
+        self._apply_positive_margin_offset(home_offset, away_offset, N - 15, -5, real_home, real_away, start_boundary_idx=0, window=N - 15 - (timeout_idx_q4 + 7))
+        
+        # Tactical timeouts in the final minute
+        tactical_1 = N - 8
+        df.loc[tactical_1, 'timeout_team'] = "BOSTON"
         df.loc[tactical_1, 'play_description'] = "Tactical Timeout: Drawing up play for the final game possession"
         
-        tactical_2 = q4_idx[-3]
-        df.loc[tactical_2, 'timeout_team'] = "TORONTO"
+        tactical_2 = N - 3
+        df.loc[tactical_2, 'timeout_team'] = "MIAMI"
         df.loc[tactical_2, 'play_description'] = "Tactical Timeout: Opponent out-of-bounds defensive alignment"
         
-        # Enforce final buzzer margin = +2
-        self._apply_positive_margin_offset(home_offset, away_offset, N - 1, 2, real_home, real_away, start_boundary_idx=q4_idx[0], window=len(q4_idx) - 55)
+        # Enforce final buzzer margin = +2 (Boston wins by 2)
+        self._apply_positive_margin_offset(home_offset, away_offset, N - 1, 2, real_home, real_away, start_boundary_idx=0, window=14)
         
         home_offset_cumulative = home_offset.cumsum()
         away_offset_cumulative = away_offset.cumsum()
@@ -364,7 +367,7 @@ class NBADemoDataArchitect:
         df['away_score'] = np.maximum.accumulate(df['away_score'])
         df['score_margin'] = df['home_score'] - df['away_score']
         
-        df['play_description'] = self._generate_play_descriptions(df)
+        df['play_description'] = self._generate_play_descriptions(df, "BOS", "MIA")
         
         return df[['period', 'home_score', 'away_score', 'score_margin', 
                   'cate_score', 'propensity_score', 'timeout_team', 

@@ -82,8 +82,6 @@ class Level2FeatureEngineer:
 
     def build_accumulated_fatigue(self):
         print("🔹 Building: Accumulated Fatigue Track (Vectorized Explode/Cumsum)...")
-        # אופטימיזציה: חיסול לולאת ה-for לחלוטין. 
-        # פירוק השחקנים, סכימה מצטברת וקטורית פר-שחקן, וממוצע חזרה ברמת החמישייה.
         
         for prefix in ['home', 'away']:
             lineup_col = f'{prefix}_lineup'
