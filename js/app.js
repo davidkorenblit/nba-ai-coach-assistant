@@ -275,6 +275,7 @@
             const overlay = document.getElementById('timeout-overlay');
             let displayName = teamName;
             if (teamName === "INDIANA") displayName = "INDIANA PACERS";
+            else if (teamName === "TORONTO") displayName = "TORONTO RAPTORS";
             else if (teamName === "BOSTON") displayName = "BOSTON CELTICS";
             else if (teamName === "MIAMI") displayName = "MIAMI HEAT";
 
