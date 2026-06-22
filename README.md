@@ -1,5 +1,7 @@
 # NBA-AI-Coach: Real-Time Tactical Timeout Optimization
 
+> 🚀 **Live Demo Available:** Play with the interactive web simulator here: [SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
+
 ## Project Executive Summary
 A Machine Learning-driven Decision Support System (DSS) designed to assist NBA coaching staffs in making data-validated timeout calls. By transforming raw event-stream data into a multi-layered analytical framework, the system quantifies game momentum and player fatigue, utilizing predictive modeling and **Causal Inference** to isolate the true treatment effect of a timeout and predict the optimal moment to intervene.
 
