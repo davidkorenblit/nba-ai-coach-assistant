@@ -1,6 +1,6 @@
 # NBA-AI-Coach: Real-Time Tactical Timeout Optimization
 
-> 🚀 **Live Demo Available:** Play with the interactive web simulator here: [SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
+> 🚀 **Live Demo Available:** Play with the interactive web simulator instantly here: [SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
 
 ## Project Executive Summary
 A Machine Learning-driven Decision Support System (DSS) designed to assist NBA coaching staffs in making data-validated timeout calls. By transforming raw event-stream data into a multi-layered analytical framework, the system quantifies game momentum and player fatigue, utilizing predictive modeling and **Causal Inference** to isolate the true treatment effect of a timeout and predict the optimal moment to intervene.
@@ -16,28 +16,32 @@ To showcase the decision-support engine in action, the project includes two inte
 
 ### 1. SimCast Arena Dashboard (`index.html`)
 A premium, web-based visual dashboard mimicking a live game broadcast feed.
-* **Features:** Live score margin tracking, player lineup fatigue bars, real-time "System Alarms" (when fatigue/momentum thresholds are crossed), and interactive scenario switching (e.g., *Micro Proof & False Alarms* vs. *Clutch Collapse & ROI*).
-* **How to Run:** 
-  * Simply open [index.html](file:///c:/Users/david/finalPro/index.html) directly in any web browser.
-  * *Or* run a local server in the project directory:
-    ```bash
-    # Python 3
-    python -m http.server 8000
-    ```
-    Then visit `http://localhost:8000` in your browser.
+
+*   **🌐 Option A: Live Hosted Demo (No Installation)**
+    *   Simply visit the hosted version: [SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
+*   **📂 Option B: Local File View (Zero-Setup)**
+    *   Open [index.html](file:///c:/Users/david/finalPro/index.html) directly in any web browser by double-clicking it in your file explorer.
+    *   *Note: Because the demo data is preloaded as a static module in `data/demo/demo_data.js`, this works instantly offline and is completely immune to browser CORS restriction issues.*
+*   **🖥️ Option C: Local HTTP Server**
+    *   Run a local server in the project directory:
+        ```bash
+        python -m http.server 8000
+        ```
+    *   Then visit: `http://localhost:8000`
 
 ### 2. Streamlit Live Simulation (`app.py`)
-An interactive Python-based dashboard showcasing the data science and causal inference outputs.
-* **Features:** Dynamic playback control (Play/Pause/Reset), period-by-period breakdown, and real-time visualization of CATE (Conditional Average Treatment Effect) scores and propensity weights.
-* **How to Run:**
-  1. Install the required dependencies:
-     ```bash
-     pip install streamlit pandas numpy matplotlib pyarrow
-     ```
-  2. Run the application:
-     ```bash
-     streamlit run app.py
-     ```
+An interactive Python-based dashboard showcasing the data science, feature importance, and causal inference outputs.
+*   **Features:** Dynamic playback control (Play/Pause/Reset), period-by-period breakdown, and real-time visualization of CATE (Conditional Average Treatment Effect) scores and propensity weights.
+*   **How to Run:**
+    1.  Install the required dependencies:
+        ```bash
+        pip install streamlit pandas numpy matplotlib pyarrow
+        ```
+    2.  Run the application:
+        ```bash
+        streamlit run app.py
+        ```
+    3.  Open `http://localhost:8501` in your browser.
 
 ---
 
@@ -61,7 +65,7 @@ Focusing on non-linear game dynamics to extract true basketball context:
 * **Hardened Baseline Model:** An XGBoost Classifier heavily regularized (L1/L2 penalties, depth limits, 80% subsampling) and stripped of temporal "cheat" variables (e.g., `seconds_remaining`). 
 * **Current Benchmark:** Established a robust Performance Floor of **0.86 ROC-AUC**, successfully validating the predictive power of Level 2 engineered features (Explosiveness, Fatigue).
 
-### Layer 4: Causal Inference (Current Phase)
+### Layer 4: Causal Inference (Prescriptive Phase)
 Transitioning from predictive to prescriptive analytics to answer: *"What happens if the coach intervenes?"*
 * **Treatment Definition:** Isolating timeout events within possessions.
 * **Propensity Scoring:** Modeling the probability of a coach calling a timeout in any given game state.
