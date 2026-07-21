@@ -2,12 +2,24 @@ import pandas as pd
 import time
 import os
 from nba_api.stats.endpoints import leaguegamefinder
-from nba_api.live.nba.endpoints import playbyplay
+from datetime import datetime
 
-# --- הגדרות ---
-SEASONS_TO_FETCH = ['2024-25', '2023-24', '2022-23', '2021-22']
+# --- הגדרות דינמיות ---
+def get_recent_nba_seasons(num_seasons=4):
+    now = datetime.now()
+    current_start_year = now.year - 1 if now.month < 10 else now.year
+    seasons = []
+    for i in range(num_seasons):
+        start_yr = current_start_year - i
+        end_yr_str = str(start_yr + 1)[-2:]
+        seasons.append(f"{start_yr}-{end_yr_str}")
+    return seasons
+
+SEASONS_TO_FETCH = get_recent_nba_seasons(1)
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, '..', 'data', 'pureData')
+
 
 HEADERS = {
     'Host': 'stats.nba.com',
