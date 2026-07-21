@@ -1,0 +1,10 @@
+pandas
+numpy
+xgboost
+scikit-learn
+matplotlib
+pyarrow
+nba_api
+mlflow
+dagshub
+supabase

@@ -6,6 +6,9 @@ import sys
 import json
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
+import mlflow
+import mlflow.xgboost
+import dagshub
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -80,6 +83,19 @@ class BaselineXGBoostRegressor:
         )
         print("Training Complete.")
 
+        # MLflow: Log Parameters
+        if mlflow.active_run():
+            mlflow.log_params({
+                "n_estimators": 300,
+                "learning_rate": 0.05,
+                "max_depth": 4,
+                "subsample": 0.8,
+                "colsample_bytree": 0.8,
+                "reg_alpha": 1.0,
+                "reg_lambda": 5.0,
+                "target": self.target
+            })
+
     def evaluate(self, X_val, y_val):
         print("\nEvaluating on Validation Set...")
         y_pred = self.model.predict(X_val)
@@ -91,6 +107,14 @@ class BaselineXGBoostRegressor:
         print(f"RMSE (Root Mean Squared Error): {rmse:.4f}")
         print(f"MAE (Mean Absolute Error): {mae:.4f}")
         print(f"R² Score: {r2:.4f}")
+
+        # MLflow: Log Metrics
+        if mlflow.active_run():
+            mlflow.log_metrics({
+                "rmse": rmse,
+                "mae": mae,
+                "r2": r2
+            })
 
     def plot_feature_importance(self):
         print("\nGenerating Feature Importance Plot...")
@@ -110,18 +134,34 @@ class BaselineXGBoostRegressor:
         plt.close()
         print(f"Feature Importance plot saved to: {plot_path}")
 
+        # MLflow: Log Plot Artifact
+        if mlflow.active_run():
+            mlflow.log_artifact(plot_path)
+
 def main():
-    pipeline = BaselineXGBoostRegressor(PROCESSED_DIR, TARGET_COL)
-    
-    train_df, val_df = pipeline.load_splits()
-    
-    X_train, y_train = pipeline.prepare_xy(train_df)
-    X_val, y_val = pipeline.prepare_xy(val_df)
-    
-    pipeline.train(X_train, y_train, X_val, y_val)
-    
-    pipeline.evaluate(X_val, y_val)
-    pipeline.plot_feature_importance()
+    try:
+        dagshub.init(repo_owner='davidkorenblit', repo_name='nba-ai-coach-assistant', mlflow=True)
+    except Exception as e:
+        print(f"Warning: Could not initialize DagsHub MLflow tracking: {e}")
+
+    with mlflow.start_run():
+        pipeline = BaselineXGBoostRegressor(PROCESSED_DIR, TARGET_COL)
+        
+        train_df, val_df = pipeline.load_splits()
+        
+        X_train, y_train = pipeline.prepare_xy(train_df)
+        X_val, y_val = pipeline.prepare_xy(val_df)
+        
+        pipeline.train(X_train, y_train, X_val, y_val)
+        
+        pipeline.evaluate(X_val, y_val)
+        pipeline.plot_feature_importance()
+
+        # MLflow: Log trained XGBoost model artifact
+        try:
+            mlflow.xgboost.log_model(pipeline.model, "xgboost_model")
+        except Exception as e:
+            print(f"Warning: Could not log XGBoost model artifact: {e}")
 
 if __name__ == "__main__":
     main()
