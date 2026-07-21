@@ -1,0 +1,76 @@
+name: NBA AI Coach MLOps Pipeline
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub UI button
+  schedule:
+    - cron: '0 0 * * 0' # Automatically runs every Sunday at midnight
+
+jobs:
+  run-mlops-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: 1. Fetch Raw Data
+      run: |
+        python scripts/DataCollectore.py || echo "Using existing raw data fallback"
+
+    - name: 2. QA Pre-FE Suite
+      run: |
+        python scripts/test_and_val/run_all_tests.py
+
+    - name: 3. FE Level 1 (Base Features)
+      run: |
+        python scripts/feature_engineering/01_build_level1_base.py
+
+    - name: 4. QA Level 1 Quality
+      run: |
+        python scripts/feature_engineering/validation/check_level1_quality.py
+
+    - name: 5. FE Level 2 (Momentum Features)
+      run: |
+        python scripts/feature_engineering/02_build_level2_momentum.py
+
+    - name: 6. QA Level 2 Quality
+      run: |
+        python scripts/feature_engineering/validation/check_level2_quality.py
+
+    - name: 7. FE Level 3 (Labels)
+      run: |
+        python scripts/feature_engineering/03_build_level3_labels.py
+
+    - name: 8. QA Level 3 Quality
+      run: |
+        python scripts/feature_engineering/validation/check_level3_quality.py
+
+    - name: 9. Prepare ML Splits & Leakage QA
+      run: |
+        python models/prepare_ml_splits.py
+
+    - name: 10. Train XGBoost Model & Log to MLflow (DagsHub)
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: |
+        python models/train_xgboost_baseline.py
+
+    - name: 11. Export Gold Predictions to Supabase DB
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: |
+        python scripts/export_to_supabase.py
+
+
