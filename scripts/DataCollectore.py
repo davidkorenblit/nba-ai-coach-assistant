@@ -6,14 +6,23 @@ from nba_api.live.nba.endpoints import playbyplay
 
 # --- הגדרות ---
 SEASONS_TO_FETCH = ['2024-25', '2023-24', '2022-23', '2021-22']
-OUTPUT_DIR = r"C:\Users\david\finalPro\data\pureData"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(BASE_DIR, '..', 'data', 'pureData')
+
+HEADERS = {
+    'Host': 'stats.nba.com',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Referer': 'https://www.nba.com/',
+    'Connection': 'keep-alive',
+}
 
 def fetch_multi_season_data():
     print(f"--- STARTING DATA COLLECTION FOR {len(SEASONS_TO_FETCH)} SEASONS ---")
     
     # 0. וידוא תיקייה
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     # לולאה ראשית: רצים עונה אחרי עונה
     for season in SEASONS_TO_FETCH:
@@ -22,8 +31,19 @@ def fetch_multi_season_data():
         
         # 1. שליפת רשימת המשחקים לאותה עונה
         print(f"Fetching game list for {season}...")
-        gamefinder = leaguegamefinder.LeagueGameFinder(season_nullable=season, league_id_nullable='00', season_type_nullable='Regular Season')
-        games_df = gamefinder.get_data_frames()[0]
+        try:
+            gamefinder = leaguegamefinder.LeagueGameFinder(
+                season_nullable=season, 
+                league_id_nullable='00', 
+                season_type_nullable='Regular Season',
+                headers=HEADERS,
+                timeout=60
+            )
+            games_df = gamefinder.get_data_frames()[0]
+        except Exception as e:
+            print(f"⚠️ Warning: Could not fetch season {season} due to API timeout: {e}")
+            continue
+
         
         # סינון משחקים ששוחקו
         games_played = games_df[games_df['WL'].notna()]
