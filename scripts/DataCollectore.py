@@ -31,13 +31,23 @@ from nba_api.live.nba.endpoints import playbyplay
 # --- הגדרות דינמיות ---
 def get_recent_nba_seasons(num_seasons=1):
     now = datetime.now()
-    current_start_year = now.year - 1 if now.month < 10 else now.year
+    # In off-season (July-September), the last played season is 2024-25
+    if now.month >= 10:
+        current_start_year = now.year
+    else:
+        current_start_year = now.year - 1
+        
+    # Ensure during off-season we target the completed 2024-25 season
+    if now.month in [7, 8, 9] and current_start_year == 2025:
+        current_start_year = 2024
+
     seasons = []
     for i in range(num_seasons):
         start_yr = current_start_year - i
         end_yr_str = str(start_yr + 1)[-2:]
         seasons.append(f"{start_yr}-{end_yr_str}")
     return seasons
+
 
 SEASONS_TO_FETCH = get_recent_nba_seasons(1)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
