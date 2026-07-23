@@ -16,10 +16,17 @@ session.headers.update({
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 })
 
+# Optional Proxy support for cloud runners (e.g. GitHub Actions)
+proxy = os.environ.get("NBA_API_PROXY")
+if proxy:
+    print(f"🌐 Using Proxy for NBA API: {proxy}")
+    session.proxies = {"http": proxy, "https": proxy}
+
 try:
     session.get('https://www.nba.com', timeout=15)
 except Exception as e:
     print(f"Warning: Cookie warmup failed: {e}")
+
 
 # Monkeypatch both stats and live HTTP sessions in nba_api
 NBAHTTP.get_session = lambda self: session
