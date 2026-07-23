@@ -193,12 +193,33 @@ def clean_sparse_columns(df):
     if existing: df.drop(columns=existing, inplace=True)
     return df
 
-# --- Main (UNTOUCHED Pipeline) ---
+# --- Main (DYNAMIC Hybrid Pipeline) ---
+def get_raw_season_data():
+    pure_dir = os.path.join(BASE_DIR, 'data', 'pureData')
+    if not os.path.exists(pure_dir):
+        print(f"❌ Error: Raw data directory not found at {pure_dir}")
+        return None
+    
+    season_files = [os.path.join(pure_dir, f) for f in os.listdir(pure_dir) if f.startswith('season_') and f.endswith('.csv')]
+    if not season_files:
+        print(f"❌ Error: No season_*.csv files found in {pure_dir}")
+        return None
+    
+    print(f"📦 Found {len(season_files)} season file(s): {[os.path.basename(f) for f in season_files]}")
+    dfs = [pd.read_csv(f, low_memory=False) for f in season_files]
+    return pd.concat(dfs, ignore_index=True)
+
 def main():
     print(f" Starting DYNAMIC Level 1 Build (V9)...")
-    if not os.path.exists(RAW_FILE_PATH): return
-    df_rot = pd.read_csv(ROTATIONS_FILE_PATH) if os.path.exists(ROTATIONS_FILE_PATH) else None
-    df = pd.read_csv(RAW_FILE_PATH, low_memory=False)
+    df = get_raw_season_data()
+    if df is None or df.empty:
+        raise FileNotFoundError("❌ CRITICAL: No raw season data found in data/pureData. Level 1 build aborted.")
+    
+    # Load rotations if available
+    pure_dir = os.path.join(BASE_DIR, 'data', 'pureData')
+    rot_files = [os.path.join(pure_dir, f) for f in os.listdir(pure_dir) if f.startswith('rotations_') and f.endswith('.csv')]
+    df_rot = pd.concat([pd.read_csv(f) for f in rot_files], ignore_index=True) if rot_files else None
+
     
     df = process_base_timeline(df)
     df = enrich_state_counters_v4(df)
