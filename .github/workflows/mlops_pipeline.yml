@@ -70,11 +70,16 @@ jobs:
       run: |
         python models/train_xgboost_baseline.py
 
+    - name: 10.5. Generate Inference Data Package
+      run: |
+        python models/prepare_demo_data.py
+
     - name: 11. Export Gold Predictions to Supabase DB
       env:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       run: |
         python scripts/export_to_supabase.py
+
 
 
