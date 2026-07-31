@@ -1,81 +1,131 @@
 # NBA-AI-Coach: Real-Time Tactical Timeout Optimization
 
-> 🚀 **Live Demo Available:** Play with the interactive web simulator instantly here: [SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
+[![MLOps Pipeline](https://github.com/davidkorenblit/nba-ai-coach-assistant/actions/workflows/mlops_pipeline.yml/badge.svg)](https://github.com/davidkorenblit/nba-ai-coach-assistant/actions)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-SimCast%20Arena-orange?style=flat&logo=javascript)](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
+[![MLflow & DagsHub](https://img.shields.io/badge/MLflow-DagsHub-blue?style=flat&logo=mlflow)](https://dagshub.com/davidkorenblit/nba-ai-coach-assistant)
+[![Database](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=flat&logo=supabase)](https://supabase.com)
 
-## Project Executive Summary
-A Machine Learning-driven Decision Support System (DSS) designed to assist NBA coaching staffs in making data-validated timeout calls. By transforming raw event-stream data into a multi-layered analytical framework, the system quantifies game momentum and player fatigue, utilizing predictive modeling and **Causal Inference** to isolate the true treatment effect of a timeout and predict the optimal moment to intervene.
-
----
-
-## 🚀 Interactive Live Demos
-
-To showcase the decision-support engine in action, the project includes two interactive demo environments that simulate game scenarios and display real-time tactical recommendations.
-
-> [!NOTE]
-> **Demo Data Note:** The demos use curated, simulated game scenarios designed to highlight specific tactical moments (e.g., clutch collapses, momentum stops, and fatigue threshold breaches) while complying with proprietary NBA data license restrictions.
-
-### 1. SimCast Arena Dashboard (`index.html`)
-A premium, web-based visual dashboard mimicking a live game broadcast feed.
-
-*   **🌐 Option A: Live Hosted Demo (No Installation)**
-    *   Simply visit the hosted version: [SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)
-*   **📂 Option B: Local File View (Zero-Setup)**
-    *   Open [index.html](file:///c:/Users/david/finalPro/index.html) directly in any web browser by double-clicking it in your file explorer.
-    *   *Note: Because the demo data is preloaded as a static module in `data/demo/demo_data.js`, this works instantly offline and is completely immune to browser CORS restriction issues.*
-*   **🖥️ Option C: Local HTTP Server**
-    *   Run a local server in the project directory:
-        ```bash
-        python -m http.server 8000
-        ```
-    *   Then visit: `http://localhost:8000`
-
-### 2. Streamlit Live Simulation (`app.py`)
-An interactive Python-based dashboard showcasing the data science, feature importance, and causal inference outputs.
-*   **Features:** Dynamic playback control (Play/Pause/Reset), period-by-period breakdown, and real-time visualization of CATE (Conditional Average Treatment Effect) scores and propensity weights.
-*   **How to Run:**
-    1.  Install the required dependencies:
-        ```bash
-        pip install streamlit pandas numpy matplotlib pyarrow
-        ```
-    2.  Run the application:
-        ```bash
-        streamlit run app.py
-        ```
-    3.  Open `http://localhost:8501` in your browser.
+> 🚀 **Live Demo Available:** Experience the interactive broadcast simulator instantly here: **[SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)**
 
 ---
 
-## System Architecture: The Pipeline
+## 📌 Executive Summary
 
-### Layer 1: Base State Engine (ETL & Infrastructure)
-* **Data Ingestion:** Automated processing of NBA Play-by-Play (PBP) JSON/CSV data.
-* **Lineup Inference:** Hybrid heuristic engine (61% API / 39% Logic) for real-time 5-man unit tracking.
-* **Temporal Normalization:** Mapping disparate period clocks to a unified, second-based game timeline.
+The **NBA AI Coach Assistant** is an end-to-end Machine Learning and Causal Inference Decision Support System (DSS) designed to assist NBA coaching staffs in making data-validated timeout calls. 
 
-### Layer 2: Feature Engineering (The "Brain")
-Focusing on non-linear game dynamics to extract true basketball context:
-* **Smart Momentum:** A weighted composite score of scoring efficiency, defensive stops, and high-value plays.
-* **Explosiveness Index:** Calculated slope of score-margin variance to identify rapid momentum shifts.
-* **Shared Fatigue & Gravity:** Vectorized tracking of on-court duration to identify "usage-gravity" drop-offs.
-* **Style Shift Detection:** Identifying deviations in average shot-clock usage and pace.
-
-### Layer 3: MLOps, Labeling & Baseline Prediction
-* **Dynamic Target Labeling:** Object-Oriented labeling engine (`Level3Labeler`) resolving the "Margin Bug" (contextualizing score relativity) to define success across multiple temporal windows (e.g., 90s, 180s momentum stops).
-* **Leakage-Proof Data Splitting:** Strict Game-Level chronological splitting (Train/Val/Test) combined with Parquet serialization to guarantee zero future-to-past data leakage.
-* **Hardened Baseline Model:** An XGBoost Classifier heavily regularized (L1/L2 penalties, depth limits, 80% subsampling) and stripped of temporal "cheat" variables (e.g., `seconds_remaining`). 
-* **Current Benchmark:** Established a robust Performance Floor of **0.86 ROC-AUC**, successfully validating the predictive power of Level 2 engineered features (Explosiveness, Fatigue).
-
-### Layer 4: Causal Inference (Prescriptive Phase)
-Transitioning from predictive to prescriptive analytics to answer: *"What happens if the coach intervenes?"*
-* **Treatment Definition:** Isolating timeout events within possessions.
-* **Propensity Scoring:** Modeling the probability of a coach calling a timeout in any given game state.
-* **X-Learner Implementation:** Calculating the Conditional Average Treatment Effect (CATE) to provide actionable, situation-specific timeout recommendations.
+By transforming raw event-stream data into a 4-layer analytical framework, the system quantifies game momentum, explosiveness, and player fatigue. It combines predictive modeling (XGBoost) with **Causal Inference (X-Learner)** to isolate the true treatment effect of a timeout and recommend the optimal moment to intervene.
 
 ---
 
-## Tech Stack & Standards
-* **Core:** Python (Pandas, NumPy, Scikit-Learn, XGBoost, Streamlit)
-* **Frontend:** HTML5, TailwindCSS, JavaScript (Chart.js)
-* **Design:** Object-Oriented Programming (OOP) with modular logic handlers.
-* **Validation:** Integrated QA Validators (`Level3QAValidator`, `SplitValidator`) enforcing strict diagnostic checks prior to model training.
-* **Efficiency:** 100% Vectorized data processing (no Python loops) for low-latency operations.
+## 📐 End-to-End System Architecture
+
+```mermaid
+graph TD
+    subgraph Data & ETL Layer
+        A[NBA Play-by-Play API] --> B[DataCollectore.py]
+        B --> C[data/pureData Bronze]
+    end
+
+    subgraph 11-Step MLOps Pipeline & QA
+        C --> D[QA Suite: 8 Pre-FE Tests]
+        D --> E[FE Level 1: Base & Lineups]
+        E --> F[QA Level 1 Check]
+        F --> G[FE Level 2: Smart Momentum & Fatigue]
+        G --> H[QA Level 2 Check]
+        H --> I[FE Level 3: Dynamic Multi-Labeler]
+        I --> J[QA Level 3 Check]
+        J --> K[prepare_ml_splits.py & Leakage QA]
+    end
+
+    subgraph Modeling & Causal AI
+        K --> L[XGBoost Classifier Baseline]
+        L --> M[MLflow & DagsHub Tracking]
+        K --> N[Causal X-Learner Meta-Model]
+    end
+
+    subgraph Production Serving & Web UI
+        L --> O[export_to_supabase.py]
+        O --> P[(Supabase Cloud DB)]
+        P --> Q[SimCast Arena Broadcast Dashboard]
+        P --> R[Streamlit Analytics App]
+    end
+```
+
+---
+
+## ⚡ Quickstart & Installation
+
+Follow these steps to clone the repository and run the full environment locally:
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/davidkorenblit/nba-ai-coach-assistant.git
+cd nba-ai-coach-assistant
+```
+
+### 2. Set Up Virtual Environment & Install Dependencies
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment (Windows)
+.\venv\Scripts\activate
+# On macOS/Linux: source venv/bin/activate
+
+# Install all required packages
+pip install -r requirements.txt
+```
+
+### 3. Run the Applications
+
+#### 🌐 Option A: SimCast Arena Broadcast Simulator (`index.html`)
+* **Instant Hosted Version:** Visit **[SimCast Arena Dashboard](https://davidkorenblit.github.io/nba-ai-coach-assistant/)**
+* **Local HTTP Server:**
+  ```bash
+  python -m http.server 8000
+  ```
+  Then open `http://localhost:8000` in your web browser.
+
+#### 📊 Option B: Streamlit Analytics App (`app.py`)
+```bash
+streamlit run app.py
+```
+Open `http://localhost:8501` to explore CATE scores, propensity weights, and period-by-period tactical breakdowns.
+
+---
+
+## 🔄 End-to-End MLOps Pipeline (GitHub Actions)
+
+The project includes an **11-step automated MLOps pipeline** configured in `.github/workflows/mlops_pipeline.yml`:
+
+1. **Raw Data Ingestion:** `DataCollectore.py` with Akamai TLS session & Proxy support.
+2. **QA Pre-FE Suite:** `run_all_tests.py` running 8 data integrity tests.
+3. **FE Level 1:** `01_build_level1_base.py` (dynamic timeline & lineup inference).
+4. **QA Level 1:** Quality and structural integrity checks.
+5. **FE Level 2:** `02_build_level2_momentum.py` (Smart Momentum, Fatigue & Explosiveness).
+6. **QA Level 2:** Non-linear metric quality checks.
+7. **FE Level 3:** `03_build_level3_labels.py` (Multi-window target labeler).
+8. **QA Level 3:** Target label distribution checks.
+9. **ML Splits & Leakage QA:** Game-level chronological splitting + zero-leakage validation.
+10. **Model Training & MLflow:** Training XGBoost models and logging artifacts to **DagsHub**.
+11. **Supabase Export:** Pushing Gold predictions to **Supabase PostgreSQL Cloud DB**.
+
+---
+
+## 🛠️ Tech Stack & Technical Standards
+
+* **Core Language & Science:** Python 3.10+, Pandas, NumPy, Scikit-Learn, XGBoost, EconML
+* **MLOps & Data Pipeline:** GitHub Actions, DagsHub, MLflow, DVC, Supabase (PostgreSQL)
+* **API Ingestion:** `nba_api`, `curl_cffi` (Chrome TLS Impersonation & Akamai WAF Bypass)
+* **Web Interfaces:** HTML5, Vanilla CSS, JavaScript (Chart.js), Streamlit
+* **Code Quality & Integrity:** OOP architecture, 100% vectorized calculations, strict assertion-based QA validators.
+
+---
+
+## 📁 Repository Structure
+
+* [`models/`](file:///c:/Users/david/finalPro/models): XGBoost baseline models, Causal X-Learner, data splitting, and recommendation engine.
+* [`scripts/`](file:///c:/Users/david/finalPro/scripts): Data collector, feature engineering pipeline (Levels 1–3), QA test suite, and Supabase exporter.
+* [`docs/`](file:///c:/Users/david/finalPro/docs): Executive summary and technical documentation.
+* [`index.html`](file:///c:/Users/david/finalPro/index.html) & [`js/`](file:///c:/Users/david/finalPro/js): SimCast Arena broadcast simulator web interface.
+* [`app.py`](file:///c:/Users/david/finalPro/app.py): Streamlit interactive analytics application.
