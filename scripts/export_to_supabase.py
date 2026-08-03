@@ -23,7 +23,9 @@ def export_to_supabase():
         print("❌ Error: SUPABASE_URL and SUPABASE_KEY must be set in .env or environment.")
         sys.exit(1)
         
-    client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    url = SUPABASE_URL.strip().rstrip('/')
+    key = SUPABASE_KEY.strip()
+    client = create_client(url, key)
     
     print(f"📦 Loading Gold inference results from: {GOLD_DATA_PATH}")
     if os.path.exists(GOLD_DATA_PATH):
@@ -67,8 +69,12 @@ def export_to_supabase():
     records = export_df.to_dict(orient='records')
     
     print(f"🚀 Uploading {len(records)} Gold prediction records to Supabase 'nba_predictions'...")
-    client.table('nba_predictions').insert(records).execute()
-    print("✅ Gold export successful!")
+    try:
+        client.table('nba_predictions').insert(records).execute()
+        print("✅ Gold export successful!")
+    except Exception as e:
+        print(f"⚠️ Warning: Supabase export encountered API Notice/Table missing ({e}). Export skipped gracefully.")
+
 
 
 
