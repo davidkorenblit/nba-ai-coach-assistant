@@ -438,9 +438,9 @@ class NBADemoDataArchitect:
         print(f"Formatted JS successfully saved at: {js_path}\nPipeline finished with 100% Data Integrity!")
 
 if __name__ == "__main__":
-    base_directory = r"C:\Users\david\finalPro"
+    base_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     parquet_path = os.path.join(base_directory, "data", "processed", "test.parquet")
     output_dir = os.path.join(base_directory, "data", "demo")
     
     architect = NBADemoDataArchitect(parquet_path, output_dir)
-    architect.generate()
+    architect.generate()
