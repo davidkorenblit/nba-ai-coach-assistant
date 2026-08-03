@@ -69,7 +69,7 @@ def run_multi_target_sweep(reports_dir):
         print(f"📊 Sweep Graph saved to: {plot_path}")
 
 if __name__ == "__main__":
-    # נתיב תיקיית הדו"חות שלך
-    REPORTS_DIR = r"C:\Users\david\finalPro\reports"
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    REPORTS_DIR = os.path.join(BASE_DIR, "reports")
     
-    run_multi_target_sweep(REPORTS_DIR)
+    run_multi_target_sweep(REPORTS_DIR)

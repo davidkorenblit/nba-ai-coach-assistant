@@ -5,7 +5,8 @@ import os
 import json
 
 def analyze_sweet_spot_all_targets():
-    base_dir = r"C:\Users\david\finalPro"
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     print("🎯 Extracting Presentation Metrics for ALL TARGETS...\n" + "="*60)
     
     data_path = os.path.join(base_dir, 'data', 'processed', 'test.parquet')

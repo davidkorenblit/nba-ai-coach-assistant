@@ -5,7 +5,8 @@ import numpy as np
 
 def generate_presentation_graphs():
     # 1. Define base directories and target output folder
-    base_dir = r"C:\Users\david\finalPro"
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     # Create the new directory inside 'reports'
     output_dir = os.path.join(base_dir, 'reports', 'important_graphs')
     os.makedirs(output_dir, exist_ok=True)
