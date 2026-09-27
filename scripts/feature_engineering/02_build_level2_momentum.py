@@ -4,6 +4,9 @@ import os
 import sys
 import ast
 
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
@@ -17,8 +20,9 @@ class Level2Validator:
     def validate(df: pd.DataFrame) -> bool:
         print("🛡️ Running Level 2 Data Validation...")
         critical_cols = [
-            'home_usage_gravity', 'usage_delta', 'home_cum_fatigue', 
-            'momentum_streak_rolling', 'explosiveness_index', 'is_star_resting'
+            'home_usage_gravity', 'usage_delta', 'home_cum_fatigue', 'away_cum_fatigue',
+            'home_momentum_streak', 'away_momentum_streak', 'momentum_streak_rolling',
+            'explosiveness_index', 'star_advantage', 'is_star_resting'
         ]
         
         for col in critical_cols:
@@ -66,12 +70,10 @@ class Level2FeatureEngineer:
 
     def build_usage_gravity(self):
         print("🔹 Building: Usage Gravity (Vectorized Lookup)...")
-        # אופטימיזציה: במקום apply עם לולאה פנימית, פירוק לרשומות, מיפוי מהיר, וקיבוץ חזרה
         for prefix in ['home', 'away']:
             lineup_col = f'{prefix}_lineup'
             exploded = self.df[lineup_col].explode()
             usg_mapped = exploded.map(self.stars_map).fillna(0.15)
-            # טיפול במקרי קצה של רשימות ריקות
             usg_mapped[exploded.isna()] = 0.0
             
             gravity = usg_mapped.groupby(level=0).sum()
@@ -87,29 +89,42 @@ class Level2FeatureEngineer:
             lineup_col = f'{prefix}_lineup'
             temp_exp = self.df[['gameId', 'play_duration', lineup_col]].explode(lineup_col)
             
-            # חישוב זמן מצטבר פר שחקן באותו משחק
             temp_exp['player_cum_dur'] = temp_exp.groupby(['gameId', lineup_col])['play_duration'].cumsum()
             
-            # קיבוץ בחזרה לממוצע החמישייה באותה שורה
             self.df[f'{prefix}_cum_fatigue'] = temp_exp.groupby(level=0)['player_cum_dur'].mean().fillna(0)
 
     def build_smart_streak(self):
-        print("🔹 Building: Smart Momentum Streak (Vectorized Action/SubType)...")
-        self.df['event_momentum_val'] = 0.0
-        
-        # וקטוריזציה מלאה על בסיס מזהים קשיחים (actionType/subType/shotResult) 
-        self.df.loc[(self.df['actionType'] == '3pt') & (self.df['shotResult'] == 'Made'), 'event_momentum_val'] += 1.5
-        self.df.loc[(self.df['actionType'] == '2pt') & (self.df['shotResult'] == 'Made'), 'event_momentum_val'] += 1.0
-        self.df.loc[self.df['actionType'] == 'steal', 'event_momentum_val'] += 2.0
-        self.df.loc[self.df['actionType'] == 'block', 'event_momentum_val'] += 1.5
-        
+        print("🔹 Building: Smart Momentum Streak (Dual Streaks with Momentum Breakers)...")
+        # 1. Team attribution
+        home_ids = self.df[self.df['scoreHome'].diff() > 0].groupby('gameId')['teamId'].agg(lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else np.nan)
+        is_home = (self.df['teamId'] == self.df['gameId'].map(home_ids))
+        is_away = (self.df['teamId'].notna()) & (~is_home)
+
+        # 2. Event weights
+        weights = {'3pt': 1.5, '2pt': 1.0, 'steal': 2.0, 'block': 1.5}
+        val = self.df['actionType'].map(weights).fillna(0.0) * (self.df['shotResult'].fillna('Made') == 'Made')
         if 'foulTechnicalTotal' in self.df.columns:
-            self.df.loc[self.df['foulTechnicalTotal'] > 0, 'event_momentum_val'] += 2.5
-        
-        WINDOW_EVENTS = 10
-        self.df['momentum_streak_rolling'] = self.df.groupby('gameId')['event_momentum_val'].transform(
-            lambda x: x.rolling(window=WINDOW_EVENTS, min_periods=1).sum()
-        ).fillna(0)
+            val += (self.df['foulTechnicalTotal'] > 0).astype(float) * 2.5
+
+        h_val, a_val = (val * is_home).to_numpy(), (val * is_away).to_numpy()
+
+        # 3. Dual streak loop with Tug-of-War continuous gauge
+        h_streaks, a_streaks = np.zeros(len(self.df)), np.zeros(len(self.df))
+        cur_gid, h_s, a_s = None, 0.0, 0.0
+        for i, gid in enumerate(self.df['gameId'].to_numpy()):
+            if gid != cur_gid: cur_gid, h_s, a_s = gid, 0.0, 0.0
+            if h_val[i] > 0:
+                h_s += h_val[i]
+                a_s = max(0.0, a_s - h_val[i])
+            if a_val[i] > 0:
+                a_s += a_val[i]
+                h_s = max(0.0, h_s - a_val[i])
+            h_streaks[i], a_streaks[i] = h_s, a_s
+
+        self.df['home_momentum_streak'] = h_streaks
+        self.df['away_momentum_streak'] = a_streaks
+        self.df['momentum_delta'] = h_streaks - a_streaks
+        self.df['momentum_streak_rolling'] = self.df['momentum_delta']
 
     def build_explosiveness(self):
         print("🔹 Building: Explosiveness Index...")
@@ -135,18 +150,18 @@ class Level2FeatureEngineer:
         )
 
     def build_star_resting(self):
-        print("🔹 Building: Star Resting (Vectorized Matrix Operation)...")
+        print("🔹 Building: Star Resting & Advantage Differential...")
         star_ids = list(self.stars_map.keys())
         if not star_ids:
+            self.df['star_advantage'] = 0
             self.df['is_star_resting'] = 0
             return
 
-        # אופטימיזציה: ללא apply ו-axis=1. בדיקה מטריציונית מהירה.
-        home_has_star = self.df['home_lineup'].explode().isin(star_ids).groupby(level=0).any()
-        away_has_star = self.df['away_lineup'].explode().isin(star_ids).groupby(level=0).any()
+        home_has_star = self.df['home_lineup'].explode().isin(star_ids).groupby(level=0).any().reindex(self.df.index, fill_value=False)
+        away_has_star = self.df['away_lineup'].explode().isin(star_ids).groupby(level=0).any().reindex(self.df.index, fill_value=False)
         
-        # אם אין כוכבים לאף אחת מהקבוצות כרגע במגרש = 1
-        self.df['is_star_resting'] = (~(home_has_star | away_has_star)).astype(int)
+        self.df['star_advantage'] = (home_has_star.astype(int) - away_has_star.astype(int)).astype(int)
+        self.df['is_star_resting'] = self.df['star_advantage']
 
     def run_pipeline(self) -> pd.DataFrame:
         self.build_usage_gravity()
