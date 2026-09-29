@@ -15,7 +15,7 @@ class Level3Validator:
     def validate(df: pd.DataFrame) -> bool:
         print("🛡️ Running Level 3 Label Validation...")
         
-        # הפרדה בין טרגטים רציפים לבינאריים כדי לא לזרוק אזהרות שווא על חוסר איזון
+        # translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment
         continuous_targets = [
             'target_stop_run_90s', 'target_reverse_trend_180s', 
             'target_improve_margin_90s', 'target_improve_margin_180s'
@@ -28,18 +28,24 @@ class Level3Validator:
         if missing:
             raise ValueError(f"Validator Error: Missing target columns {missing}")
             
-        # 2. NaNs check
-        nan_counts = df[target_cols].isna().sum()
-        if nan_counts.sum() > 0:
-            raise ValueError(f"Validator Error: Found NaNs in targets!\n{nan_counts[nan_counts > 0]}")
-            
-        # 3. Class Imbalance Check (Only for binary penalty)
-        for col in binary_targets:
-            positive_rate = df[col].mean()
-            if positive_rate < 0.001 or positive_rate > 0.999:
-                print(f"⚠️ Warning: Severe class imbalance in {col} ({positive_rate*100:.2f}% positive). XGBoost might struggle.")
-            else:
-                print(f"✅ {col} Class Balance: {positive_rate*100:.2f}% positive")
+        # 2. Boundary-aware completeness check (Right-Censoring validation)
+        # Non-boundary plays (>=90s or >=180s left in quarter) MUST have complete non-NaN targets
+        valid_90s_mask = (df['seconds_remaining'] >= 90)
+        nans_in_valid_90 = df.loc[valid_90s_mask, ['target_stop_run_90s', 'target_improve_margin_90s']].isna().sum()
+        if nans_in_valid_90.sum() > 0:
+            raise ValueError(f"Validator Error: Unexpected NaNs in non-boundary 90s targets!\n{nans_in_valid_90}")
+
+        valid_180s_mask = (df['seconds_remaining'] >= 180)
+        nans_in_valid_180 = df.loc[valid_180s_mask, ['target_reverse_trend_180s', 'target_improve_margin_180s', 'target_danger_penalty']].isna().sum()
+        if nans_in_valid_180.sum() > 0:
+            raise ValueError(f"Validator Error: Unexpected NaNs in non-boundary 180s targets!\n{nans_in_valid_180}")
+
+        print(f"✅ Right-Censoring Validation Passed: 90s targets valid for {valid_90s_mask.sum():,} plays ({valid_90s_mask.mean()*100:.1f}%), 180s targets valid for {valid_180s_mask.sum():,} plays ({valid_180s_mask.mean()*100:.1f}%).")
+
+        # 3. Class Imbalance Check (Only for valid binary penalty)
+        penalty_valid = df['target_danger_penalty'].dropna()
+        positive_rate = penalty_valid.mean()
+        print(f"✅ target_danger_penalty Class Balance: {positive_rate*100:.2f}% positive (evaluated on {len(penalty_valid):,} valid non-boundary rows)")
                 
         print("✅ Validation Passed: Labels are clean and ready for ML.")
         return True
@@ -96,18 +102,12 @@ class Level3Labeler:
             by=['gameId', 'period'], direction='forward'
         )
 
-        # Re-sort and fill edge cases (end of quarter/game)
+        # Re-sort (Keep quarter-end boundary lookahead NaNs for proper Right-Censoring)
         self.df = merged.sort_values(by=['gameId', 'period', 'time_elapsed']).reset_index(drop=True)
-        
-        for prefix in ['_90s', '_180s']:
-            self.df['fut_margin'+prefix] = self.df['fut_margin'+prefix].fillna(self.df[self.col_margin])
-            self.df['fut_mom'+prefix] = self.df['fut_mom'+prefix].fillna(self.df[self.col_mom])
-            self.df['fut_exp'+prefix] = self.df['fut_exp'+prefix].fillna(self.df[self.col_exp])
 
     def build_targets(self):
         print("🎯 Generating Machine Learning Targets (Labels)...")
 
-        # --- הוספת דגל הגארבג' טיים ---
         self.df['is_garbage_time'] = (
             ((self.df['period'] == 4) & (self.df['seconds_remaining'] <= 180) & (self.df['score_margin'].abs() >= 15)) |
             ((self.df['period'] == 4) & (self.df['seconds_remaining'] > 180) & (self.df['score_margin'].abs() >= 30)) |
@@ -145,7 +145,11 @@ class Level3Labeler:
         is_timeout = self.df['actionType'].str.contains('timeout', case=False, na=False)
 
         # Danger penalty: in danger, no timeout, and normalized margin got worse (negative)
-        self.df['target_danger_penalty'] = (is_danger & ~is_timeout & (self.df['norm_delta_margin_180s'] < 0)).astype(int)
+        self.df['target_danger_penalty'] = np.where(
+            self.df['norm_delta_margin_180s'].isna(),
+            np.nan,
+            (is_danger & ~is_timeout & (self.df['norm_delta_margin_180s'] < 0)).astype(float)
+        )
 
     def cleanup_and_save(self):
         print("🧹 Cleaning up temporary columns...")
