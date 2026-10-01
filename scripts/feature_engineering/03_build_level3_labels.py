@@ -114,19 +114,30 @@ class Level3Labeler:
             ((self.df['period'] > 4) & (self.df['score_margin'].abs() >= 20))
         ).astype(int)
 
-        # Target 1: Stop Run (Continuous -> Positive value means explosiveness went down, which is good)
+        # 1. Determine acting team perspective (Home: +1, Away: -1)
+        home_team_series = self.df[self.df['scoreHome'].diff() > 0].groupby('gameId')['teamId'].agg(
+            lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else np.nan
+        )
+        home_team_map = home_team_series.to_dict()
+        for gid in self.df['gameId'].unique():
+            if gid not in home_team_map or pd.isna(home_team_map[gid]):
+                game_teams = self.df[self.df['gameId'] == gid]['teamId'].dropna().unique()
+                if len(game_teams) > 0:
+                    home_team_map[gid] = game_teams[0]
+
+        home_team_id = self.df['gameId'].map(home_team_map)
+        is_away = (self.df['teamId'].notna()) & (self.df['teamId'] != home_team_id)
+        self.df['interest_sign'] = np.where(is_away, -1, 1)
+
+        # Target 1: Stop Run (Reduction in absolute opponent explosiveness -> Positive is good)
         self.df['delta_exp_abs_90s'] = self.df['fut_exp_90s'].abs() - self.df[self.col_exp].abs()
         self.df['target_stop_run_90s'] = -self.df['delta_exp_abs_90s']
 
-        # Target 2: Reverse Trend 180s (Continuous)
+        # Target 2: Reverse Trend 180s (Momentum shift in favor of acting team)
         self.df['delta_mom_180s'] = self.df['fut_mom_180s'] - self.df[self.col_mom]
-        self.df['target_reverse_trend_180s'] = self.df['delta_mom_180s']
+        self.df['target_reverse_trend_180s'] = self.df['delta_mom_180s'] * self.df['interest_sign']
 
-        # Target 3 & 4: Improve Margin (Continuous)
-        # If score_margin > 0 (Home leading), Away is in pressure (interest_sign = -1)
-        # If score_margin < 0 (Away leading), Home is in pressure (interest_sign = 1)
-        self.df['interest_sign'] = np.where(self.df['score_margin'] > 0, -1, 1)
-        
+        # Target 3 & 4: Improve Margin 90s & 180s (Normalized point gain from acting team perspective)
         self.df['delta_margin_90s'] = self.df['fut_margin_90s'] - self.df[self.col_margin]
         self.df['norm_delta_margin_90s'] = self.df['delta_margin_90s'] * self.df['interest_sign']
         self.df['target_improve_margin_90s'] = self.df['norm_delta_margin_90s']
