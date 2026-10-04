@@ -146,7 +146,7 @@ class Level2FeatureEngineer:
         self.df.drop(columns=['time_lag'], inplace=True)
         
         self.df['is_clutch_time'] = np.where(
-            (self.df['seconds_remaining'] <= 300) & (self.df['score_margin'].abs() <= 5), 1, 0
+            (self.df['period'] >= 4) & (self.df['seconds_remaining'] <= 300) & (self.df['score_margin'].abs() <= 5), 1, 0
         )
 
     def build_star_resting(self):
