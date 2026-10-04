@@ -18,28 +18,28 @@ def fill_smart():
         gid = missing_ids[i]
         try:
             print(f"   💉 Fixing {gid} [{i+1}/{len(missing_ids)}]...", end="\r")
-            time.sleep(random.uniform(2, 4)) # הפסקה בין בקשות
+            time.sleep(random.uniform(2, 4)) # Pause between requests
             
             rot = gamerotation.GameRotation(game_id=gid, timeout=30)
             frames = []
             if hasattr(rot, 'home_team'): frames.append(rot.home_team.get_data_frame())
             if hasattr(rot, 'away_team'): frames.append(rot.away_team.get_data_frame())
             
-            # אם חזר מידע - שומרים
+            # Save retrieved data
             if frames:
                 df = pd.concat(frames, ignore_index=True)
                 df['gameId'] = gid
-                # סידור מהיר של עמודות כדי למנוע קריסה
+                # Reorder columns to ensure structure
                 cols = ['gameId', 'PERSON_ID', 'IN_TIME_REAL', 'OUT_TIME_REAL']
                 exist = [c for c in cols if c in df.columns]
                 other = [c for c in df.columns if c not in exist]
                 df[exist + other].to_csv(OUTPUT_PATH, mode='a', header=False, index=False)
             
-            i += 1 # הצלחה -> ממשיכים
+            i += 1 # Success -> proceed
             
         except Exception as e:
             print(f"\n   🛑 Blocked on {gid}. Sleeping 3 mins...")
-            time.sleep(180) # ישנים 3 דקות ומנסים שוב את אותו משחק
+            time.sleep(180) # Wait 3 minutes and retry game request
 
 if __name__ == "__main__":
     fill_smart()
