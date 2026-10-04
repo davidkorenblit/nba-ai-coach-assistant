@@ -4,7 +4,7 @@ import os
 import sys
 
 # --- Config ---
-# מותאם לנתיב הריצה מתוך תיקיית validation
+# translated_comment translated_comment translated_comment translated_comment translated_comment validation
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'interim', 'level2_features.csv')
 
@@ -83,8 +83,8 @@ class Level2Validator:
             self._log("Strict Clean Data Check", False, err_msg)
 
     def check_binary_flags(self):
-        """Verifies binary features contain only 0/1."""
-        binary_cols = ['is_high_fatigue', 'is_star_resting', 'is_clutch_time']
+        """Verifies binary and ternary indicator features contain valid discrete values."""
+        binary_cols = ['is_high_fatigue', 'is_clutch_time']
         valid = True
         
         for col in binary_cols:
@@ -95,8 +95,17 @@ class Level2Validator:
                 self._log("Binary Flags", False, f"Column '{col}' has invalid values: {invalid_vals}")
                 break
         
+        # Validate star differential flags allow {-1, 0, 1}
+        for star_col in ['star_advantage', 'is_star_resting']:
+            if star_col in self.df.columns:
+                invalid_star = [x for x in self.df[star_col].unique() if pd.notna(x) and x not in [-1, 0, 1, -1.0, 0.0, 1.0]]
+                if invalid_star:
+                    valid = False
+                    self._log("Binary/Ternary Flags", False, f"Column '{star_col}' has invalid values: {invalid_star}")
+                    break
+        
         if valid:
-            self._log("Binary Flags", True, "All binary flags contain only {0, 1}.")
+            self._log("Binary Flags", True, "All binary and star advantage flags contain valid {-1, 0, 1} ranges.")
 
     def check_clutch_time_logic(self):
         """Logic Test: Clutch time must be <= 300s (5 mins) and margin <= 5."""
