@@ -54,20 +54,20 @@ def enrich_state_counters_v4(df):
             if current_code != 'nan': return 'away'
         return 'none'
 
-    # זיהוי תפקיד פסק הזמן
+    # translated_comment translated_comment translated_comment translated_comment
     df['timeout_role'] = df.apply(_resolve_timeout_role, axis=1)
 
-    # --- תוספת: סיווג אסטרטגי של פסקי זמן ---
+    # --- translated_comment: translated_comment translated_comment translated_comment translated_comment translated_comment ---
     df['timeout_strategic_weight'] = 0
     is_to = df['timeout_role'] != 'none'
     
-    # 1. משקל בסיסי לכל פסק זמן
+    # 1. translated_comment translated_comment translated_comment translated_comment translated_comment
     df.loc[is_to, 'timeout_strategic_weight'] = 1
     
-    # 2. סוף רבע (2 דקות אחרונות של כל רבע) - משקל גבוה
+    # 2. translated_comment translated_comment (2 translated_comment translated_comment translated_comment translated_comment translated_comment) - translated_comment translated_comment
     df.loc[is_to & (df['seconds_remaining'] <= 120), 'timeout_strategic_weight'] = 2
     
-    # 3. קלאץ' / סוף משחק (5 דקות אחרונות של רבע 4 ומעלה) - משקל קריטי
+    # 3. translated_comment' / translated_comment translated_comment (5 translated_comment translated_comment translated_comment translated_comment 4 translated_comment) - translated_comment translated_comment
     df.loc[is_to & (df['period'] >= 4) & (df['seconds_remaining'] <= 300), 'timeout_strategic_weight'] = 3
     # ------------------------------------------
 
@@ -147,7 +147,7 @@ def process_lineups_logic(df, df_rot):
             if len(h_s) >= 5 and len(a_s) >= 5: break
         return set(list(h_s)[:5]), set(list(a_s)[:5]), 0
 
-    # Main Row-by-Row Tracking
+    # Main Row-by-Row Tracking (Optimized with itertuples & change-only sorting)
     final_dfs = []
     for gid, g_df in df.groupby('gameId'):
         hid = home_team_map.get(gid)
@@ -155,19 +155,31 @@ def process_lineups_logic(df, df_rot):
             curr_h, curr_a, conf = get_starters(p_df, gid, hid)
             h_list, a_list = [], []
             
-            for _, row in p_df.iterrows():
-                desc = str(row['description'])
-                pid, tid = row['personId'], row['teamId']
+            # Cache initial 5-man lists
+            cached_h = sorted(list(curr_h))[:5]
+            cached_a = sorted(list(curr_a))[:5]
+            
+            for row in p_df.itertuples(index=False):
+                desc = str(row.description)
+                pid = row.personId
+                tid = row.teamId
                 
+                sub_happened = False
                 if 'SUB out' in desc and pd.notna(pid):
                     if tid == hid: curr_h.discard(int(pid))
                     else: curr_a.discard(int(pid))
+                    sub_happened = True
                 elif 'SUB in' in desc and pd.notna(pid):
                     if tid == hid: curr_h.add(int(pid))
                     else: curr_a.add(int(pid))
+                    sub_happened = True
                 
-                h_list.append(sorted(list(curr_h))[:5])
-                a_list.append(sorted(list(curr_a))[:5])
+                if sub_happened:
+                    cached_h = sorted(list(curr_h))[:5]
+                    cached_a = sorted(list(curr_a))[:5]
+                
+                h_list.append(cached_h)
+                a_list.append(cached_a)
             
             p_df = p_df.assign(home_lineup=h_list, away_lineup=a_list, lineup_confidence=conf)
             final_dfs.append(p_df)
@@ -196,29 +208,25 @@ def clean_sparse_columns(df):
 # --- Main (DYNAMIC Hybrid Pipeline) ---
 def get_raw_season_data():
     pure_dir = os.path.join(BASE_DIR, 'data', 'pureData')
-    if not os.path.exists(pure_dir):
-        print(f"❌ Error: Raw data directory not found at {pure_dir}")
+    target_season = os.path.join(pure_dir, 'season_2024_25.csv')
+    if not os.path.exists(target_season):
+        print(f"❌ Error: Raw season data not found at {target_season}")
         return None
     
-    season_files = [os.path.join(pure_dir, f) for f in os.listdir(pure_dir) if f.startswith('season_') and f.endswith('.csv')]
-    if not season_files:
-        print(f"❌ Error: No season_*.csv files found in {pure_dir}")
-        return None
-    
-    print(f"📦 Found {len(season_files)} season file(s): {[os.path.basename(f) for f in season_files]}")
-    dfs = [pd.read_csv(f, low_memory=False) for f in season_files]
-    return pd.concat(dfs, ignore_index=True)
+    print(f"📦 Loading active season: {os.path.basename(target_season)}")
+    return pd.read_csv(target_season, low_memory=False)
 
 def main():
-    print(f" Starting DYNAMIC Level 1 Build (V9)...")
+    print(f" Starting DYNAMIC Level 1 Build (Season 2024-25)...")
     df = get_raw_season_data()
     if df is None or df.empty:
         raise FileNotFoundError("❌ CRITICAL: No raw season data found in data/pureData. Level 1 build aborted.")
     
-    # Load rotations if available
-    pure_dir = os.path.join(BASE_DIR, 'data', 'pureData')
-    rot_files = [os.path.join(pure_dir, f) for f in os.listdir(pure_dir) if f.startswith('rotations_') and f.endswith('.csv')]
-    df_rot = pd.concat([pd.read_csv(f) for f in rot_files], ignore_index=True) if rot_files else None
+    # Load rotations strictly from rotations_2024_25.csv (ignoring any backups)
+    rot_path = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
+    df_rot = pd.read_csv(rot_path, low_memory=False) if os.path.exists(rot_path) else None
+    if df_rot is not None:
+        print(f"🔄 Loaded rotations: {os.path.basename(rot_path)} ({len(df_rot):,} rows)")
 
     
     df = process_base_timeline(df)
