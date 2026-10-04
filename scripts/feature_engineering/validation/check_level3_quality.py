@@ -104,10 +104,10 @@ class Level3QAValidator:
         else:
             self._log("Timeout Logic", False, f"LOGIC ERROR: {penalty_on_to} penalties assigned to timeout events!")
 
-        print("\n📈 OBSERVATIONAL TIMEOUT SHIFTS (Raw Delta when Timeout called, before causal modeling):")
+        print("\n📊 DESCRIPTIVE RAW STATS: E[Y | Timeout=1] (Raw observational delta, unadjusted for confounding):")
         for col in self.continuous_targets:
-            avg_impact = timeouts_df[col].mean()
-            print(f"   - {col.replace('target_', '').ljust(25)}: {avg_impact:+.2f} average raw shift")
+            raw_obs_mean = timeouts_df[col].mean()
+            print(f"   - {col.replace('target_', '').ljust(25)}: {raw_obs_mean:+.2f} raw descriptive mean")
 
     def check_end_of_period(self):
         # Verify that boundary plays strictly contain NaNs rather than artificial 0s
