@@ -42,6 +42,7 @@ class Level2Validator:
         """Ensures ALL Hybrid Level-2 features exist."""
         expected_cols = [
             'style_tempo_rolling', 'is_high_fatigue', 
+            'is_high_fatigue_home', 'is_high_fatigue_away', 'stint_fatigue_diff',
             'momentum_streak_rolling', 'explosiveness_index', 
             'instability_index', 'is_star_resting', 'is_clutch_time',
             'home_usage_gravity', 'away_usage_gravity', 'usage_delta',
@@ -58,7 +59,9 @@ class Level2Validator:
     def check_strict_clean_data(self):
         """STRICT: Ensures absolutely ZERO NaNs or Infinite values in the engineered features."""
         cols_to_check = [
-            'style_tempo_rolling', 'is_high_fatigue', 'momentum_streak_rolling', 
+            'style_tempo_rolling', 'is_high_fatigue',
+            'is_high_fatigue_home', 'is_high_fatigue_away', 'stint_fatigue_diff',
+            'momentum_streak_rolling', 
             'explosiveness_index', 'instability_index', 'is_clutch_time',
             'home_usage_gravity', 'away_usage_gravity', 'usage_delta',
             'home_cum_fatigue', 'away_cum_fatigue'
@@ -84,7 +87,7 @@ class Level2Validator:
 
     def check_binary_flags(self):
         """Verifies binary and ternary indicator features contain valid discrete values."""
-        binary_cols = ['is_high_fatigue', 'is_clutch_time']
+        binary_cols = ['is_high_fatigue', 'is_high_fatigue_home', 'is_high_fatigue_away', 'is_clutch_time']
         valid = True
         
         for col in binary_cols:

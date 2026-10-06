@@ -28,7 +28,7 @@ class Level1Validator:
         try:
             self.df = pd.read_csv(self.file_path, low_memory=False)
             
-            # המרת מחרוזות הרשימות בחזרה לאובייקטים
+            # translated_comment translated_comment translated_comment translated_comment translated_comment
             for col in ['home_lineup', 'away_lineup']:
                 if col in self.df.columns:
                     self.df[col] = self.df[col].apply(
@@ -64,12 +64,12 @@ class Level1Validator:
 
     def check_lineup_turnover(self):
         """NEW: Detects 'Stagnant Lineups' where substitutions are not being captured."""
-        # יצירת מזהה ייחודי לחמישייה (String) כדי לספור שינויים
+        # translated_comment translated_comment translated_comment translated_comment (String) translated_comment translated_comment translated_comment
         self.df['lineup_sig_qa'] = self.df['home_lineup'].astype(str) + self.df['away_lineup'].astype(str)
         
-        # ספירת חמישיות ייחודיות לכל משחק
+        # translated_comment translated_comment translated_comment translated_comment translated_comment
         lineup_counts = self.df.groupby('gameId')['lineup_sig_qa'].nunique()
-        stagnant_games = lineup_counts[lineup_counts <= 2] # משחק שלם עם פחות מ-2 חמישיות הוא לא הגיוני
+        stagnant_games = lineup_counts[lineup_counts <= 2] # translated_comment translated_comment translated_comment translated_comment translated_comment-2 translated_comment translated_comment translated_comment translated_comment
         
         avg_lineups = lineup_counts.mean()
         
@@ -121,16 +121,16 @@ class Level1Validator:
         self._log("Timeouts Inventory", (min_val >= 0 and max_val <= 7), f"Inventory valid (Range: {min_val}-{max_val}).")
 
     def check_timeout_strategic_weights(self):
-        """וואלידציה לסיווג החדש של פסקי הזמן"""
+        """translated_comment translated_comment translated_comment translated_comment translated_comment translated_comment"""
         if 'timeout_strategic_weight' not in self.df.columns:
             self._log("Timeout Weights", False, "Column 'timeout_strategic_weight' missing.")
             return
         
         unique_vals = sorted(self.df['timeout_strategic_weight'].unique())
-        # בודק שהערכים הם רק 0, 1, 2, 3
+        # translated_comment translated_comment translated_comment translated_comment 0, 1, 2, 3
         is_valid_range = all(v in [0, 1, 2, 3] for v in unique_vals)
         
-        # בודק אם "תפסנו" פסקי זמן משמעותיים (משקלים 2 ו-3)
+        # translated_comment translated_comment "translated_comment" translated_comment translated_comment translated_comment (translated_comment 2 translated_comment-3)
         has_heavy_tos = self.df['timeout_strategic_weight'].max() >= 2
         
         message = f"Values: {unique_vals}. Heavy timeouts (2+) detected: {has_heavy_tos}"
@@ -145,11 +145,16 @@ class Level1Validator:
         self._log("Cumulative Counters", (max_pts > 50), f"Points accumulating (Max: {max_pts}).")
 
     def check_substitution_timer_sync(self):
-        """Ensures the fatigue timer resets."""
-        if 'time_since_last_sub' not in self.df.columns: return
-        min_val, max_val = self.df['time_since_last_sub'].min(), self.df['time_since_last_sub'].max()
-        # אם הטיימר מגיע ליותר מ-720 שניות (רבע שלם) ללא איפוס ב-100% מהמקרים, זו תקלה.
-        self._log("Sub Timer Sync", (min_val >= 0 and max_val > 60), f"Timer active (Max: {max_val:.0f}s).")
+        """Ensures the fatigue timer resets independently for home and away."""
+        missing = [c for c in ['time_since_last_sub_home', 'time_since_last_sub_away'] if c not in self.df.columns]
+        if missing:
+            self._log("Sub Timer Sync", False, f"Missing independent sub timer columns: {missing}")
+            return
+
+        h_min, h_max = self.df['time_since_last_sub_home'].min(), self.df['time_since_last_sub_home'].max()
+        a_min, a_max = self.df['time_since_last_sub_away'].min(), self.df['time_since_last_sub_away'].max()
+        valid = (h_min >= 0 and h_max > 60 and a_min >= 0 and a_max > 60)
+        self._log("Sub Timer Sync", valid, f"Home Range: [{h_min:.0f}s, {h_max:.0f}s], Away Range: [{a_min:.0f}s, {a_max:.0f}s].")
 
     def check_critical_missing_values(self):
         """Ensures no gaps in critical columns."""
@@ -170,7 +175,7 @@ class Level1Validator:
         self.check_substitution_timer_sync()
         self.check_shot_clock_14s_rule()
         self.check_timeouts_inventory_integrity()
-        self.check_timeout_strategic_weights() # הבדיקה החדשה כאן
+        self.check_timeout_strategic_weights() # translated_comment translated_comment translated_comment
         self.check_cumulative_counters_monotonicity()
         self.check_critical_missing_values()
         

@@ -22,7 +22,8 @@ class Level2Validator:
         critical_cols = [
             'home_usage_gravity', 'usage_delta', 'home_cum_fatigue', 'away_cum_fatigue',
             'home_momentum_streak', 'away_momentum_streak', 'momentum_streak_rolling',
-            'explosiveness_index', 'star_advantage', 'is_star_resting'
+            'explosiveness_index', 'star_advantage', 'is_star_resting',
+            'is_high_fatigue_home', 'is_high_fatigue_away', 'stint_fatigue_diff'
         ]
         
         for col in critical_cols:
@@ -139,7 +140,17 @@ class Level2FeatureEngineer:
             lambda x: x.rolling(window=15, min_periods=1).mean()
         ).fillna(14.0)
         
-        self.df['is_high_fatigue'] = np.where(self.df['time_since_last_sub'] > 550, 1, 0)
+        if 'time_since_last_sub_home' in self.df.columns and 'time_since_last_sub_away' in self.df.columns:
+            self.df['is_high_fatigue_home'] = np.where(self.df['time_since_last_sub_home'] > 550, 1, 0)
+            self.df['is_high_fatigue_away'] = np.where(self.df['time_since_last_sub_away'] > 550, 1, 0)
+            self.df['stint_fatigue_diff'] = self.df['time_since_last_sub_home'] - self.df['time_since_last_sub_away']
+            self.df['is_high_fatigue'] = ((self.df['is_high_fatigue_home'] == 1) | (self.df['is_high_fatigue_away'] == 1)).astype(int)
+        else:
+            fallback_sub = self.df['time_since_last_sub'] if 'time_since_last_sub' in self.df.columns else 0
+            self.df['is_high_fatigue'] = np.where(fallback_sub > 550, 1, 0)
+            self.df['is_high_fatigue_home'] = self.df['is_high_fatigue']
+            self.df['is_high_fatigue_away'] = self.df['is_high_fatigue']
+            self.df['stint_fatigue_diff'] = 0.0
         
         self.df['time_lag'] = self.df.groupby(['gameId', 'period'])['seconds_remaining'].shift(10)
         self.df['instability_index'] = (self.df['time_lag'] - self.df['seconds_remaining']).fillna(60)

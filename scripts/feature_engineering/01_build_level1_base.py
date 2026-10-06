@@ -186,17 +186,32 @@ def process_lineups_logic(df, df_rot):
 
     df = pd.concat(final_dfs)
 
-    # Re-calculate Sub Timer
-    df['lineup_temp'] = df['home_lineup'].astype(str) + "|" + df['away_lineup'].astype(str)
-    df['lineup_signature'] = df.groupby('gameId')['lineup_temp'].ffill()
-    df['is_new_period'] = (df['period'] != df.groupby('gameId')['period'].shift(1)).astype(int)
-    shift_sig = df.groupby('gameId')['lineup_signature'].shift(1)
-    
-    df['is_sub'] = np.where((df['lineup_signature'] != shift_sig) & (df['is_new_period'] == 0) & (shift_sig.notna()), 1, 0)
-    df['lineup_era'] = df.groupby('gameId')['is_sub'].cumsum()
-    df['time_since_last_sub'] = df.groupby(['gameId', 'period', 'lineup_era'])['seconds_remaining'].transform('max') - df['seconds_remaining']
-    
-    df.drop(columns=['lineup_temp', 'is_new_period', 'lineup_era', 'lineup_signature', 'is_sub', 'elapsed_sec'], inplace=True)
+    # Re-calculate Sub Timer independently for home and away
+    is_new_period = (df['period'] != df.groupby('gameId')['period'].shift(1)).astype(int)
+    temp_cols = ['is_new_period', 'elapsed_sec']
+
+    for side in ['home', 'away']:
+        sig_col = f'lineup_sig_{side}'
+        sub_col = f'is_sub_{side}'
+        era_col = f'lineup_era_{side}'
+
+        df[sig_col] = df[f'{side}_lineup'].astype(str)
+        shift_side = df.groupby('gameId')[sig_col].shift(1)
+
+        df[sub_col] = np.where(
+            (df[sig_col] != shift_side) & (is_new_period == 0) & (shift_side.notna()),
+            1,
+            0
+        )
+        df[era_col] = df.groupby('gameId')[sub_col].cumsum()
+        df[f'time_since_last_sub_{side}'] = (
+            df.groupby(['gameId', 'period', era_col])['seconds_remaining'].transform('max') - df['seconds_remaining']
+        )
+        temp_cols.extend([sig_col, sub_col, era_col])
+
+    df['time_since_last_sub'] = df[['time_since_last_sub_home', 'time_since_last_sub_away']].max(axis=1)
+
+    df.drop(columns=[c for c in temp_cols if c in df.columns], inplace=True)
     return df
 
 def clean_sparse_columns(df):
