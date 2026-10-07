@@ -73,13 +73,45 @@ def enrich_state_counters_v4(df):
 
     for side in ['home', 'away']:
         is_side_to = (df['timeout_role'] == side).astype(int)
-        used = is_side_to.groupby(df['gameId']).cumsum()
-        df[f'timeouts_remaining_{side}'] = (7 - used).clip(lower=0)
+        # Regulation Q1-Q3: Starts with 7 timeouts
+        used_q1_q3 = is_side_to.where(df['period'] <= 3, 0).groupby(df['gameId']).cumsum()
+        rem_q1_q3 = (7 - used_q1_q3).clip(lower=0, upper=7)
+        
+        # Transition into Q4: Capped at maximum 4 timeouts per NBA rules
+        q3_final_rem = rem_q1_q3.where(df['period'] <= 3).groupby(df['gameId']).transform('last').fillna(7)
+        q4_entry_cap = np.minimum(q3_final_rem, 4)
+        
+        # Q4 early (before 3:00 / > 180s remaining)
+        used_q4_early = is_side_to.where((df['period'] == 4) & (df['seconds_remaining'] > 180), 0).groupby(df['gameId']).cumsum()
+        rem_q4_early = (q4_entry_cap - used_q4_early).clip(lower=0, upper=4)
+        
+        # Transition into Q4 under 3:00 (<= 180s remaining): Capped at maximum 2 timeouts per NBA rules
+        q4_early_final = rem_q4_early.where((df['period'] == 4) & (df['seconds_remaining'] > 180)).groupby(df['gameId']).transform('last').fillna(q4_entry_cap)
+        clutch_cap = np.minimum(q4_early_final, 2)
+        
+        # Q4 late (under 3:00 / <= 180s remaining)
+        used_q4_late = is_side_to.where((df['period'] == 4) & (df['seconds_remaining'] <= 180), 0).groupby(df['gameId']).cumsum()
+        rem_q4_late = (clutch_cap - used_q4_late).clip(lower=0, upper=2)
+        
+        # Overtime (period >= 5): Each overtime period grants 2 timeouts
+        used_ot = is_side_to.where(df['period'] >= 5, 0).groupby([df['gameId'], df['period']]).cumsum()
+        rem_ot = (2 - used_ot).clip(lower=0, upper=2)
+        
+        cond_q1_q3 = df['period'] <= 3
+        cond_q4_early = (df['period'] == 4) & (df['seconds_remaining'] > 180)
+        cond_q4_late = (df['period'] == 4) & (df['seconds_remaining'] <= 180)
+        cond_ot = df['period'] >= 5
+        
+        df[f'timeouts_remaining_{side}'] = np.select(
+            [cond_q1_q3, cond_q4_early, cond_q4_late, cond_ot],
+            [rem_q1_q3, rem_q4_early, rem_q4_late, rem_ot],
+            default=0
+        ).astype(int)
     
     df['is_foul'] = (df['foulPersonalTotal'] > 0).astype(int)
     df['team_fouls_period'] = df.groupby(['gameId', 'period', 'teamTricode'])['is_foul'].cumsum().fillna(0)
     
-    cols_to_sum = ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal']
+    cols_to_sum = ['pointsTotal', 'turnoverTotal', 'reboundDefensiveTotal', 'reboundOffensiveTotal']
     for metric in cols_to_sum:
         df[metric] = pd.to_numeric(df[metric], errors='coerce').fillna(0)
         df[f'cum_{metric}'] = df.groupby(['gameId', 'teamId'])[metric].cumsum().fillna(0)
@@ -98,8 +130,32 @@ def calculate_possession_flow(df):
     return df
 
 def apply_shot_clock_logic(df):
-    elapsed = df.groupby(['gameId', 'possession_id'])['play_duration'].cumsum()
-    df['shot_clock_estimated'] = (24.0 - elapsed).clip(lower=0)
+    # Detect offensive rebounds that reset the shot clock to 14 seconds
+    is_off_reb = (df['reboundOffensiveTotal'] > 0).astype(int)
+    
+    # A new clock cycle starts on possession change OR offensive rebound
+    clock_cycle = ((df['is_poss_change'] == 1) | (is_off_reb == 1)).astype(int)
+    cycle_id = clock_cycle.groupby(df['gameId']).cumsum()
+    
+    # Identify whether the cycle was triggered by an offensive rebound
+    is_reb_cycle = df.groupby([df['gameId'], cycle_id])['reboundOffensiveTotal'].transform('first') > 0
+    
+    # Cumulative elapsed duration within each clock cycle
+    cycle_duration_cumsum = df.groupby([df['gameId'], cycle_id])['play_duration'].cumsum()
+    
+    # For offensive rebound cycles, the rebound row itself is the reset point (elapsed = 0, clock = 14.0)
+    reb_first_duration = df.groupby([df['gameId'], cycle_id])['play_duration'].transform('first')
+    elapsed_since_reb = cycle_duration_cumsum - reb_first_duration
+    
+    # Standard possession cycle counts down from 24.0; offensive rebound cycle counts down from 14.0
+    shot_clock = np.where(
+        is_reb_cycle,
+        (14.0 - elapsed_since_reb).clip(lower=0.0, upper=14.0),
+        (24.0 - cycle_duration_cumsum).clip(lower=0.0, upper=24.0)
+    )
+    
+    df['shot_clock_estimated'] = shot_clock
+    # Ensure offensive rebound row itself is capped strictly at 14.0
     df.loc[df['reboundOffensiveTotal'] > 0, 'shot_clock_estimated'] = 14.0
     return df
 

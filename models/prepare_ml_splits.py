@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 import json
-# הייבוא החדש של קובץ הקבועים שלנו!
+# Import pipeline constants module
 from pipeline_constants import get_blacklisted_features
 
 # --- Config ---
@@ -111,7 +111,32 @@ class MLDataPreparer:
         
         SplitValidator.validate(train_df, val_df, test_df, self.df)
 
-        print("STEP 5: Exporting splits to Parquet format...")
+        print("STEP 5: Sanitizing features and preventing Data Leakage...")
+        all_targets = [c for c in train_df.columns if c.startswith('target_')]
+        blacklisted = get_blacklisted_features()
+        
+        # Structural / experimental columns needed for split mapping and treatment
+        structural_cols = [c for c in ['gameId', 'period', 'is_timeout', 'is_garbage_time'] if c in train_df.columns]
+        
+        # Clean causal features
+        clean_features = [
+            c for c in train_df.columns 
+            if c not in all_targets 
+            and c not in blacklisted 
+            and c not in structural_cols
+        ]
+        
+        # All columns allowed in the exported Parquet splits
+        export_cols = [c for c in train_df.columns if c in structural_cols or c in clean_features or c in all_targets]
+        
+        train_df = train_df[export_cols].copy()
+        val_df = val_df[export_cols].copy()
+        test_df = test_df[export_cols].copy()
+        
+        print(f"   Clean Features count: {len(clean_features)}")
+        print(f"   Total exported columns in Parquet: {len(export_cols)} (Filtered out {len(self.df.columns) - len(export_cols)} leaked/metadata columns)")
+
+        print("STEP 6: Exporting splits to Parquet format...")
         train_path = os.path.join(self.output_dir, 'train.parquet')
         val_path = os.path.join(self.output_dir, 'val.parquet')
         test_path = os.path.join(self.output_dir, 'test.parquet')
@@ -120,18 +145,7 @@ class MLDataPreparer:
         val_df.to_parquet(val_path, index=False)
         test_df.to_parquet(test_path, index=False)
 
-        print("STEP 6: Exporting Metadata JSON (With Aggressive Leakage Prevention)...")
-        all_targets = [c for c in train_df.columns if c.startswith('target_')]
-        
-        # --- כאן המטא-דאטה הופך לסטרילי ---
-        blacklisted = get_blacklisted_features()
-        clean_features = [
-            c for c in train_df.columns 
-            if c not in all_targets 
-            and c not in blacklisted 
-            and c != 'is_garbage_time'
-        ]
-
+        print("STEP 7: Exporting Metadata JSON...")
         metadata = {
             "features": clean_features,
             "targets": [c for c in all_targets if c != 'target_danger_penalty'],
