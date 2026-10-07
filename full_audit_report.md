@@ -240,13 +240,19 @@
 - [ ] הרצת הסקריפט ליצירת קבצי Train / Val / Test נקיים בדיסק
 
 ### שלב ג' – מודלים סיבתיים ומרכיבים אקדמיים
-- [ ] באג #5b – מימוש K-Fold Cross-Fitting ב-`06_causal_x_learner.py`
-- [ ] שמירת מודלים מאומנים לדיסק (`save_models`)
-- [ ] הערה #3 – Overlap & Covariate Balance (Love Plot, SMD, Propensity histogram)
-- [ ] הערה #4 – AIPW / Causal Forest (EconML) + השוואה ל-X-Learner
-- [ ] הערה #5 – Cluster Bootstrap CI ברמת gameId
-- [ ] הערה #6 – Placebo Test + Sensitivity Analysis (E-Value)
-- [ ] הערה #8 – Off-Policy Evaluation (OPE) מבוסס AIPW (במקום recommendation_engine הישן)
+
+#### 🛠️ ג.1 – תיקון וביסוס האלגוריתם הראשי הקיים (X-Learner)
+*תיקוני קוד, אימות מדעי והערכת אי-וודאות ישירות על המודל הקיים:*
+- [ ] באג #5b – מימוש K-Fold Cross-Fitting ב-`06_causal_x_learner.py` (מניעת In-Sample Overfitting באמידת ה-Counterfactuals)
+- [ ] שמירת מודלים מאומנים לדיסק (`save_models()`)
+- [ ] הערה #3 – בדיקות חפיפה ותקינות משתנים עבור ה-X-Learner (Love Plot, SMD, Propensity Overlap Histogram)
+- [ ] הערה #5 – הפקת רווחי סמך באמצעות Cluster Bootstrap ברמת `gameId` ל-CATE
+- [ ] הערה #6 – בדיקת פלסבו (Placebo Treatment Test) וניתוח רגישות לערפלנים חבויים (E-Value)
+
+#### 🔬 ג.2 – הוספת אלגוריתמים ומודלים חדשים (דרישות ד"ר שפירא להשוואה ולמדיניות)
+*בניית מודלים סיבתיים מתחרים והערכת מדיניות (OPE) מאפס:*
+- [ ] הערה #4 – בניית מודל סיבתי נוסף: AIPW / DR-Learner או Causal Forest (`EconML`) לצורך השוואה ואימות חוסן מול ה-X-Learner
+- [ ] הערה #8 (כולל החלפת באגים #11 ו-#12) – אלגוריתם הערכת מדיניות חדש: Off-Policy Evaluation (OPE) מבוסס Doubly Robust ועקומות Uplift / AUUC (במקום `recommendation_engine.py` ו-`hit_rate_sweep.py` הישנים)
 
 ### שלב ד' – בדיקת תוצאות וכתיבת מאמר
 - [ ] האם התוצאות יציבות אחרי כל התיקונים?
