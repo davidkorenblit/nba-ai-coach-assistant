@@ -84,12 +84,14 @@
 
 ---
 
-### באג #5b: אין Cross-Fitting ב-X-Learner — [⏳ ממתין לשלב המודלים]
+### באג #5b: אין Cross-Fitting ב-X-Learner — [✅ טופל בהצלחה]
 **קובץ:** [06_causal_x_learner.py](file:///c:/Users/david/finalPro/models/06_causal_x_learner.py)
 
-* **מה קורה:** ה-Imputation של ה-Counterfactuals ($D_0, D_1$) נעשה In-Sample ללא Cross-Fitting. מודלי ה-Outcome ($\mu_0, \mu_1$) חוזים על אותו דאטה שעליו הם אומנו.
-* **השלכה:** Overfitting מזהם את אמידת ה-CATE.
-* **תיקון נדרש:** מימוש K-Fold Cross-Fitting מלא כסטנדרט ב-DML/AIPW.
+* **הפתרון שהוטמע:** יושם מנגנון **Stratified K-Fold Cross-Fitting (K=5)** (לפי סטנדרט DML / Chernozhukov et al.):
+  - נתוני ה-Train מחולקים ל-5 קיפולים מאוזנים.
+  - מודל ה-Propensity ($e$) ומודלי התוצאה ($\mu_0, \mu_1$) מאומנים על $K-1$ קיפולים, ומנבאים את ה-Counterfactuals ($D_0, D_1$) strictly מחוץ למדגם (Out-of-Fold).
+  - מודלי שלב 3 ($\tau_0, \tau_1$) מאומנים על ה-Counterfactuals הנקיים מחוץ למדגם, מה שמבטל לחלוטין את ה-In-Sample Overfitting.
+  - מודלי האינפרנס הסופיים נשמרים אוטומטית לדיסק באמצעות `save_models()`.
 
 ---
 
@@ -201,16 +203,25 @@
 * **סטטוס:** תוויות התוצאה נוקו לחלוטין מ-25% האפסים המזויפים והיפוך הסימנים (באגים #2 ו-#3 תוקנו במלואם).
 
 ### הערה 3: "בדיקות Overlap ו-Covariate Balance"
-* **סטטוס:** ⏳ לבנייה בשלב המודלים (Love Plot, SMD, Propensity Histogram).
+* **סטטוס:** ✅ **הוטמע בהצלחה ב-`06_causal_x_learner.py`**:
+  - מופקת היסטוגרמת חפיפה (`overlap_propensity_<target>.png`).
+  - מחושב SMD (Standardized Mean Difference) לפני ואחרי IPW ומופק Love Plot (`love_plot_<target>.png`).
+  - נשמר קובץ מדדי איזון JSON (`covariate_balance_<target>.json`).
+  - כל התוצרים נשמרים בתיקייה ייעודית: `reports/paper_preparation/`.
 
 ### הערה 4: "Estimator נוסף – DR-Learner / AIPW / Causal Forest"
 * **סטטוס:** ⏳ לבנייה עם `EconML` לאחר שלב ה-X-Learner.
 
 ### הערה 5: "Confidence Intervals באמצעות Bootstrap ברמת משחק"
-* **סטטוס:** ⏳ מתוכנן לשלב ג' (Cluster Bootstrap לפי `gameId`).
+* **סטטוס:** ✅ **הוטמע בהצלחה ב-`06_causal_x_learner.py`**:
+  - מופק Cluster Bootstrap לפי `gameId` לחישוב רווח סמך של 95% ($95\%$ CI) ו-Standard Error ל-ATE.
+  - נשמר גרף התפלגות בוטסטראפ (`bootstrap_ci_<target>.png`) וקובץ מדדים JSON ב-`reports/paper_preparation/`.
 
 ### הערה 6: "Placebo Tests ו-Sensitivity Analysis ל-Unmeasured Confounding"
-* **סטטוס:** ⏳ מתוכנן לשלב ג' (בדיקת פסק זמן מדומה ו-E-Values).
+* **סטטוס:** ✅ **הוטמע בהצלחה ב-`06_causal_x_learner.py`**:
+  - מבוצע מבחן פסק זמן מדומה (Placebo Treatment Test ע"י פרמוטציה אקראית) לוודא שהאפקט מתאפס ($\sim 0.00$).
+  - מחושב מדד הרגישות לערפלנים חבויים (E-Value לפי VanderWeele & Ding 2017).
+  - נשמר גרף השוואת פלסבו מול אפקט אמיתי (`placebo_test_<target>.png`) וקובץ JSON ב-`reports/paper_preparation/`.
 
 ### הערה 7: "בדיקת Accuracy של מנוע שחזור החמישיות"
 * **סטטוס:** תוקנה שחיתות קובץ הרוטציות (באג #10), 97.6% התאמה לרוטציות הרשמיות.
@@ -243,11 +254,11 @@
 
 #### 🛠️ ג.1 – תיקון וביסוס האלגוריתם הראשי הקיים (X-Learner)
 *תיקוני קוד, אימות מדעי והערכת אי-וודאות ישירות על המודל הקיים:*
-- [ ] באג #5b – מימוש K-Fold Cross-Fitting ב-`06_causal_x_learner.py` (מניעת In-Sample Overfitting באמידת ה-Counterfactuals)
-- [ ] שמירת מודלים מאומנים לדיסק (`save_models()`)
-- [ ] הערה #3 – בדיקות חפיפה ותקינות משתנים עבור ה-X-Learner (Love Plot, SMD, Propensity Overlap Histogram)
-- [ ] הערה #5 – הפקת רווחי סמך באמצעות Cluster Bootstrap ברמת `gameId` ל-CATE
-- [ ] הערה #6 – בדיקת פלסבו (Placebo Treatment Test) וניתוח רגישות לערפלנים חבויים (E-Value)
+- [x] באג #5b – מימוש K-Fold Cross-Fitting ב-`06_causal_x_learner.py` (מניעת In-Sample Overfitting באמידת ה-Counterfactuals)
+- [x] שמירת מודלים מאומנים לדיסק (`save_models()`)
+- [x] הערה #3 – בדיקות חפיפה ותקינות משתנים עבור ה-X-Learner (Love Plot, SMD, Propensity Overlap בתיקיית `reports/paper_preparation/`)
+- [x] הערה #5 – הפקת רווחי סמך באמצעות Cluster Bootstrap ברמת `gameId` ל-CATE (בתיקיית `reports/paper_preparation/`)
+- [x] הערה #6 – בדיקת פלסבו (Placebo Treatment Test) וניתוח רגישות לערפלנים חבויים E-Value (בתיקיית `reports/paper_preparation/`)
 
 #### 🔬 ג.2 – הוספת אלגוריתמים ומודלים חדשים (דרישות ד"ר שפירא להשוואה ולמדיניות)
 *בניית מודלים סיבתיים מתחרים והערכת מדיניות (OPE) מאפס:*

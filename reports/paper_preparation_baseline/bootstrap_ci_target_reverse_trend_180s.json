@@ -1,0 +1,10 @@
+{
+    "target": "target_reverse_trend_180s",
+    "n_bootstraps": 100,
+    "unique_games_evaluated": 185,
+    "point_ate": 0.27872002124786377,
+    "ci_95_lower": 0.22459331154823303,
+    "ci_95_upper": 0.3508079946041107,
+    "standard_error": 0.03260418772697449,
+    "statistically_significant": true
+}

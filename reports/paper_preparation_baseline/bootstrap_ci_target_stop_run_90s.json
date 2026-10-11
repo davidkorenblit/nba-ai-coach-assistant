@@ -1,0 +1,10 @@
+{
+    "target": "target_stop_run_90s",
+    "n_bootstraps": 100,
+    "unique_games_evaluated": 185,
+    "point_ate": -0.18148575723171234,
+    "ci_95_lower": -0.1949087232351303,
+    "ci_95_upper": -0.16229799389839172,
+    "standard_error": 0.008320316672325134,
+    "statistically_significant": true
+}

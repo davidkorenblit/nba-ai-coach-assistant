@@ -1,0 +1,109 @@
+{
+    "target": "target_reverse_trend_180s",
+    "total_features_evaluated": 27,
+    "unadjusted_mean_smd": 0.15621262356352683,
+    "weighted_mean_smd": 0.15250163037938883,
+    "features_balanced_under_0_1_pct": 51.85185185185185,
+    "top_features": {
+        "time_since_last_sub_home": {
+            "raw_smd": 0.5215536240037204,
+            "weighted_smd": 0.2526770788395206
+        },
+        "time_since_last_sub": {
+            "raw_smd": 0.5201870691471485,
+            "weighted_smd": 0.29811942888499915
+        },
+        "time_since_last_sub_away": {
+            "raw_smd": 0.4822426598579426,
+            "weighted_smd": 0.2309621547792937
+        },
+        "timeouts_remaining_home": {
+            "raw_smd": 0.3736517850704758,
+            "weighted_smd": 0.4655432062275408
+        },
+        "timeouts_remaining_away": {
+            "raw_smd": 0.3368913567753493,
+            "weighted_smd": 0.42657562707405505
+        },
+        "seconds_remaining": {
+            "raw_smd": 0.31378093662576284,
+            "weighted_smd": 0.3104115009933085
+        },
+        "home_cum_fatigue": {
+            "raw_smd": 0.2415611436447746,
+            "weighted_smd": 0.35655425816261566
+        },
+        "away_cum_fatigue": {
+            "raw_smd": 0.2363652311639924,
+            "weighted_smd": 0.35388765972808794
+        },
+        "team_fouls_period": {
+            "raw_smd": 0.2121818674251854,
+            "weighted_smd": 0.2575038924548988
+        },
+        "instability_index": {
+            "raw_smd": 0.14483170618491467,
+            "weighted_smd": 0.031456720013201336
+        },
+        "is_clutch_time": {
+            "raw_smd": 0.1298514061677028,
+            "weighted_smd": 0.10619954604593873
+        },
+        "away_usage_gravity": {
+            "raw_smd": 0.12153946231287686,
+            "weighted_smd": 0.07141964884983781
+        },
+        "cum_reboundOffensiveTotal": {
+            "raw_smd": 0.12116624782344972,
+            "weighted_smd": 0.2615835334967163
+        },
+        "home_usage_gravity": {
+            "raw_smd": 0.11710719201392425,
+            "weighted_smd": 0.05526037138945827
+        },
+        "shot_clock_estimated": {
+            "raw_smd": 0.0965780084736,
+            "weighted_smd": 0.0837773807950335
+        },
+        "away_momentum_streak": {
+            "raw_smd": 0.07360864179080426,
+            "weighted_smd": 0.1512065316003148
+        },
+        "home_momentum_streak": {
+            "raw_smd": 0.07228932805205858,
+            "weighted_smd": 0.17791654465966458
+        },
+        "stint_fatigue_diff": {
+            "raw_smd": 0.03366244982515642,
+            "weighted_smd": 0.018660183659830895
+        },
+        "explosiveness_index": {
+            "raw_smd": 0.02578373057344611,
+            "weighted_smd": 0.003742897264826464
+        },
+        "score_margin": {
+            "raw_smd": 0.0118290343492488,
+            "weighted_smd": 0.02829557857762332
+        },
+        "style_tempo_rolling": {
+            "raw_smd": 0.009057823277667725,
+            "weighted_smd": 0.07479767561220985
+        },
+        "star_advantage": {
+            "raw_smd": 0.006572525586698023,
+            "weighted_smd": 0.015463579405394065
+        },
+        "is_star_resting": {
+            "raw_smd": 0.006572525586698023,
+            "weighted_smd": 0.015463579405394065
+        },
+        "lineup_confidence": {
+            "raw_smd": 0.005212000997841575,
+            "weighted_smd": 0.019734291157820476
+        },
+        "usage_delta": {
+            "raw_smd": 0.002012570677018671,
+            "weighted_smd": 0.011632457584191742
+        }
+    }
+}
