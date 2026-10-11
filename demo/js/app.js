@@ -1,9 +1,9 @@
-// אובייקטים לניהול הגרפים
+// Chart manager objects
         let shapChart = null;
         let lookaheadChart = null;
         let roiChart = null;
 
-        // מצב הזיכרון החי של האפליקציה (Session State)
+        // Application live memory state (Session State)
         let dataset = null;
         let currentGame = "game_1";
         let currentIndex = 0;
@@ -30,7 +30,7 @@
 
         function exportSimLog() {
             if (!window.SIM_LOG || window.SIM_LOG.length === 0) {
-                alert("אין נתוני סימולציה לייצא כרגע. אנא הרץ את הסימולציה תחילה.");
+                alert("No simulation data to export. Please run the simulation first.");
                 return;
             }
 
@@ -55,7 +55,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // טעינת נתונים אוטומטית ממערך JS
+        // Automatic data loading from JS array
         window.addEventListener('DOMContentLoaded', () => {
             if (window.DEMO_DATA) {
                 dataset = window.DEMO_DATA;
@@ -123,14 +123,14 @@
         function pauseSimulation() {
             isPlaying = false;
             if (simTimeout) clearTimeout(simTimeout);
-            // מנקה שאריות מהגרסאות הישנות למקרה שקיים
+            // Clean up legacy timer references if present
             if (window.simInterval) clearInterval(window.simInterval);
         }
 
-        // Play simulation - מתוקן עם setTimeout רקורסיבי לתמיכה בסליידר חי
+        // Play simulation - recursive setTimeout implementation supporting dynamic speed slider
         function playSimulation() {
             if (!dataset) {
-                alert("אנא ודא שקובץ הנתונים נטען בהצלחה.");
+                alert("Please ensure the dataset has been loaded successfully.");
                 return;
             }
             if (isPlaying) return;
@@ -154,19 +154,19 @@
                 updateHudDisplay();
                 checkTacticalTriggers(gameData[currentIndex]);
 
-                // רק אם המשחק עדיין רץ (לא נעצר על ידי טיים אאוט או אלרט) קובעים את הטיק הבא
+                // Schedule next tick only if simulation is still active (not paused by timeout or alert)
                 if (isPlaying) {
                     const speed = speedSlider.max - speedSlider.value + 50;
                     simTimeout = setTimeout(tick, speed);
                 }
             }
 
-            // קריאה ראשונה ללולאה
+            // Initial call to loop
             const initialSpeed = speedSlider.max - speedSlider.value + 50;
             simTimeout = setTimeout(tick, initialSpeed);
         }
 
-        // עדכון שוטף של מדדי המשחק על המסך (HUD Update)
+        // HUD Display Update
         function updateHudDisplay() {
             if (!dataset) return;
             const row = dataset[currentGame][currentIndex];
@@ -185,7 +185,7 @@
                 ticker.insertAdjacentHTML('afterbegin', `<div>[Q${row.period} - P:${currentIndex}] ${TEAMS[currentGame].home} ${row.home_score} : ${TEAMS[currentGame].away} ${row.away_score} | ${pDesc}</div>`);
             }
 
-            // עדכון לוג הריצה הכללי עבור כל פוזשן ופוזשן
+            // Update general runtime log for each possession
             const logEntry = {
                 timestamp_ms: Date.now(),
                 simulation_clock_s: currentIndex * 1.5,
@@ -221,7 +221,7 @@
             }
         }
 
-        // מאזין הטריגרים והאירועים - כולל מנגנון ה-Crisis Muting
+        // Trigger and event listener - including Crisis Muting mechanism
         function checkTacticalTriggers(row) {
             // 1. Timeout requested banner (always show if timeout_team is not NONE)
             if (row.timeout_team !== "NONE") {

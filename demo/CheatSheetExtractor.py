@@ -14,7 +14,7 @@ def analyze_sweet_spot_all_targets():
     reports_dir = os.path.join(base_dir, 'reports')
     summary_path = os.path.join(reports_dir, 'causal_multi_target_summary.json')
     
-    # 1. שליפת אחוזי הדיוק (AUC) לכל המטרות
+    # 1. Fetch accuracy rates (AUC) for all targets
     if os.path.exists(summary_path):
         with open(summary_path, 'r') as f:
             summary = json.load(f)
@@ -30,7 +30,7 @@ def analyze_sweet_spot_all_targets():
         'target_improve_margin_180s'
     ]
     
-    # בודקים שני מצבי קיצון: החמישון העליון (Top 10%) והמאיון ה-95 (Top 5%)
+    # Check extreme percentiles: Top 10% (90th percentile) and Top 5% (95th percentile)
     percentiles_to_test = [90, 95] 
     
     try:
@@ -43,7 +43,7 @@ def analyze_sweet_spot_all_targets():
         print(f"🔬 Analyzing Sweet Spot for: {target_col}")
         
         try:
-            # טעינת מודלים
+            # Load models
             p_model = joblib.load(os.path.join(models_dir, f'propensity_{target_col}.joblib'))
             t0_model = joblib.load(os.path.join(models_dir, f'tau0_{target_col}.joblib'))
             t1_model = joblib.load(os.path.join(models_dir, f'tau1_{target_col}.joblib'))
@@ -53,7 +53,7 @@ def analyze_sweet_spot_all_targets():
             expected_features = p_model.get_booster().feature_names
             X = df.reindex(columns=expected_features, fill_value=0)
             
-            # חישוב CATE
+            # Calculate CATE
             g_x = np.clip(p_model.predict_proba(X)[:, 1], 0.01, 0.99)
             cate = (1 - g_x) * t0_model.predict(X) + g_x * t1_model.predict(X)
             
@@ -63,7 +63,7 @@ def analyze_sweet_spot_all_targets():
                 'outcome': df[target_col]
             })
             
-            # ריצה על האחוזונים
+            # Iterate through percentiles
             for p in percentiles_to_test:
                 threshold = np.percentile(eval_df['cate_score'], p)
                 top_cases = eval_df[eval_df['cate_score'] >= threshold]

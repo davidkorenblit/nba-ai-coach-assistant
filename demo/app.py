@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 
 # ==========================================
-# 1. הגדרות דף ועיצוב הממשק
+# 1. Page Configuration & UI Styling
 # ==========================================
 st.set_page_config(
     page_title="NBA Timeout DSS - Live Simulation",
@@ -14,35 +14,34 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# הגדרת כיוון כתיבה מימין לשמאל עבור רכיבי ממשק מסוימים ב-Markdown
+# UI styling for notification boxes and visual alignment
 st.markdown("""
     <style>
-    .rtl-text { text-align: right; direction: rtl; }
     .alert-box { background-color: #ff4b4b22; border: 2px solid #ff4b4b; padding: 15px; border-radius: 5px; }
     .success-box { background-color: #24a14822; border: 2px solid #24a148; padding: 15px; border-radius: 5px; }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. טעינת נתונים דינמית (פונקציה עם Cache)
+# 2. Dynamic Data Loading (Cached Function)
 # ==========================================
 @st.cache_data
 def load_demo_data():
-    # מוצא דינמית את מיקום התיקייה שבה app.py נמצא ומנווט לתיקיית הדאטא
+    # Dynamically find the app directory and navigate to the demo data path
     current_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(current_dir, 'data', 'demo', 'demo_simulation_data.parquet')
     
     if not os.path.exists(file_path):
-        st.error(f"קובץ הנתונים לא נמצא בנתיב היחסי: {file_path}")
+        st.error(f"Data file not found at path: {file_path}")
         return pd.DataFrame()
     df = pd.read_parquet(file_path)
     
-    # הנדוס מדדים ויזואליים חסרים לטובת התצוגה (סיכויי ניצחון מבוססי מרג'ין וזמן)
+    # Engineer missing visual metrics for display (win probability based on margin)
     if 'win_probability' not in df.columns:
         df['win_probability'] = 1 / (1 + np.exp(-df['score_margin'] * 0.15))
         df['win_probability'] = df['win_probability'].clip(0.01, 0.99)
         
-    # הנדוס מדד CATE ו-Propensity לטובת גרף הצירוף המדעי במערכות
+    # Engineer CATE score & Propensity for system analytics visualization
     if 'cate_score' not in df.columns:
         df['cate_score'] = np.where(df['target_stop_run_90s'] == 1, np.random.uniform(0.6, 0.85, len(df)), np.random.uniform(0.1, 0.4, len(df)))
     if 'propensity_score' not in df.columns:
@@ -56,7 +55,7 @@ if df_game.empty:
     st.stop()
 
 # ==========================================
-# 3. אתחול משתני הזיכרון (Session State)
+# 3. Initialize Session State Variables
 # ==========================================
 if 'current_index' not in st.session_state:
     st.session_state.current_index = 0
@@ -67,7 +66,7 @@ if 'triggered_breakpoints' not in st.session_state:
 if 'selected_period' not in st.session_state:
     st.session_state.selected_period = 2
 
-# פונקציית עזר למעבר ישיר בין רבעים (לצרכי הצגה מהירה לשופטים)
+# Helper function to jump directly between quarters
 def jump_to_quarter(period):
     st.session_state.selected_period = period
     period_df = df_game[df_game['period'] == period]
@@ -76,21 +75,21 @@ def jump_to_quarter(period):
     st.session_state.playing = False
 
 # ==========================================
-# 4. תפריט שליטה צדדי (Sidebar Controls)
+# 4. Sidebar Controls
 # ==========================================
 with st.sidebar:
-    st.markdown("<h2 class='rtl-text'>בקרת סימולציה</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>Simulation Controls</h2>", unsafe_allow_html=True)
     
-    # כפתורי מעבר מהיר בין רבעים
-    st.markdown("<p class='rtl-text'><b>בחר רבע להצגה:</b></p>", unsafe_allow_html=True)
+    # Quarter jump buttons
+    st.markdown("<p><b>Select Quarter to Display:</b></p>", unsafe_allow_html=True)
     col_q1, col_q2, col_q3, col_q4 = st.columns(4)
-    if col_q2.button("רבע 2"): jump_to_quarter(2)
-    if col_q3.button("רבע 3"): jump_to_quarter(3)
-    if col_q4.button("רבע 4"): jump_to_quarter(4)
+    if col_q2.button("Q2"): jump_to_quarter(2)
+    if col_q3.button("Q3"): jump_to_quarter(3)
+    if col_q4.button("Q4"): jump_to_quarter(4)
     
     st.write("---")
     
-    # כפתורי הפעלה/עצירה
+    # Play / Pause / Reset controls
     col_play, col_pause, col_reset = st.columns(3)
     if col_play.button("▶ Play"):
         st.session_state.playing = True
@@ -103,24 +102,24 @@ with st.sidebar:
         jump_to_quarter(st.session_state.selected_period)
 
     st.write("---")
-    # מהירות סימולציה
-    speed = st.slider("מהירות הזרמה (שניות לפוזשן):", 0.1, 2.0, 0.5, step=0.1)
+    # Simulation speed
+    speed = st.slider("Streaming Speed (seconds per possession):", 0.1, 2.0, 0.5, step=0.1)
 
-# סינון הדאטא לפי הרבע הנבחר
+# Filter data by selected quarter
 df_period = df_game[df_game['period'] == st.session_state.selected_period]
 start_idx = df_period.index[0] - df_game.index[0]
 end_idx = df_period.index[-1] - df_game.index[0]
 
-# וידוא שהאינדקס הנוכחי נמצא בטווח הרבע הנבחר
+# Ensure current index is within the range of the selected period
 if st.session_state.current_index < start_idx or st.session_state.current_index > end_idx:
     st.session_state.current_index = start_idx
 
-# שליפת הפוזשן הנוכחי וההיסטוריה שלו ברבע
+# Extract current possession and quarter history
 current_row = df_game.iloc[st.session_state.current_index]
 history_df = df_game.iloc[start_idx:st.session_state.current_index + 1]
 
 # ==========================================
-# 5. זיהוי נקודות עצירה אוטומטיות (Breakpoints)
+# 5. Automatic Breakpoint Detection
 # ==========================================
 is_breakpoint = False
 if not st.session_state.playing:
@@ -135,29 +134,29 @@ else:
             st.rerun()
 
 # ==========================================
-# 6. כותרת הדשבורד הראשית
+# 6. Main Dashboard Header
 # ==========================================
 st.markdown("<h1 style='text-align: center; color: #1e3a8a;'>NBA Timeout Decision Support System</h1>", unsafe_allow_html=True)
 st.markdown(f"<h3 style='text-align: center; color: #475569;'>Live Simulator — Game ID: 22401052 | Quarter {st.session_state.selected_period}</h3>", unsafe_allow_html=True)
 st.write("---")
 
 # ==========================================
-# 7. חלוקת המסך לטורים (UI Layout Columns)
+# 7. UI Layout Columns
 # ==========================================
 col_hud, col_science = st.columns([1, 1])
 
 # ------------------------------------------
-# טור שמאל: הלוח הדינמי במגרש (Live HUD)
+# Left Column: Live Field Dashboard (HUD)
 # ------------------------------------------
 with col_hud:
-    st.markdown("<h3 class='rtl-text'>🖥️ לוח המשחק (Live HUD)</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>🖥️ Game Dashboard (Live HUD)</h3>", unsafe_allow_html=True)
     
     kpi1, kpi2, kpi3 = st.columns(3)
-    kpi1.metric("הפרש תוצאה (Margin)", f"{int(current_row['score_margin'])}")
-    kpi2.metric("עייפות בית (Home Fatigue)", f"{int(current_row.get('home_cum_fatigue', 0))}s")
-    kpi3.metric("עייפות חוץ (Away Fatigue)", f"{int(current_row.get('away_cum_fatigue', 0))}s")
+    kpi1.metric("Score Margin", f"{int(current_row['score_margin'])}")
+    kpi2.metric("Home Fatigue", f"{int(current_row.get('home_cum_fatigue', 0))}s")
+    kpi3.metric("Away Fatigue", f"{int(current_row.get('away_cum_fatigue', 0))}s")
     
-    st.markdown("<p class='rtl-text'><b>Live Win Probability (Bet365 Style)</b></p>", unsafe_allow_html=True)
+    st.markdown("<p><b>Live Win Probability (Bet365 Style)</b></p>", unsafe_allow_html=True)
     fig_wp, ax_wp = plt.subplots(figsize=(6, 3))
     fig_wp.patch.set_facecolor('#0e1117')
     ax_wp.set_facecolor('#1e293b')
@@ -178,12 +177,12 @@ with col_hud:
     st.pyplot(fig_wp)
 
 # ------------------------------------------
-# 2. טור ימין: שכבת המדע וההסברתיות (The Science Layer)
+# Right Column: Analytics & Causal Inference
 # ------------------------------------------
 with col_science:
-    st.markdown("<h3 class='rtl-text'>🔬 שכבת אנליטיקה והסקה סיבתית</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>🔬 Analytics & Causal Inference Layer</h3>", unsafe_allow_html=True)
     
-    st.markdown("<p class='rtl-text'><b>מדד לחץ מערכת (CATE) מול הסתברות מאמן (Propensity)</b></p>", unsafe_allow_html=True)
+    st.markdown("<p><b>System Stress (CATE) vs. Coach Probability (Propensity)</b></p>", unsafe_allow_html=True)
     fig_sc, ax_sc = plt.subplots(figsize=(6, 3))
     fig_sc.patch.set_facecolor('#0e1117')
     ax_sc.set_facecolor('#1e293b')
@@ -205,37 +204,37 @@ with col_science:
 st.write("---")
 
 # ==========================================
-# 8. ניתוח מותנה קשר ברגעי העצירה וההפעלה
+# 8. Contextual Analysis at Breakpoint Triggers
 # ==========================================
 if is_breakpoint:
-    st.markdown("<div class='alert-box'><h3 class='rtl-text' style='color: #ff4b4b; margin: 0;'>🚨 TIMEOUT RECOMMENDED — נקודת קיצון מתמטית (Top 5%)</h3></div>", unsafe_allow_html=True)
+    st.markdown("<div class='alert-box'><h3 style='color: #ff4b4b; margin: 0;'>🚨 TIMEOUT RECOMMENDED — Mathematical Threshold Triggered (Top 5%)</h3></div>", unsafe_allow_html=True)
     
     col_narrative, col_shap = st.columns([1, 1])
     
     with col_narrative:
-        st.markdown("<h4 class='rtl-text'>שאלה לשופטים / קהל:</h4>", unsafe_allow_html=True)
+        st.markdown("<h4>Key Tactical Question:</h4>", unsafe_allow_html=True)
         if st.session_state.selected_period == 2:
             st.markdown("""
-                <p class='rtl-text'>
-                <b>המצב הנוכחי ברבע השני:</b> המשחק בורח מ-10- ל-22-. המערכת מזהה חציית סף אקוטית וממליצה על פסק זמן מיידי.<br>
-                המאמן האנושי במציאות התעלם לחלוטין (Propensity נמוך).<br><br>
-                <i>מה לדעתכם יקרה ב-90 השניות הבאות אם נמשיך לזרום בלי עצירה?</i>
+                <p>
+                <b>Current Situation in Quarter 2:</b> Game margin is ballooning from -10 to -22. The system detects a critical threshold breach and recommends an immediate timeout.<br>
+                The human head coach historically ignored this moment (Low Propensity).<br><br>
+                <i>What will happen in the next 90 seconds if play continues without a stoppage?</i>
                 </p>
             """, unsafe_allow_html=True)
         elif st.session_state.selected_period == 4:
             st.markdown("""
-                <p class='rtl-text'>
-                <b>מאני-טיים ברבע הרביעי:</b> ההפרש קורס שוב ל-16-. לחץ פסיכולוגי אדיר באולם.<br>
-                המערכת צועקת לקחת פסק זמן עקב שחיקה פיזיולוגית קיצונית, אך המאמן קופא על הספסל.<br><br>
-                <i>האם אינטואיציה אנושית מסוגלת להתחרות כאן בספים אבסולוטיים? מה מחיר הטעות?</i>
+                <p>
+                <b>Crunch Time in Quarter 4:</b> Lead collapses down to -16 under intense game pressure.<br>
+                The system recommends calling a timeout due to severe cumulative player fatigue.<br><br>
+                <i>Can human intuition compete with data-driven absolute thresholds here? What is the cost of hesitation?</i>
                 </p>
             """, unsafe_allow_html=True)
             
-        if st.button("🔓 פתח קופסה שחורה והצג ניתוח טקטי"):
+        if st.button("🔓 Open Blackbox & View Tactical Breakdown"):
             st.session_state.playing = False
             
     with col_shap:
-        st.markdown("<p class='rtl-text'><b>פירוק טקטי מבוסס ערכי SHAP להסברתיות המודל</b></p>", unsafe_allow_html=True)
+        st.markdown("<p><b>SHAP Value Breakdown for Model Explainability</b></p>", unsafe_allow_html=True)
         fig_shap, ax_shap = plt.subplots(figsize=(5, 2.5))
         fig_shap.patch.set_facecolor('#0e1117')
         ax_shap.set_facecolor('#1e293b')
@@ -256,20 +255,20 @@ if is_breakpoint:
         st.pyplot(fig_shap)
 
 # ==========================================
-# 9. פאנל המסקנות המדעיות הקבועות (רבע 3 ו-4)
+# 9. Fixed Analytical Insights (Q3 & Q4 End)
 # ==========================================
 if st.session_state.selected_period == 3 and st.session_state.current_index == end_idx:
-    st.markdown("<div class='success-box'><h3 class='rtl-text' style='color: #24a148; margin: 0;'>📉 סינרגיה מלאה והוכחת המיקרו (Mean Reversion)</h3></div>", unsafe_allow_html=True)
+    st.markdown("<div class='success-box'><h3 style='color: #24a148; margin: 0;'>📉 Full Synergy & Micro Proof (Mean Reversion)</h3></div>", unsafe_allow_html=True)
     
     col_m1, col_m2 = st.columns([1, 1])
     with col_m1:
         st.markdown("""
-            <p class='rtl-text'><br>
-            <b>ניתוח תוצאות הרבע השלישי:</b><br>
-            ברבע הזה נרשמו 0 פספוסים של המאמן! המאמן לקח את פסקי הזמן בדיוק בנקודות השבירה שהמערכת סימנה.<br><br>
-            <b>הוכחת מגבלות פסק הזמן (הקו הסיבתי המדויק):</b><br>
-            שימו לב שהקבוצה עצרה את הדימום מיידית בחלון ה-90 שניות (החזרת נקודות). אך כפי שרואים, בטווח של 180 שניות ההשפעה דועכת ומתיישרת לחלוטין לממוצע הסטטיסטי.<br>
-            <b>מסקנה מדעית: פסק זמן הוא בלם חירום אקוטי, הוא אינו מנוע טקטי מתמשך.</b>
+            <p><br>
+            <b>Quarter 3 Results Breakdown:</b><br>
+            0 coaching misses recorded in this quarter! The coach called timeouts precisely at the system-highlighted stress points.<br><br>
+            <b>Proof of Timeout Effect Decay (Causal Boundary):</b><br>
+            Notice that the team stopped the run effectively in the immediate 90-second window (reclaiming points). However, over 180 seconds, the effect decays and reverts to the mean.<br>
+            <b>Scientific Conclusion: A timeout acts as an emergency brake, not a persistent momentum engine.</b>
             </p>
         """, unsafe_allow_html=True)
     with col_m2:
@@ -288,18 +287,18 @@ if st.session_state.selected_period == 3 and st.session_state.current_index == e
         st.pyplot(fig_mr)
 
 if st.session_state.selected_period == 4 and st.session_state.current_index == end_idx:
-    st.markdown("<div class='alert-box'><h3 class='rtl-text' style='color: #ff4b4b; margin: 0;'>📊 סימולציית What-If סופית והערכת החזר השקעה (ROI)</h3></div>", unsafe_allow_html=True)
+    st.markdown("<div class='alert-box'><h3 style='color: #ff4b4b; margin: 0;'>📊 Final What-If Simulation & ROI Estimation</h3></div>", unsafe_allow_html=True)
     
     col_r1, col_r2 = st.columns([1, 1])
     with col_r1:
         st.markdown("""
-            <p class='rtl-text'><br>
-            <b>ניתוח הפסד המשחק וחישוב ה-Gap:</b><br>
-            המשחק האמיתי הסתיים בהפסד צמוד של הקבוצה הביתית (Margin: -16).<br>
-            המודל הסיבתי שלנו מראה שהמאמן קפא ופספס שני חלונות התערבות קריטיים במאני-טיים.<br><br>
-            <b>תרגום למאקרו (Expected Season Wins):</b><br>
-            אם המאמן היה מפעיל את בלם החירום באחת מנקודות הקיצון האלו (Top 5%), הוא היה חוסך בממוצע 1.5 נקודות למשחק הנוכחי – מה שהיה משאיר את המשחק צמוד ומוביל לניצחון.<br>
-            במכפלה על פני עונה שלמה של 82 משחקים, צמצום טעויות הקיצון האנושיות הללו שווה בדיוק את ה-<b>3.2 ניצחונות נוספים בעונה</b> שמפרידים בין הדחה לעלייה לפלייאוף.
+            <p><br>
+            <b>Game Loss Analysis & Gap Calculation:</b><br>
+            The actual game ended in a close defeat for the home team (Margin: -16).<br>
+            Our causal model demonstrates that the head coach missed two critical intervention windows during crunch time.<br><br>
+            <b>Macro Translation (Expected Season Wins):</b><br>
+            Had the coach deployed the emergency brake at one of these top 5% threshold moments, it would have saved an average of 1.5 points in this game — keeping the game close and potentially changing the outcome.<br>
+            Extrapolated across an 82-game season, eliminating these extreme human errors equals <b>3.2 additional wins per season</b> — the difference between lottery and playoff contention.
             </p>
         """, unsafe_allow_html=True)
     with col_r2:
@@ -319,7 +318,7 @@ if st.session_state.selected_period == 4 and st.session_state.current_index == e
         st.pyplot(fig_roi)
 
 # ==========================================
-# 10. ניהול לולאת הריצה והזמן בסימולציה
+# 10. Simulation Loop & Time Management
 # ==========================================
 if st.session_state.playing and st.session_state.current_index < end_idx:
     st.session_state.current_index += 1
