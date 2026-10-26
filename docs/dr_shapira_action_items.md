@@ -1,0 +1,112 @@
+# 📋 משימות פיתוח ומתודולוגיה אקדמית: דרישות ד"ר שפירא
+# Academic Methodology & Development Tasks: Dr. Shapira Roadmap
+
+> **תאריך עדכון / Updated:** 2026-10-26  
+> **מטרה / Objective:** מיפוי והגדרה של משימות הקוד והמתודולוגיה הסיבתית בעקבות המשוב של ד"ר רחל לאה כהנא שפירא לקראת פרסום מאמר.  
+> **Objective:** Comprehensive roadmap of code, modeling, and causal methodology tasks based on Dr. Rachel Shapira's review.
+
+---
+
+## 🇮🇱 עברית: משימות הקוד והמתודולוגיה
+
+### 1. הפרדת משחקים מלאה ב-Cross-Fitting (`GroupKFold` ברמת המשחק) — [✅ הושלם ואומת אמפירית]
+* **הרציונל המדעי:** מניעת תלות תוך-משחקית וזליגת מידע (Intra-game correlation & leakage). אירועים (פוזשנים) מאותו משחק לא יימצאו בו-זמנית גם ב-Training Fold וגם ב-OOF Fold של ה-X-Learner.
+* **יישום בקוד:** 
+  * יושם `StratifiedGroupKFold(n_splits=5)` מקושר ל-`groups=games_train` (`gameId`) בתוך `stage_1_and_2_cross_fitting` בקובץ `models/06_causal_x_learner.py`.
+  * הוטמעה בדיקת `assert` קשיחה בכל Fold שמוודאת 0 חיתוך משחקים בין Train ל-Validation.
+* **סטטוס ואימות אמפירי (2026-10-26):**
+  * **הושלם בהצלחה (Exit code: 0).**
+  * כל 5 ה-Folds עברו עם **0 דליפת משחקים**.
+  * חושבו בהצלחה אומדני OOF עבור $D_0, D_1$ ונוצרו תחזיות CATE מלאות לכל 83,761 שורות המבחן.
+
+---
+
+### 2. בדיקות חפיפה (Overlap) ותמיכה משותפת (Common Support)
+* **הרציונל המדעי:** מאחר שמודל ה-Propensity מדויק יחסית (~85% AUC), קיים חשש להפרת הנחת ה-Positivity ($0 < P(T=1 \mid X) < 1$). יש להוכיח שקיימות תצפיות ביקורת דומות מספיק למצבי פסק זמן.
+* **יישום בקוד:**
+  * יצירת היסטוגרמות חפיפה משותפות של ציוני הנטייה לקבוצת הטיפול והביקורת.
+  * בדיקת הצורך ב-Trimming / קיטום ערכי קיצון ($e(x) < 0.02$ או $e(x) > 0.98$).
+  * בדיקת איזון משתנים (Covariate Balance) בעזרת SMD ו-Love Plot לפני ואחרי שקלול IPW.
+* **סטטוס:** תשתית Love Plot קיימת, נדרש חידוד מבחן החפיפה וה-Common Support.
+
+---
+
+### 3. אומדן סיבתי מתחרה / נוסף (Second Causal Estimator)
+* **הרציונל המדעי:** הוכחה שההטרוגניות של האפקט (CATE) אינה ארטיפקט של ארכיטקטורת ה-X-Learner.
+* **יישום בקוד:**
+  * הטמעת אסטימטור מבוסס Doubly Robust (DR-Learner / AIPW) או Causal Forest (שימוש בספריית `EconML`).
+  * השוואת התפלגות ה-CATE והקורלציה בין הניבויים של שני המודלים בסט המבחן.
+* **סטטוס:** מודל עצמאי חדש שיוקם לצורך בנצ'מרק.
+
+---
+
+### 4. ולידציית CATE עצמאית ועקומות Uplift (מעבר מבדיקת 5% בלבד)
+* **הרציונל המדעי:** מניעת טענות Cherry-Picking. הוכחה שהמודל מדרג נכון את האפקטיביות לאורך כל טווח המצבים ולא רק באחוזון עליון שרירותי.
+* **יישום בקוד:**
+  * חלוקת סט המבחן החיצוני (`test.parquet`) לעשירונים או חמישונים (Deciles / Quintiles) לפי ה-Predicted CATE.
+  * חישוב ה-Actual Uplift האמפירי בכל עשירון בנפרד ($E[Y \mid T=1] - E[Y \mid T=0]$).
+  * הפקת גרף Uplift מונוטוני (עקומה עולה מעשירון 1 לעשירון 10) ועקומת Qini / AUUC.
+* **סטטוס:** פיתוח סקריפט ולידציה חדש בסט המבחן.
+
+---
+
+### 5. הרחבה רב-עונתית ומבחן זמן עיוור (External Temporal Validation)
+* **הרציונל המדעי:** מבחן הזהב של הכללה (Generalization). המודל יאומן על עונות היסטוריות וייבדק על עונה שלמה עתידית שלא נראתה באימון.
+* **יישום בקוד:**
+  * איסוף והזרמת נתוני העונות המלאות (2021/22, 2022/23, 2023/24) לתוך ה-Pipeline של ה-Feature Engineering הנקי.
+  * שמירת עונת 2024/25 במלואה כ-Test Set עיוור (Out-of-Time Holdout).
+* **סטטוס:** הנתונים הגולמיים זמינים, נדרשת הרצת ה-FE שלבים 1–3 על עונות העבר.
+
+---
+---
+
+## 🇬🇧 English: Code & Methodology Action Items
+
+### 1. Strict Game-Level Group Cross-Fitting — [✅ Completed & Empirically Verified]
+* **Scientific Rationale:** Prevent intra-game correlation and lookahead/data leakage. Possessions from the exact same game must never appear simultaneously in both training folds and out-of-fold (OOF) evaluation folds.
+* **Implementation:**
+  * Refactored `stage_1_and_2_cross_fitting` inside `models/06_causal_x_learner.py`.
+  * Implemented `StratifiedGroupKFold(n_splits=5)` strictly grouped by `gameId`.
+  * Integrated an automated assertion validating zero game intersection between folds.
+* **Status & Empirical Validation (2026-10-26):**
+  * **Passed cleanly (Exit code: 0).**
+  * All 5 folds completed with strictly **0 game leakage**.
+  * Complete OOF counterfactual imputation ($D_0, D_1$) and seamless downstream Stage 3 CATE generation across all 83,761 test rows.
+
+---
+
+### 2. Propensity Overlap & Common Support Diagnostics
+* **Scientific Rationale:** High Propensity AUC (~85%) raises concerns about the Positivity assumption ($0 < P(T=1 \mid X) < 1$). We must demonstrate sufficient overlap between treated and control game states.
+* **Implementation:**
+  * Generate Propensity Overlap density plots across treatment and control groups.
+  * Implement and document propensity trimming boundaries (e.g., clipping at $[0.02, 0.98]$).
+  * Compute Standardized Mean Differences (SMD) and generate Love Plots pre- and post-IPW weighting.
+* **Status:** Core diagnostics present; finalizing overlap reporting.
+
+---
+
+### 3. Secondary Causal Estimator (DR-Learner / Causal Forest)
+* **Scientific Rationale:** Confirm that treatment effect heterogeneity is a true game phenomenon, rather than an artifact of the specific X-Learner meta-learning architecture.
+* **Implementation:**
+  * Train an alternative Doubly Robust (DR-Learner / AIPW) or Generalized Random Forest (Causal Forest) using `EconML`.
+  * Compare CATE distributions and calculate rank correlation against X-Learner predictions.
+* **Status:** New benchmark pipeline to be built.
+
+---
+
+### 4. Empirical Out-of-Sample CATE Uplift Validation (Decile Sweep)
+* **Scientific Rationale:** Avoid cherry-picking criticisms by expanding beyond the top 5% "sweet spot" to evaluate the full spectrum of predicted effects.
+* **Implementation:**
+  * Bucket the external test set (`test.parquet`) into deciles/quintiles based on predicted CATE.
+  * Calculate empirical treatment uplift per bucket: $E[Y \mid T=1] - E[Y \mid T=0]$.
+  * Plot monotonic Uplift curves and calculate Area Under the Uplift Curve (AUUC / Qini).
+* **Status:** New evaluation script required.
+
+---
+
+### 5. Multi-Season External Temporal Validation
+* **Scientific Rationale:** Golden standard of out-of-distribution temporal generalization.
+* **Implementation:**
+  * Ingest and process multiple prior seasons (2021/22, 2022/23, 2023/24) through the hardened Level 1–3 FE pipeline.
+  * Reserve the entire 2024/25 season as a strictly held-out out-of-time test set.
+* **Status:** Raw CSVs collected in `data/pureData`; requires automated pipeline run.

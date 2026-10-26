@@ -2,12 +2,16 @@ import joblib
 import pandas as pd
 import numpy as np
 import xgboost as xgb
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.model_selection import train_test_split, StratifiedGroupKFold
 from sklearn.metrics import roc_auc_score, mean_squared_error
 import matplotlib.pyplot as plt
 import os
 import json
-from pipeline_constants import get_blacklisted_features
+import sys
+try:
+    from pipeline_constants import get_blacklisted_features
+except ImportError:
+    from models.pipeline_constants import get_blacklisted_features
 
 class NBACausalLearner:
     def __init__(self, data_path: str, target_col: str = 'target_stop_run_90s', treatment_col: str = 'is_timeout'):
@@ -107,8 +111,8 @@ class NBACausalLearner:
         and outcome models (mu0, mu1) on K-1 folds, and predicts strictly Out-of-Fold 
         to impute counterfactuals D0 and D1 without In-Sample Overfitting bias.
         """
-        print(f"Stages 1 & 2: K-Fold Cross-Fitting (K={n_splits}) for Out-of-Fold Counterfactual Imputation...")
-        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+        print(f"Stages 1 & 2: Stratified Group K-Fold Cross-Fitting (K={n_splits}, Grouped by gameId) for OOF Imputation...")
+        sgkf = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=42)
         
         # Out-of-fold containers
         oof_g_x = np.zeros(len(self.X_train))
@@ -119,10 +123,16 @@ class NBACausalLearner:
         T_tr = self.T_train.values if isinstance(self.T_train, pd.Series) else self.T_train
         Y_tr = self.Y_train.values if isinstance(self.Y_train, pd.Series) else self.Y_train
         
-        for fold, (train_idx, val_idx) in enumerate(skf.split(X_tr, T_tr), 1):
+        for fold, (train_idx, val_idx) in enumerate(sgkf.split(X_tr, T_tr, groups=self.games_train), 1):
             X_fold_tr, X_fold_val = X_tr[train_idx], X_tr[val_idx]
             T_fold_tr, T_fold_val = T_tr[train_idx], T_tr[val_idx]
             Y_fold_tr, Y_fold_val = Y_tr[train_idx], Y_tr[val_idx]
+            
+            # QA: Verify strictly zero game leakage between train and val fold
+            train_games_set = set(self.games_train[train_idx])
+            val_games_set = set(self.games_train[val_idx])
+            overlap = train_games_set.intersection(val_games_set)
+            assert len(overlap) == 0, f"Critical leakage in Fold {fold}: {len(overlap)} games leaked!"
             
             # 1. Propensity model on fold
             fold_prop = xgb.XGBClassifier(eval_metric='logloss', random_state=42)
