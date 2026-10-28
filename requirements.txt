@@ -9,4 +9,5 @@ mlflow
 dagshub
 supabase
 curl_cffi
+econml
 
