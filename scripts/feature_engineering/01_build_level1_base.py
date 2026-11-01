@@ -7,9 +7,13 @@ import re
 pd.set_option('future.no_silent_downcasting', True)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RAW_FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
-ROTATIONS_FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
-OUTPUT_FILE = os.path.join(BASE_DIR, 'data', 'interim', 'level1_base.csv')
+
+def normalize_season(season_str: str):
+    s = season_str.strip().replace('-', '_')
+    if '_' in s:
+        parts = s.split('_')
+        return f"{parts[0]}_{parts[1]}", f"{parts[0]}-{parts[1]}"
+    return s, s.replace('_', '-')
 
 # --- Helper Functions (DO NOT TOUCH) ---
 def parse_clock(clock_str):
@@ -277,9 +281,9 @@ def clean_sparse_columns(df):
     return df
 
 # --- Main (DYNAMIC Hybrid Pipeline) ---
-def get_raw_season_data():
+def get_raw_season_data(season_underscore: str):
     pure_dir = os.path.join(BASE_DIR, 'data', 'pureData')
-    target_season = os.path.join(pure_dir, 'season_2024_25.csv')
+    target_season = os.path.join(pure_dir, f'season_{season_underscore}.csv')
     if not os.path.exists(target_season):
         print(f"❌ Error: Raw season data not found at {target_season}")
         return None
@@ -288,18 +292,26 @@ def get_raw_season_data():
     return pd.read_csv(target_season, low_memory=False)
 
 def main():
-    print(f" Starting DYNAMIC Level 1 Build (Season 2024-25)...")
-    df = get_raw_season_data()
+    import argparse
+    parser = argparse.ArgumentParser(description="Build Level 1 Base Timeline & Lineup Features")
+    parser.add_argument('--season', type=str, default='2024_25', help="Target season (e.g. 2024_25, 2021_22)")
+    args = parser.parse_args()
+
+    season_underscore, season_dash = normalize_season(args.season)
+    print(f"🚀 Starting DYNAMIC Level 1 Build (Season {season_dash})...")
+
+    df = get_raw_season_data(season_underscore)
     if df is None or df.empty:
-        raise FileNotFoundError("❌ CRITICAL: No raw season data found in data/pureData. Level 1 build aborted.")
+        raise FileNotFoundError(f"❌ CRITICAL: No raw season data found for {season_underscore} in data/pureData. Level 1 build aborted.")
     
-    # Load rotations strictly from rotations_2024_25.csv (ignoring any backups)
-    rot_path = os.path.join(BASE_DIR, 'data', 'pureData', 'rotations_2024_25.csv')
+    # Load rotations if available (with fallback handling)
+    rot_path = os.path.join(BASE_DIR, 'data', 'pureData', f'rotations_{season_underscore}.csv')
     df_rot = pd.read_csv(rot_path, low_memory=False) if os.path.exists(rot_path) else None
     if df_rot is not None:
         print(f"🔄 Loaded rotations: {os.path.basename(rot_path)} ({len(df_rot):,} rows)")
+    else:
+        print(f"ℹ️ Rotations file not found for {season_underscore}. Utilizing Play-by-Play dynamic fallback inference.")
 
-    
     df = process_base_timeline(df)
     df = enrich_state_counters_v4(df)
     df = calculate_temporal_metrics(df)
@@ -308,9 +320,15 @@ def main():
     df = process_lineups_logic(df, df_rot)
     df = clean_sparse_columns(df)
     
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-    df.to_csv(OUTPUT_FILE, index=False)
-    print(f" Level 1 DONE. Dynamic Substitutions Captured.")
+    interim_dir = os.path.join(BASE_DIR, 'data', 'interim')
+    os.makedirs(interim_dir, exist_ok=True)
+    out_file = os.path.join(interim_dir, f'level1_base_{season_underscore}.csv')
+    df.to_csv(out_file, index=False)
+    print(f"✅ Level 1 DONE. Output saved to: {out_file}")
+
+    if season_underscore == '2024_25':
+        legacy_file = os.path.join(interim_dir, 'level1_base.csv')
+        df.to_csv(legacy_file, index=False)
 
 if __name__ == "__main__":
     main()

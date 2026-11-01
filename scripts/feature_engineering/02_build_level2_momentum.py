@@ -9,9 +9,13 @@ if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level1_base.csv')
-OUTPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level2_features.csv')
-LOOKUP_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'lookup', 'high_usage_players_2024-25.csv')
+
+def normalize_season(season_str: str):
+    s = season_str.strip().replace('-', '_')
+    if '_' in s:
+        parts = s.split('_')
+        return f"{parts[0]}_{parts[1]}", f"{parts[0]}-{parts[1]}"
+    return s, s.replace('_', '-')
 
 class Level2Validator:
     """Quality Assurance for Level 2 Features."""
@@ -185,16 +189,50 @@ class Level2FeatureEngineer:
 
 # --- Main Execution ---
 def main():
-    print("🚀 Starting Level 2 Feature Engineering (Optimized OOP Architecture)...")
+    import argparse
+    parser = argparse.ArgumentParser(description="Build Level 2 Momentum & Fatigue Features")
+    parser.add_argument('--season', type=str, default='2024_25', help="Target season (e.g. 2024_25, 2021_22)")
+    args = parser.parse_args()
+
+    season_underscore, season_dash = normalize_season(args.season)
+    print(f"🚀 Starting Level 2 Feature Engineering (Season {season_dash})...")
+
+    interim_dir = os.path.join(BASE_DIR, '..', '..', 'data', 'interim')
+    lookup_dir = os.path.join(BASE_DIR, '..', '..', 'data', 'lookup')
+
+    # Resolve input path (level1_base_{season}.csv with fallback)
+    input_path = os.path.join(interim_dir, f'level1_base_{season_underscore}.csv')
+    if not os.path.exists(input_path) and season_underscore == '2024_25':
+        input_path = os.path.join(interim_dir, 'level1_base.csv')
+
+    if not os.path.exists(input_path):
+        raise FileNotFoundError(f"❌ Input Level 1 data not found at {input_path}. Run Level 1 first.")
+
+    # Resolve season-specific stars lookup
+    lookup_path = os.path.join(lookup_dir, f'high_usage_players_{season_dash}.csv')
+    if not os.path.exists(lookup_path):
+        # Fallback check
+        alt_lookup = os.path.join(lookup_dir, f'high_usage_players_{season_underscore}.csv')
+        if os.path.exists(alt_lookup):
+            lookup_path = alt_lookup
+        else:
+            print(f"⚠️ Warning: Star lookup not found at {lookup_path}. Star features may be neutral.")
+
+    output_path = os.path.join(interim_dir, f'level2_features_{season_underscore}.csv')
+
     try:
-        engineer = Level2FeatureEngineer(INPUT_PATH, LOOKUP_PATH)
+        engineer = Level2FeatureEngineer(input_path, lookup_path)
         df_features = engineer.run_pipeline()
         
         Level2Validator.validate(df_features)
         
-        df_features.to_csv(OUTPUT_PATH, index=False)
-        print(f"✅ Saved Optimized Level 2 to: {OUTPUT_PATH}")
+        df_features.to_csv(output_path, index=False)
+        print(f"✅ Saved Optimized Level 2 to: {output_path}")
         print(f"📊 Final Dataset Shape: {df_features.shape}")
+
+        if season_underscore == '2024_25':
+            legacy_file = os.path.join(interim_dir, 'level2_features.csv')
+            df_features.to_csv(legacy_file, index=False)
         
     except Exception as e:
         print(f"❌ Critical Error: {e}")

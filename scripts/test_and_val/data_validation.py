@@ -1,16 +1,26 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import argparse
 
-# --- הגדרות ---
+def normalize_season(season_str: str):
+    """
+    Normalizes season input like '2024-25' or '2024_25' to both:
+    (season_underscore, season_dash), e.g. ('2024_25', '2024-25').
+    """
+    s = season_str.strip().replace('-', '_')
+    if '_' in s:
+        parts = s.split('_')
+        return f"{parts[0]}_{parts[1]}", f"{parts[0]}-{parts[1]}"
+    return s, s.replace('_', '-')
+
+# --- Configuration ---
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(CURRENT_DIR, '..', '..', 'data', 'pureData')
 OUTPUT_DIR = os.path.join(CURRENT_DIR, '..', '..', 'docs', 'figures')
-INPUT_FILENAME = "season_2024_25.csv"
-INPUT_FILE = os.path.join(DATA_DIR, INPUT_FILENAME)
 
-# --- הגדרות בנצ'מארק (ממוצעים למשחק ב-NBA) ---
-# המספרים מייצגים סכום לשתי הקבוצות יחד
+# --- Configuration (NBA Benchmarks) ---
+# Numbers represent combined totals for both teams
 NBA_BENCHMARKS = {
     'turnover': {'expected': 27, 'tolerance': 5},  # ~13.5 per team
     'steal':    {'expected': 15, 'tolerance': 4},  # ~7.5 per team
@@ -20,20 +30,20 @@ NBA_BENCHMARKS = {
     'timeout':  {'expected': 14, 'tolerance': 4}   # ~7 per team
 }
 
-def generate_context_report(df):
+def generate_context_report(df, season_str: str = "2024_25", input_filename: str = "season_2024_25.csv"):
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    # 1. חישוב סטטיסטיקות מהדאטא
+    # 1. Calculate statistics from data
     num_games = df['gameId'].nunique()
-    print(f"Analyzing {num_games} games...")
+    print(f"Analyzing {num_games} games for Season {season_str}...")
 
-    # ספירת אירועים לכל משחק כדי לקבל ממוצע
+    # Count events per game for average calculation
     event_counts = df.groupby(['gameId', 'actionType']).size().unstack(fill_value=0)
     
-    # הכנת נתונים לטבלה
+    # Prepare table data
     table_data = []
-    # כותרות
+    # Headers
     table_data.append(["Event Type", "Your Data (Avg)", "NBA Benchmark", "Status"])
     
     for event, bench in NBA_BENCHMARKS.items():
@@ -41,7 +51,7 @@ def generate_context_report(df):
             actual_avg = event_counts[event].mean()
             diff = abs(actual_avg - bench['expected'])
             
-            # קביעת סטטוס
+            # Set status
             if diff <= bench['tolerance']:
                 status = "OK (Healthy)"
             elif actual_avg < bench['expected']:
@@ -59,16 +69,16 @@ def generate_context_report(df):
         else:
             table_data.append([event.title(), "0.0", str(bench['expected']), "MISSING"])
 
-    # 2. הוספת בדיקת Nulls חכמה (לשדות קריטיים בלבד)
-    table_data.append(["", "", "", ""]) # רווח
+    # 2. Smart Null checks for critical fields
+    table_data.append(["", "", "", ""]) # Spacer
     table_data.append(["Field Name", "Missing %", "Expected Missing", "Integrity"])
     
-    # שדות שנרצה לבדוק
+    # Target fields for inspection
     fields_check = [
-        ('stealPlayerName', 0.97, 0.02), # צפוי להיות חסר ב-97% מהמקרים (כי רק 3% זה חטיפות)
+        ('stealPlayerName', 0.97, 0.02), # Expected missing in 97% of cases (steals are ~3% of events)
         ('blockPlayerName', 0.98, 0.02),
-        ('shotDistance',    0.68, 0.05), # צפוי להיות חסר ברוב האירועים שאינם זריקות
-        ('gameId',          0.00, 0.00)  # אסור שיהיה חסר
+        ('shotDistance',    0.68, 0.05), # Expected missing in non-shot events
+        ('gameId',          0.00, 0.00)  # Must never be missing
     ]
     
     total_rows = len(df)
@@ -90,40 +100,53 @@ def generate_context_report(df):
                 status
             ])
 
-    # 3. ציור הטבלה
+    # 3. Render Table
     fig, ax = plt.subplots(figsize=(10, len(table_data) * 0.6))
     ax.axis('tight')
     ax.axis('off')
     
-    # בחירת צבעים לשורות הסטטוס (אופציונלי למתקדמים, כרגע נשאיר נקי)
+    # Status row colors styling
     table = ax.table(cellText=table_data, loc='center', cellLoc='left')
     
     table.auto_set_font_size(False)
     table.set_fontsize(11)
     table.scale(1.2, 1.8)
     
-    # עיצוב שורות כותרת (מודגשות)
+    # Format header rows
     for (i, j), cell in table.get_celld().items():
-        if i == 0 or i == len(NBA_BENCHMARKS) + 2: # שורות כותרת
+        if i == 0 or i == len(NBA_BENCHMARKS) + 2: # Header rows
             cell.set_text_props(weight='bold')
             cell.set_facecolor('#e6e6e6')
 
-    # שמירה
-    output_path = os.path.join(OUTPUT_DIR, "0_data_health_context.png")
-    plt.title(f"Data Health & Integrity Report - {INPUT_FILENAME}", y=0.99)
+    # Save output
+    output_path = os.path.join(OUTPUT_DIR, f"0_data_health_context_{season_str}.png")
+    plt.title(f"Data Health & Integrity Report - {input_filename}", y=0.99)
     plt.savefig(output_path, bbox_inches='tight', dpi=150)
+    if season_str == "2024_25":
+        legacy_path = os.path.join(OUTPUT_DIR, "0_data_health_context.png")
+        plt.savefig(legacy_path, bbox_inches='tight', dpi=150)
     plt.close()
     
     print(f"[V] Contextual health report saved to: {output_path}")
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Validate data against NBA benchmarks and generate report.")
+    parser.add_argument("--season", type=str, default="2024_25", help="Season string (e.g. 2024_25, 2024-25, 2021_22)")
+    return parser.parse_args()
+
 def main():
-    if not os.path.exists(INPUT_FILE):
-        print("File not found.")
+    args = parse_args()
+    season_underscore, _ = normalize_season(args.season)
+    input_filename = f"season_{season_underscore}.csv"
+    input_file = os.path.join(DATA_DIR, input_filename)
+
+    if not os.path.exists(input_file):
+        print(f"File not found: {input_file}")
         return
     
-    print("Loading data...")
-    df = pd.read_csv(INPUT_FILE, low_memory=False)
-    generate_context_report(df)
+    print(f"Loading data for season {season_underscore} from {input_file}...")
+    df = pd.read_csv(input_file, low_memory=False)
+    generate_context_report(df, season_str=season_underscore, input_filename=input_filename)
 
 if __name__ == "__main__":
     main()

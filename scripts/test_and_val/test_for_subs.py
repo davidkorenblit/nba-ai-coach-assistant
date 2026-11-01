@@ -1,31 +1,38 @@
 import pandas as pd
 import os
+import argparse
 
-# --- Configuration ---
+def normalize_season(season_str: str):
+    """
+    Normalizes season input like '2024-25' or '2024_25' to both:
+    (season_underscore, season_dash), e.g. ('2024_25', '2024-25').
+    """
+    s = season_str.strip().replace('-', '_')
+    if '_' in s:
+        parts = s.split('_')
+        return f"{parts[0]}_{parts[1]}", f"{parts[0]}-{parts[1]}"
+    return s, s.replace('_', '-')
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-FILE_PATH = os.path.join(BASE_DIR, 'data', 'pureData', 'season_2024_25.csv')
 
-def inspect_substitution_data():
-    print(f"🕵️‍♂️ Starting Feasibility Check on: {FILE_PATH}")
+def inspect_substitution_data(file_path: str):
+    print(f"🕵️‍♂️ Starting Feasibility Check on: {file_path}")
     
-    if not os.path.exists(FILE_PATH):
-        print(f"❌ Error: File not found at {FILE_PATH}")
+    if not os.path.exists(file_path):
+        print(f"❌ Error: File not found at {file_path}")
         return
 
     try:
         # 1. Load a sample (first 50,000 rows is usually enough to catch full games)
-        # We load specific columns based on your documentation to check the mapping
         cols = [
             'gameId', 'period', 'clock', 
             'actionType', 'subType', 
             'description', 'playerName', 'teamTricode'
         ]
         
-        # Using lambda in usecols to avoid error if a column is slightly named differently in CSV
-        df = pd.read_csv(FILE_PATH, nrows=50000, usecols=lambda c: c in cols)
+        df = pd.read_csv(file_path, nrows=50000, usecols=lambda c: c in cols)
         
         # 2. Filter for Substitution Events
-        # Usually identified by 'SUB' in description or specific action types
         mask_sub = df['description'].str.contains('SUB', case=False, na=False)
         subs_df = df[mask_sub]
 
@@ -36,7 +43,7 @@ def inspect_substitution_data():
 
         print(f"✅ Found {len(subs_df)} substitution events.")
         
-        # 3. Inspect the Logic (The crucial part)
+        # 3. Inspect the Logic
         print("\n🔍 --- LOGIC INSPECTION ---")
         print("Goal: Determine if 'playerName' refers to the player COMING IN or GOING OUT.")
         
@@ -67,5 +74,17 @@ def inspect_substitution_data():
     except Exception as e:
         print(f"❌ Critical Error: {e}")
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Inspect substitution data for a given season.")
+    parser.add_argument("--season", type=str, default="2024_25", help="Season string (e.g. 2024_25, 2024-25, 2021_22)")
+    parser.add_argument("--file", type=str, default=None, help="Explicit path to raw season CSV")
+    return parser.parse_args()
+
 if __name__ == "__main__":
-    inspect_substitution_data()
+    args = parse_args()
+    if args.file:
+        target_path = args.file
+    else:
+        season_underscore, _ = normalize_season(args.season)
+        target_path = os.path.join(BASE_DIR, 'data', 'pureData', f'season_{season_underscore}.csv')
+    inspect_substitution_data(target_path)

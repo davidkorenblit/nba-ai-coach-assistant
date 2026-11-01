@@ -1,0 +1,250 @@
+======================================================================
+PRE-FEATURE ENGINEERING QA & VALIDATION REPORT
+Season:    2024_25 (2024-25)
+Timestamp: 2026-11-01 13:20:34
+Python:    C:\Python314\python.exe
+======================================================================
+
+----------------------------------------------------------------------
+TEST: Data_integrity_check_before_FE.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\Data_integrity_check_before_FE.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+--- Starting Data Completeness Check (Season 2024_25) ---
+Target CSV file: C:\Users\david\finalPro\data\pureData\season_2024_25.csv
+
+==========================================
+📂 Analyzing file: season_2024_25.csv
+==========================================
+Total Rows: 686008
+Column Name               | Missing    | % Missing  | Status
+-----------------------------------------------------------------
+gameId                    | 0          |   0.00%    | ✅ Perfect
+period                    | 0          |   0.00%    | ✅ Perfect
+clock                     | 0          |   0.00%    | ✅ Perfect
+actionNumber              | 0          |   0.00%    | ✅ Perfect
+actionType                | 0          |   0.00%    | ✅ Perfect
+subType                   | 32178      |   4.69%    | ⚠️ OK (Low)
+description               | 0          |   0.00%    | ✅ Perfect
+qualifiers                | 0          |   0.00%    | ✅ Perfect
+playerName                | 47825      |   6.97%    | Rx Warning
+personId                  | 0          |   0.00%    | ✅ Perfect
+teamId                    | 11198      |   1.63%    | ⚠️ OK (Low)
+scoreHome                 | 0          |   0.00%    | ✅ Perfect
+scoreAway                 | 0          |   0.00%    | ✅ Perfect
+personIdsFilter           | 0          |   0.00%    | ✅ Perfect
+x                         | 466479     |  68.00%    | ❌ Critical
+y                         | 466479     |  68.00%    | ❌ Critical
+shotDistance              | 466479     |  68.00%    | ❌ Critical
+foulPersonalTotal         | 639164     |  93.17%    | ❌ Critical
+turnoverTotal             | 652793     |  95.16%    | ❌ Critical
+pointsTotal               | 541869     |  78.99%    | ❌ Critical
+
+--- Check Complete ---
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: check_data_health.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\check_data_health.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+🏥 Starting Data Health Check (Season 2024_25)...
+
+📊 Summary (2024_25):
+   Total Games in Season: 1230
+   Successfully Fetched:  1230
+   Missing Games:         0
+   ✅ Success Rate:       100.0%
+
+🔍 Quality Check:
+   Games with BOTH Home/Away data: 1230
+   Games with Partial data:        0
+
+✅ STATUS: HEALTHY (Ready for ML)
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: data_validation.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\data_validation.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+Loading data for season 2024_25 from C:\Users\david\finalPro\scripts\test_and_val\..\..\data\pureData\season_2024_25.csv...
+Analyzing 1230 games for Season 2024_25...
+[V] Contextual health report saved to: C:\Users\david\finalPro\scripts\test_and_val\..\..\docs\figures\0_data_health_context_2024_25.png
+
+[STDERR]:
+C:\Users\david\.matplotlib is not a writable directory
+Matplotlib created a temporary cache directory at C:\Users\david\AppData\Local\Temp\matplotlib-tivgakfg because there was an issue with the default path (C:\Users\david\.matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+======================================================================
+
+----------------------------------------------------------------------
+TEST: validate_game_logic.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\validate_game_logic.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+--- STARTING DEEP LOGIC VALIDATION ---
+Scanning 1 season file(s)...
+
+Processing season_2024_25.csv...
+
+--- VALIDATION COMPLETE ---
+Total Games Checked: 1230
+Valid Games: 1174
+Invalid Games: 56
+
+[X] Blacklist saved to: C:\Users\david\finalPro\scripts\test_and_val\..\..\docs\reports\invalid_games_blacklist.csv
+[X] Season blacklist saved to: C:\Users\david\finalPro\scripts\test_and_val\..\..\docs\reports\invalid_games_blacklist_2024_25.csv
+Preview of bad games:
+     gameId      matchup              season                  reason
+0  22401189  CLE vs. IND  season_2024_25.csv  Too Many Timeouts (18)
+1  22401198    LAC @ GSW  season_2024_25.csv  Too Many Timeouts (16)
+2  22401151    BOS @ NYK  season_2024_25.csv  Too Many Timeouts (15)
+3  22401131  MIA vs. MIL  season_2024_25.csv  Too Many Timeouts (15)
+4  22401102  DEN vs. MIN  season_2024_25.csv  Too Many Timeouts (19)
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: check_contextual_sparsity.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\check_contextual_sparsity.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+🕵️‍♂️ Starting QA...
+Analyzing file: C:\Users\david\finalPro\scripts\test_and_val\..\..\data\interim\level1_base.csv
+
+🏀 Testing Event: ASSISTS
+   Found 10 rows containing 'Assist'.
+   [A] Checking specific 'assist' columns:
+   [B] Checking PRIMARY identity columns:
+     -> personId                       :    0.0% NaN,    0.0% Zeros. ✅ PERFECT
+     -> teamTricode                    :    0.0% NaN,    0.0% Zeros. ✅ PERFECT
+        🕵️‍♂️ VALUES FOUND: <ArrowStringArray>
+['OKC', 'MIN', 'POR', 'MEM', 'DET', 'BOS', 'LAC', 'ORL']
+Length: 8, dtype: str 
+
+🏀 Testing Event: TIMEOUTS
+   Found 13681 rows containing 'Timeout'.
+   [A] Checking specific 'teamTricode' columns:
+     -> teamTricode                    :    0.0% missing. ✅ KEEP
+   [B] Checking PRIMARY identity columns:
+     -> personId                       :    0.0% NaN,  100.0% Zeros. ❌ BROKEN
+     -> teamTricode                    :    0.0% NaN,    0.0% Zeros. ✅ PERFECT
+        🕵️‍♂️ VALUES FOUND: <ArrowStringArray>
+['BOS', 'ATL', 'MIA', 'DET', 'CHA', 'ORL', 'PHI', 'NYK', 'TOR', 'MIL']
+Length: 10, dtype: str ...
+
+🏀 Testing Event: TURNOVERS
+   Found 35171 rows containing 'Turnover'.
+   [A] Checking specific 'teamTricode' columns:
+     -> teamTricode                    :    0.0% missing. ✅ KEEP
+   [B] Checking PRIMARY identity columns:
+     -> personId                       :    0.0% NaN,    5.6% Zeros. ❌ BROKEN
+     -> teamTricode                    :    0.0% NaN,    0.0% Zeros. ✅ PERFECT
+        🕵️‍♂️ VALUES FOUND: <ArrowStringArray>
+['ATL', 'BOS', 'DET', 'MIA', 'ORL', 'CHA', 'PHI', 'NYK', 'TOR', 'MIL']
+Length: 10, dtype: str ...
+
+🏁 Analysis Complete.
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: check_usage_test.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\check_usage_test.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+📁 Loading High Usage Players from local lookup (C:\Users\david\finalPro\data\lookup\high_usage_players_2024-25.csv)...
+
+📊 Top High Usage Players (Season 2024-25):
+
+--- LAL ---
+TEAM_ABBREVIATION PLAYER_NAME  USG_PCT  GP  MIN
+              LAL Luka Dončić    0.328  50 35.4
+
+--- BOS ---
+TEAM_ABBREVIATION  PLAYER_NAME  USG_PCT  GP  MIN
+              BOS Jayson Tatum    0.301  72 36.4
+
+--- DEN ---
+TEAM_ABBREVIATION  PLAYER_NAME  USG_PCT  GP  MIN
+              DEN Nikola Jokić    0.285  70 36.7
+
+--- GSW ---
+TEAM_ABBREVIATION   PLAYER_NAME  USG_PCT  GP  MIN
+              GSW Stephen Curry    0.286  70 32.2
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: test_data.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\test_data.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+[V] Local PBP file verified: season_2024_25.csv
+--- Checking Historical Availability ---
+
+Checking Season 2024-25...
+  [X] ERROR for 2024-25: HTTPSConnectionPool(host='stats.nba.com', port=443): Max retries exceeded with url: /stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftTeamID=&DraftYear=&EqAST=&EqBLK=&EqDD=&EqDREB=&EqFG3A=&EqFG3M=&EqFG3_PCT=&EqFGA=&EqFGM=&EqFG_PCT=&EqFTA=&EqFTM=&EqFT_PCT=&EqMINUTES=&EqOREB=&EqPF=&EqPTS=&EqREB=&EqSTL=&EqTD=&EqTOV=&GameID=&GtAST=&GtBLK=&GtDD=&GtDREB=&GtFG3A=&GtFG3M=&GtFG3_PCT=&GtFGA=&GtFGM=&GtFG_PCT=&GtFTA=&GtFTM=&GtFT_PCT=&GtMINUTES=&GtOREB=&GtPF=&GtPTS=&GtREB=&GtSTL=&GtTD=&GtTOV=&LeagueID=00&Location=&LtAST=&LtBLK=&LtDD=&LtDREB=&LtFG3A=&LtFG3M=&LtFG3_PCT=&LtFGA=&LtFGM=&LtFG_PCT=&LtFTA=&LtFTM=&LtFT_PCT=&LtMINUTES=&LtOREB=&LtPF=&LtPTS=&LtREB=&LtSTL=&LtTD=&LtTOV=&Outcome=&PORound=&PlayerID=&PlayerOrTeam=T&RookieYear=&Season=2024-25&SeasonSegment=&SeasonType=&StarterBench=&TeamID=&VsConference=&VsDivision=&VsTeamID=&YearsExperience= (Caused by NameResolutionError("HTTPSConnection(host='stats.nba.com', port=443): Failed to resolve 'stats.nba.com' ([Errno 11001] getaddrinfo failed)"))
+  --- STOPPING: Reached the limit. ---
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: test_for_subs.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\test_for_subs.py --season 2024_25
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+🕵️‍♂️ Starting Feasibility Check on: C:\Users\david\finalPro\data\pureData\season_2024_25.csv
+✅ Found 9797 substitution events.
+
+🔍 --- LOGIC INSPECTION ---
+Goal: Determine if 'playerName' refers to the player COMING IN or GOING OUT.
+      clock teamTricode    playerName              description
+PT04M58.00S         CHI       Buzelis      SUB out: M. Buzelis
+PT04M58.00S         CHI         White        SUB out: C. White
+PT04M58.00S         CHI         Terry         SUB in: D. Terry
+PT04M58.00S         CHI      Williams      SUB in: P. Williams
+PT04M58.00S         PHI        Butler       SUB out: J. Butler
+PT04M58.00S         PHI     Walker IV    SUB out: L. Walker IV
+PT04M58.00S         PHI    Council IV    SUB in: R. Council IV
+PT04M58.00S         PHI Hood-Schifino SUB in: J. Hood-Schifino
+PT03M08.00S         PHI        Grimes       SUB out: Q. Grimes
+PT03M08.00S         PHI          Bona         SUB out: A. Bona
+
+🧠 Analysis Helper:
+Event: SUB out: M. Buzelis
+Column 'playerName': Buzelis
+✅ 'playerName' is explicitly inside the description.
+⚠️ 'FOR' keyword not found. Parsing might need Regex.
+
+[STDERR]:
+<empty>
+======================================================================
+
+======================================================================
+📊 QA SUITE SUMMARY FOR 2024_25: 8 Passed | 0 Failed
+======================================================================
+
+✨ All QA & Validation tests passed successfully for Season 2024_25!

@@ -5,8 +5,13 @@ import sys
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level2_features.csv')
-OUTPUT_PATH = os.path.join(BASE_DIR, '..', '..', 'data', 'interim', 'level3_labels.csv')
+
+def normalize_season(season_str: str):
+    s = season_str.strip().replace('-', '_')
+    if '_' in s:
+        parts = s.split('_')
+        return f"{parts[0]}_{parts[1]}", f"{parts[0]}-{parts[1]}"
+    return s, s.replace('_', '-')
 
 class Level3Validator:
     """Quality Assurance for Level 3 Labels."""
@@ -185,13 +190,36 @@ class Level3Labeler:
 
 # --- Main Execution ---
 def main():
-    print("🚀 Starting Level 3 Target Generation (OOP Architecture)...")
+    import argparse
+    parser = argparse.ArgumentParser(description="Build Level 3 Causal Labels & Targets")
+    parser.add_argument('--season', type=str, default='2024_25', help="Target season (e.g. 2024_25, 2021_22)")
+    args = parser.parse_args()
+
+    season_underscore, season_dash = normalize_season(args.season)
+    print(f"🚀 Starting Level 3 Target Generation (Season {season_dash})...")
+
+    interim_dir = os.path.join(BASE_DIR, '..', '..', 'data', 'interim')
+
+    # Resolve input path (level2_features_{season}.csv with fallback)
+    input_path = os.path.join(interim_dir, f'level2_features_{season_underscore}.csv')
+    if not os.path.exists(input_path) and season_underscore == '2024_25':
+        input_path = os.path.join(interim_dir, 'level2_features.csv')
+
+    if not os.path.exists(input_path):
+        raise FileNotFoundError(f"❌ Input Level 2 data not found at {input_path}. Run Level 2 first.")
+
+    output_path = os.path.join(interim_dir, f'level3_labels_{season_underscore}.csv')
+
     try:
-        labeler = Level3Labeler(INPUT_PATH, OUTPUT_PATH)
+        labeler = Level3Labeler(input_path, output_path)
         df_labeled = labeler.run_pipeline()
         
         # Validate Labels
         Level3Validator.validate(df_labeled)
+
+        if season_underscore == '2024_25':
+            legacy_file = os.path.join(interim_dir, 'level3_labels.csv')
+            df_labeled.to_csv(legacy_file, index=False)
         
     except Exception as e:
         print(f"❌ Critical Error in Level 3: {e}")

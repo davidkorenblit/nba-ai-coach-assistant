@@ -1,0 +1,216 @@
+======================================================================
+PRE-FEATURE ENGINEERING QA & VALIDATION REPORT
+Season:    2021_22 (2021-22)
+Timestamp: 2026-11-01 13:27:23
+Python:    C:\Python314\python.exe
+======================================================================
+
+----------------------------------------------------------------------
+TEST: Data_integrity_check_before_FE.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\Data_integrity_check_before_FE.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+--- Starting Data Completeness Check (Season 2021_22) ---
+Target CSV file: C:\Users\david\finalPro\data\pureData\season_2021_22.csv
+
+==========================================
+📂 Analyzing file: season_2021_22.csv
+==========================================
+Total Rows: 691875
+Column Name               | Missing    | % Missing  | Status
+-----------------------------------------------------------------
+gameId                    | 0          |   0.00%    | ✅ Perfect
+period                    | 0          |   0.00%    | ✅ Perfect
+clock                     | 0          |   0.00%    | ✅ Perfect
+actionNumber              | 0          |   0.00%    | ✅ Perfect
+actionType                | 0          |   0.00%    | ✅ Perfect
+subType                   | 30595      |   4.42%    | ⚠️ OK (Low)
+description               | 16351      |   2.36%    | ⚠️ OK (Low)
+qualifiers                | 0          |   0.00%    | ✅ Perfect
+playerName                | 63134      |   9.13%    | Rx Warning
+personId                  | 0          |   0.00%    | ✅ Perfect
+teamId                    | 26849      |   3.88%    | ⚠️ OK (Low)
+scoreHome                 | 0          |   0.00%    | ✅ Perfect
+scoreAway                 | 0          |   0.00%    | ✅ Perfect
+personIdsFilter           | 0          |   0.00%    | ✅ Perfect
+x                         | 475162     |  68.68%    | ❌ Critical
+y                         | 475162     |  68.68%    | ❌ Critical
+shotDistance              | 475162     |  68.68%    | ❌ Critical
+foulPersonalTotal         | 642129     |  92.81%    | ❌ Critical
+turnoverTotal             | 659773     |  95.36%    | ❌ Critical
+pointsTotal               | 550288     |  79.54%    | ❌ Critical
+
+--- Check Complete ---
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: check_data_health.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\check_data_health.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+🏥 Starting Data Health Check (Season 2021_22)...
+
+📊 Summary (2021_22):
+   Total Games in Season: 1230
+   Successfully Fetched:  153
+   Missing Games:         1077
+   ✅ Success Rate:       12.4%
+
+🔍 Quality Check:
+   Games with BOTH Home/Away data: 153
+   Games with Partial data:        0
+
+❌ STATUS: CRITICAL (Too much missing data)
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: data_validation.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\data_validation.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+Loading data for season 2021_22 from C:\Users\david\finalPro\scripts\test_and_val\..\..\data\pureData\season_2021_22.csv...
+Analyzing 1230 games for Season 2021_22...
+[V] Contextual health report saved to: C:\Users\david\finalPro\scripts\test_and_val\..\..\docs\figures\0_data_health_context_2021_22.png
+
+[STDERR]:
+C:\Users\david\.matplotlib is not a writable directory
+Matplotlib created a temporary cache directory at C:\Users\david\AppData\Local\Temp\matplotlib-lh8t3dpc because there was an issue with the default path (C:\Users\david\.matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
+======================================================================
+
+----------------------------------------------------------------------
+TEST: validate_game_logic.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\validate_game_logic.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+--- STARTING DEEP LOGIC VALIDATION ---
+Scanning 1 season file(s)...
+
+Processing season_2021_22.csv...
+
+--- VALIDATION COMPLETE ---
+Total Games Checked: 1230
+Valid Games: 1187
+Invalid Games: 43
+
+[X] Blacklist saved to: C:\Users\david\finalPro\scripts\test_and_val\..\..\docs\reports\invalid_games_blacklist.csv
+[X] Season blacklist saved to: C:\Users\david\finalPro\scripts\test_and_val\..\..\docs\reports\invalid_games_blacklist_2021_22.csv
+Preview of bad games:
+     gameId      matchup              season                  reason
+0  22101224  MIN vs. CHI  season_2021_22.csv  Too Many Timeouts (15)
+1  22101220  DEN vs. LAL  season_2021_22.csv  Too Many Timeouts (15)
+2  22101149    LAC @ CHI  season_2021_22.csv  Too Many Timeouts (17)
+3  22101148    MIL @ BKN  season_2021_22.csv  Too Many Timeouts (15)
+4  22101130    OKC @ POR  season_2021_22.csv  Too Many Timeouts (17)
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: check_contextual_sparsity.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\check_contextual_sparsity.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+🕵️‍♂️ Starting QA...
+❌ File not found at C:\Users\david\finalPro\scripts\test_and_val\..\..\data\interim\level1_base_2021_22.csv.
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: check_usage_test.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\check_usage_test.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+📁 Loading High Usage Players from local lookup (C:\Users\david\finalPro\data\lookup\high_usage_players_2021-22.csv)...
+
+📊 Top High Usage Players (Season 2021-22):
+
+--- LAL ---
+TEAM_ABBREVIATION  PLAYER_NAME  USG_PCT  GP  MIN
+              LAL LeBron James    0.317  56 37.2
+
+--- BOS ---
+TEAM_ABBREVIATION  PLAYER_NAME  USG_PCT  GP  MIN
+              BOS Jayson Tatum    0.313  76 35.9
+
+--- DEN ---
+TEAM_ABBREVIATION  PLAYER_NAME  USG_PCT  GP  MIN
+              DEN Nikola Jokić    0.309  74 33.5
+
+--- GSW ---
+TEAM_ABBREVIATION   PLAYER_NAME  USG_PCT  GP  MIN
+              GSW Stephen Curry    0.293  64 34.5
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: test_data.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\test_data.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+[V] Local PBP file verified: season_2021_22.csv
+--- Checking Historical Availability ---
+
+Checking Season 2021-22...
+  [X] ERROR for 2021-22: HTTPSConnectionPool(host='stats.nba.com', port=443): Max retries exceeded with url: /stats/leaguegamefinder?Conference=&DateFrom=&DateTo=&Division=&DraftNumber=&DraftRound=&DraftTeamID=&DraftYear=&EqAST=&EqBLK=&EqDD=&EqDREB=&EqFG3A=&EqFG3M=&EqFG3_PCT=&EqFGA=&EqFGM=&EqFG_PCT=&EqFTA=&EqFTM=&EqFT_PCT=&EqMINUTES=&EqOREB=&EqPF=&EqPTS=&EqREB=&EqSTL=&EqTD=&EqTOV=&GameID=&GtAST=&GtBLK=&GtDD=&GtDREB=&GtFG3A=&GtFG3M=&GtFG3_PCT=&GtFGA=&GtFGM=&GtFG_PCT=&GtFTA=&GtFTM=&GtFT_PCT=&GtMINUTES=&GtOREB=&GtPF=&GtPTS=&GtREB=&GtSTL=&GtTD=&GtTOV=&LeagueID=00&Location=&LtAST=&LtBLK=&LtDD=&LtDREB=&LtFG3A=&LtFG3M=&LtFG3_PCT=&LtFGA=&LtFGM=&LtFG_PCT=&LtFTA=&LtFTM=&LtFT_PCT=&LtMINUTES=&LtOREB=&LtPF=&LtPTS=&LtREB=&LtSTL=&LtTD=&LtTOV=&Outcome=&PORound=&PlayerID=&PlayerOrTeam=T&RookieYear=&Season=2021-22&SeasonSegment=&SeasonType=&StarterBench=&TeamID=&VsConference=&VsDivision=&VsTeamID=&YearsExperience= (Caused by NameResolutionError("HTTPSConnection(host='stats.nba.com', port=443): Failed to resolve 'stats.nba.com' ([Errno 11001] getaddrinfo failed)"))
+  --- STOPPING: Reached the limit. ---
+
+[STDERR]:
+<empty>
+======================================================================
+
+----------------------------------------------------------------------
+TEST: test_for_subs.py
+COMMAND: C:\Python314\python.exe C:\Users\david\finalPro\scripts\test_and_val\test_for_subs.py --season 2021_22
+STATUS: PASSED (Exit Code: 0)
+----------------------------------------------------------------------
+[STDOUT]:
+🕵️‍♂️ Starting Feasibility Check on: C:\Users\david\finalPro\data\pureData\season_2021_22.csv
+✅ Found 8952 substitution events.
+
+🔍 --- LOGIC INSPECTION ---
+Goal: Determine if 'playerName' refers to the player COMING IN or GOING OUT.
+      clock teamTricode playerName            description
+PT05M14.00S         CHA       Ball       SUB out: L. Ball
+PT05M14.00S         CHA    Plumlee    SUB out: M. Plumlee
+PT05M14.00S         CHA Washington SUB out: P. Washington
+PT05M14.00S         CHA    Harrell     SUB in: M. Harrell
+PT05M14.00S         CHA     Martin      SUB in: C. Martin
+PT05M14.00S         CHA  Oubre Jr.   SUB in: K. Oubre Jr.
+PT05M14.00S         WAS     Avdija     SUB out: D. Avdija
+PT05M14.00S         WAS       Gill        SUB in: A. Gill
+PT03M52.00S         WAS  Hachimura  SUB out: R. Hachimura
+PT03M52.00S         WAS    Gafford    SUB out: D. Gafford
+
+🧠 Analysis Helper:
+Event: SUB out: L. Ball
+Column 'playerName': Ball
+✅ 'playerName' is explicitly inside the description.
+⚠️ 'FOR' keyword not found. Parsing might need Regex.
+
+[STDERR]:
+<empty>
+======================================================================
+
+======================================================================
+📊 QA SUITE SUMMARY FOR 2021_22: 8 Passed | 0 Failed
+======================================================================
+
+✨ All QA & Validation tests passed successfully for Season 2021_22!
