@@ -1,0 +1,53 @@
+{
+  "_comment": "Canonical NBA Benchmarks and Rules for Validation and QA",
+  "per_game_combined": {
+    "points": {
+      "expected": 224,
+      "tolerance": 25,
+      "min_per_team": 70,
+      "max_per_team": 165,
+      "description": "Total points scored by both teams (~112 per team)"
+    },
+    "turnover": {
+      "expected": 27,
+      "tolerance": 5,
+      "min_per_team": 3,
+      "max_per_team": 28,
+      "description": "Total turnovers by both teams (~13.5 per team)"
+    },
+    "foul": {
+      "expected": 38,
+      "tolerance": 6,
+      "min_per_period_team": 0,
+      "max_per_period_team": 16,
+      "description": "Total fouls by both teams (~19 per team)"
+    },
+    "steal": {
+      "expected": 15,
+      "tolerance": 4,
+      "description": "Total steals by both teams (~7.5 per team)"
+    },
+    "block": {
+      "expected": 10,
+      "tolerance": 3,
+      "description": "Total blocks by both teams (~5 per team)"
+    },
+    "3pt": {
+      "expected": 70,
+      "tolerance": 15,
+      "description": "Total 3PT field goal attempts by both teams (~35 per team)"
+    },
+    "timeout": {
+      "expected": 14,
+      "tolerance": 4,
+      "min_game": 7,
+      "max_game": 14,
+      "description": "Total timeouts called by both teams in regulation (~7 per team)"
+    }
+  },
+  "possession_rules": {
+    "max_score_jump": 4,
+    "shot_clock_max": 24.0,
+    "shot_clock_offensive_rebound": 14.0
+  }
+}

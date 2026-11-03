@@ -182,6 +182,28 @@ class Level2Validator:
             print("⚠️ STATUS: FAILED. Fix the logic errors in 02_build_level2_momentum.py before proceeding.")
             sys.exit(1)
 
+def normalize_season(season_str: str):
+    s = season_str.strip().replace('-', '_')
+    if '_' in s:
+        parts = s.split('_')
+        return f"{parts[0]}_{parts[1]}", f"{parts[0]}-{parts[1]}"
+    return s, s.replace('_', '-')
+
 if __name__ == "__main__":
-    validator = Level2Validator(FILE_PATH)
+    import argparse
+    parser = argparse.ArgumentParser(description="QA Validator for Level 2 Features")
+    parser.add_argument('--season', type=str, default='2024_25', help="Season to validate (default: 2024_25)")
+    parser.add_argument('--file', type=str, default=None, help="Explicit path to level2 file")
+    args = parser.parse_args()
+
+    interim_dir = os.path.join(BASE_DIR, '..', '..', '..', 'data', 'interim')
+    if args.file:
+        target_file = args.file
+    else:
+        s_under, _ = normalize_season(args.season)
+        target_file = os.path.join(interim_dir, f'level2_features_{s_under}.csv')
+        if not os.path.exists(target_file) and s_under == '2024_25':
+            target_file = os.path.join(interim_dir, 'level2_features.csv')
+
+    validator = Level2Validator(target_file)
     validator.run()
