@@ -31,14 +31,14 @@ class NBACausalLearner:
         self.oof_D1 = None
         
         # Propensity model is a classifier (Treatment is binary: timeout taken or not)
-        self.propensity_model = xgb.XGBClassifier(eval_metric='logloss', random_state=42)
+        self.propensity_model = xgb.XGBClassifier(eval_metric='logloss', random_state=42, n_jobs=-1, tree_method='hist')
         
         # Outcome models are regressors (Target is continuous impact)
-        self.mu0_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
-        self.mu1_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
+        self.mu0_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42, n_jobs=-1, tree_method='hist')
+        self.mu1_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42, n_jobs=-1, tree_method='hist')
         
-        self.tau0_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
-        self.tau1_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
+        self.tau0_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42, n_jobs=-1, tree_method='hist')
+        self.tau1_model = xgb.XGBRegressor(eval_metric='rmse', random_state=42, n_jobs=-1, tree_method='hist')
 
     def save_models(self, save_dir=None):
         if save_dir is None:
@@ -135,13 +135,13 @@ class NBACausalLearner:
             assert len(overlap) == 0, f"Critical leakage in Fold {fold}: {len(overlap)} games leaked!"
             
             # 1. Propensity model on fold
-            fold_prop = xgb.XGBClassifier(eval_metric='logloss', random_state=42)
+            fold_prop = xgb.XGBClassifier(eval_metric='logloss', random_state=42, n_jobs=-1, tree_method='hist')
             fold_prop.fit(X_fold_tr, T_fold_tr)
             oof_g_x[val_idx] = fold_prop.predict_proba(X_fold_val)[:, 1]
             
             # 2. Outcome models on fold
-            fold_mu0 = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
-            fold_mu1 = xgb.XGBRegressor(eval_metric='rmse', random_state=42)
+            fold_mu0 = xgb.XGBRegressor(eval_metric='rmse', random_state=42, n_jobs=-1, tree_method='hist')
+            fold_mu1 = xgb.XGBRegressor(eval_metric='rmse', random_state=42, n_jobs=-1, tree_method='hist')
             
             ctrl_mask_tr = (T_fold_tr == 0)
             treat_mask_tr = (T_fold_tr == 1)
@@ -432,8 +432,8 @@ class NBACausalLearner:
             ctrl_mask = (T_placebo == 0)
             treat_mask = (T_placebo == 1)
             
-            p_mu0 = xgb.XGBRegressor(n_estimators=30, max_depth=3, random_state=m)
-            p_mu1 = xgb.XGBRegressor(n_estimators=30, max_depth=3, random_state=m)
+            p_mu0 = xgb.XGBRegressor(n_estimators=30, max_depth=3, random_state=m, n_jobs=-1, tree_method='hist')
+            p_mu1 = xgb.XGBRegressor(n_estimators=30, max_depth=3, random_state=m, n_jobs=-1, tree_method='hist')
             
             p_mu0.fit(X_train_val[ctrl_mask], self.Y_train[ctrl_mask])
             p_mu1.fit(X_train_val[treat_mask], self.Y_train[treat_mask])

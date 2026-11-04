@@ -8,8 +8,11 @@ from pipeline_constants import get_blacklisted_features
 
 # --- Config ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-INPUT_PATH = os.path.join(BASE_DIR, '..',  'data', 'interim', 'level3_labels.csv')
-OUTPUT_DIR = os.path.join(BASE_DIR, '..',  'data', 'processed')
+INTERIM_DIR = os.path.join(BASE_DIR, '..', 'data', 'interim')
+OUTPUT_DIR = os.path.join(BASE_DIR, '..', 'data', 'processed')
+
+TRAIN_SEASONS = ['2021_22', '2022_23', '2023_24']
+TEST_SEASON = '2024_25'
 
 class SplitValidator:
     """Draconian QA with Diagnostic Reporting for MLOps."""
@@ -58,23 +61,45 @@ class SplitValidator:
         return True
     
 class MLDataPreparer:
-    """Prepares and splits Level 3 data for XGBoost modeling."""
+    """Prepares and splits Multi-Season Level 3 data for Causal & ML modeling."""
     
-    def __init__(self, input_path: str, output_dir: str):
-        self.input_path = input_path
-        self.output_dir = output_dir
+    def __init__(self, interim_dir: str = None, output_dir: str = None):
+        self.interim_dir = interim_dir or INTERIM_DIR
+        self.output_dir = output_dir or OUTPUT_DIR
         self.df = None
         os.makedirs(self.output_dir, exist_ok=True)
 
     def run_pipeline(self):
-        print("Starting ML Data Preparation Pipeline...")
+        print("Starting ML Data Preparation Pipeline (Multi-Season Setup)...")
         
-        print("STEP 1: Loading Level 3 Data...")
-        if not os.path.exists(self.input_path):
-            raise FileNotFoundError(f"Missing: {self.input_path}")
-        self.df = pd.read_csv(self.input_path, low_memory=False)
+        print("STEP 1: Loading Multi-Season Level 3 Data...")
+        historical_dfs = []
+        historical_games = set()
         
-        print(" STEP 2: Feature Selection (Dropping incompatible strings/objects)...")
+        for s in TRAIN_SEASONS:
+            p = os.path.join(self.interim_dir, f'level3_labels_{s}.csv')
+            if not os.path.exists(p):
+                raise FileNotFoundError(f"Missing training season file: {p}")
+            print(f"   Loading train season {s}: {os.path.basename(p)}...")
+            s_df = pd.read_csv(p, low_memory=False)
+            historical_games.update(s_df['gameId'].unique())
+            historical_dfs.append(s_df)
+        
+        # Load test season (2024-25)
+        test_path = os.path.join(self.interim_dir, f'level3_labels_{TEST_SEASON}.csv')
+        if not os.path.exists(test_path):
+            test_path = os.path.join(self.interim_dir, 'level3_labels.csv')
+        if not os.path.exists(test_path):
+            raise FileNotFoundError(f"Missing test season file: {test_path}")
+        print(f"   Loading holdout test season {TEST_SEASON}: {os.path.basename(test_path)}...")
+        test_df_raw = pd.read_csv(test_path, low_memory=False)
+        test_games = set(test_df_raw['gameId'].unique())
+        
+        self.df = pd.concat(historical_dfs + [test_df_raw], ignore_index=True)
+        print(f"   Total combined raw rows: {len(self.df):,}")
+        print(f"   Historical Train/Val games: {len(historical_games):,}, Blind Test games: {len(test_games):,}")
+        
+        print("STEP 2: Feature Selection (Dropping incompatible strings/objects)...")
         metadata_cols = [
             'actionType', 'actionSubtype', 'description', 'shotResult',
             'home_lineup', 'away_lineup', 'period_start_time', 'time_elapsed',
@@ -92,18 +117,13 @@ class MLDataPreparer:
         print("STEP 3: Chronological Sorting by Game ID...")
         self.df.sort_values(by=['gameId', 'period', 'seconds_remaining'], 
                             ascending=[True, True, False], inplace=True)
-        
-        unique_games = self.df['gameId'].unique()
-        total_games = len(unique_games)
-        print(f"   Found {total_games} unique games.")
 
-        print("STEP 4: Splitting into Train (70%), Val (15%), Test (15%)...")
-        train_idx = int(total_games * 0.70)
-        val_idx = int(total_games * 0.85)
+        print("STEP 4: Splitting into Multi-Season Train (85% Historical), Val (15% Historical), Test (100% 2024/25)...")
+        sorted_historical_games = [g for g in self.df['gameId'].unique() if g in historical_games]
+        val_split_idx = int(len(sorted_historical_games) * 0.85)
         
-        train_games = unique_games[:train_idx]
-        val_games = unique_games[train_idx:val_idx]
-        test_games = unique_games[val_idx:]
+        train_games = sorted_historical_games[:val_split_idx]
+        val_games = sorted_historical_games[val_split_idx:]
         
         train_df = self.df[self.df['gameId'].isin(train_games)].copy()
         val_df = self.df[self.df['gameId'].isin(val_games)].copy()
@@ -118,12 +138,13 @@ class MLDataPreparer:
         # Structural / experimental columns needed for split mapping and treatment
         structural_cols = [c for c in ['gameId', 'period', 'is_timeout', 'is_garbage_time'] if c in train_df.columns]
         
-        # Clean causal features
+        # Clean causal features that exist in both train and test
         clean_features = [
             c for c in train_df.columns 
             if c not in all_targets 
             and c not in blacklisted 
             and c not in structural_cols
+            and c in test_df.columns
         ]
         
         # All columns allowed in the exported Parquet splits
@@ -158,7 +179,7 @@ class MLDataPreparer:
 
 def main():
     try:
-        preparer = MLDataPreparer(INPUT_PATH, OUTPUT_DIR)
+        preparer = MLDataPreparer(INTERIM_DIR, OUTPUT_DIR)
         preparer.run_pipeline()
     except Exception as e:
         print(f"❌ Critical Error in Splitting Pipeline: {e}")

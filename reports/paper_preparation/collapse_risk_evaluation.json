@@ -1,0 +1,34 @@
+{
+    "n_competitive_events": 80369,
+    "n_collapse_risk_events": 4043,
+    "explosiveness_threshold_80th": 3.0,
+    "momentum_threshold": -3.0,
+    "timeouts_taken": 99,
+    "coaches_freezed": 3944,
+    "targets_comparison": {
+        "target_stop_run_90s": {
+            "mean_freezing_no_timeout": 1.4103671706263499,
+            "mean_timeout_taken": 1.3417721518987342,
+            "observed_raw_diff": -0.06859501872761564,
+            "causal_cate_danger": -0.260886013507843
+        },
+        "target_reverse_trend_180s": {
+            "mean_freezing_no_timeout": -0.12527593818984548,
+            "mean_timeout_taken": -0.015625,
+            "observed_raw_diff": 0.10965093818984548,
+            "causal_cate_danger": -0.46354037523269653
+        },
+        "target_improve_margin_90s": {
+            "mean_freezing_no_timeout": -0.023449552607219995,
+            "mean_timeout_taken": 0.4936708860759494,
+            "observed_raw_diff": 0.5171204386831694,
+            "causal_cate_danger": 0.17879407107830048
+        },
+        "target_improve_margin_180s": {
+            "mean_freezing_no_timeout": -0.016188373804267846,
+            "mean_timeout_taken": 0.046875,
+            "observed_raw_diff": 0.06306337380426785,
+            "causal_cate_danger": -0.08363062888383865
+        }
+    }
+}

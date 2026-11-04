@@ -1,0 +1,10 @@
+{
+    "target": "target_improve_margin_90s",
+    "n_bootstraps": 100,
+    "unique_games_evaluated": 1230,
+    "point_ate": 0.2809152901172638,
+    "ci_95_lower": 0.27612733840942383,
+    "ci_95_upper": 0.28652963042259216,
+    "standard_error": 0.002857006387785077,
+    "statistically_significant": true
+}

@@ -1,0 +1,11 @@
+{
+    "target": "target_reverse_trend_180s",
+    "n_placebo_iterations": 20,
+    "actual_ate": 0.41102728247642517,
+    "placebo_mean_ate": -0.005909906234592199,
+    "placebo_std_ate": 0.058748021721839905,
+    "placebo_centered_near_zero": true,
+    "cohens_d": 0.06579584628343582,
+    "approx_relative_risk": 1.0617029666900635,
+    "e_value_unmeasured_confounding": 1.3176526156220723
+}

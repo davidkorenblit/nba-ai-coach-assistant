@@ -1,0 +1,11 @@
+{
+    "target": "target_stop_run_90s",
+    "n_placebo_iterations": 20,
+    "actual_ate": -0.1679142862558365,
+    "placebo_mean_ate": -0.0005655372515320778,
+    "placebo_std_ate": 0.01789207197725773,
+    "placebo_centered_near_zero": true,
+    "cohens_d": 0.058985527604818344,
+    "approx_relative_risk": 1.0551435947418213,
+    "e_value_unmeasured_confounding": 1.296358044522243
+}

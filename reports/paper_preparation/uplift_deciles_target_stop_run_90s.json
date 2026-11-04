@@ -1,0 +1,121 @@
+{
+    "target": "target_stop_run_90s",
+    "n_test_samples": 83761,
+    "spearman_rank_correlation": -0.7697,
+    "is_monotonic_trend": false,
+    "bottom_decile_uplift_D1": 1.8086,
+    "top_decile_uplift_D10": 0.0805,
+    "uplift_spread_D10_minus_D1": -1.7281,
+    "deciles": [
+        {
+            "decile": "D1",
+            "n_samples": 8377,
+            "n_control": 8241,
+            "n_treated": 136,
+            "treatment_rate_pct": 1.62,
+            "mean_predicted_cate": -1.3952,
+            "mean_y_control": 0.7135,
+            "mean_y_treated": 2.5221,
+            "empirical_uplift": 1.8086
+        },
+        {
+            "decile": "D2",
+            "n_samples": 8376,
+            "n_control": 8199,
+            "n_treated": 177,
+            "treatment_rate_pct": 2.11,
+            "mean_predicted_cate": -0.6865,
+            "mean_y_control": 0.6256,
+            "mean_y_treated": 2.1412,
+            "empirical_uplift": 1.5157
+        },
+        {
+            "decile": "D3",
+            "n_samples": 8376,
+            "n_control": 8189,
+            "n_treated": 187,
+            "treatment_rate_pct": 2.23,
+            "mean_predicted_cate": -0.4519,
+            "mean_y_control": 0.3546,
+            "mean_y_treated": 1.1711,
+            "empirical_uplift": 0.8165
+        },
+        {
+            "decile": "D4",
+            "n_samples": 8376,
+            "n_control": 8218,
+            "n_treated": 158,
+            "treatment_rate_pct": 1.89,
+            "mean_predicted_cate": -0.2928,
+            "mean_y_control": 0.1912,
+            "mean_y_treated": 1.3291,
+            "empirical_uplift": 1.1379
+        },
+        {
+            "decile": "D5",
+            "n_samples": 8376,
+            "n_control": 8220,
+            "n_treated": 156,
+            "treatment_rate_pct": 1.86,
+            "mean_predicted_cate": -0.1637,
+            "mean_y_control": -0.1017,
+            "mean_y_treated": 0.4872,
+            "empirical_uplift": 0.5889
+        },
+        {
+            "decile": "D6",
+            "n_samples": 8376,
+            "n_control": 8199,
+            "n_treated": 177,
+            "treatment_rate_pct": 2.11,
+            "mean_predicted_cate": -0.0476,
+            "mean_y_control": -0.3149,
+            "mean_y_treated": 0.1751,
+            "empirical_uplift": 0.4901
+        },
+        {
+            "decile": "D7",
+            "n_samples": 8376,
+            "n_control": 8177,
+            "n_treated": 199,
+            "treatment_rate_pct": 2.38,
+            "mean_predicted_cate": 0.0671,
+            "mean_y_control": -0.4886,
+            "mean_y_treated": 0.1809,
+            "empirical_uplift": 0.6695
+        },
+        {
+            "decile": "D8",
+            "n_samples": 8376,
+            "n_control": 8214,
+            "n_treated": 162,
+            "treatment_rate_pct": 1.93,
+            "mean_predicted_cate": 0.1946,
+            "mean_y_control": -0.5665,
+            "mean_y_treated": 0.0309,
+            "empirical_uplift": 0.5973
+        },
+        {
+            "decile": "D9",
+            "n_samples": 8376,
+            "n_control": 8200,
+            "n_treated": 176,
+            "treatment_rate_pct": 2.1,
+            "mean_predicted_cate": 0.3596,
+            "mean_y_control": -0.8245,
+            "mean_y_treated": -0.0852,
+            "empirical_uplift": 0.7393
+        },
+        {
+            "decile": "D10",
+            "n_samples": 8376,
+            "n_control": 8220,
+            "n_treated": 156,
+            "treatment_rate_pct": 1.86,
+            "mean_predicted_cate": 0.7699,
+            "mean_y_control": -0.8882,
+            "mean_y_treated": -0.8077,
+            "empirical_uplift": 0.0805
+        }
+    ]
+}

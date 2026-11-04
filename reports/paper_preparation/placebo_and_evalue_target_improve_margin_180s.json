@@ -1,0 +1,11 @@
+{
+    "target": "target_improve_margin_180s",
+    "n_placebo_iterations": 20,
+    "actual_ate": 0.2879171371459961,
+    "placebo_mean_ate": -0.0010203456040471792,
+    "placebo_std_ate": 0.031935881823301315,
+    "placebo_centered_near_zero": true,
+    "cohens_d": 0.0647452101111412,
+    "approx_relative_risk": 1.0606883764266968,
+    "e_value_unmeasured_confounding": 1.3144036803797796
+}
