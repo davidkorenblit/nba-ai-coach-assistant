@@ -1,42 +1,42 @@
 {
     "target_stop_run_90s": {
-        "n_test_samples": 83761,
-        "ate_xlearner": -0.1647,
-        "ate_dr_learner": -0.0189,
-        "spearman_rho": 0.2755,
-        "pearson_r": 0.0364,
+        "n_test_samples": 569341,
+        "ate_xlearner": -0.1619,
+        "ate_dr_learner": -0.0357,
+        "spearman_rho": 0.3653,
+        "pearson_r": 0.1116,
         "direction_agreement": true,
-        "top10_recommendation_positive_agreement_pct": 60.64,
-        "mean_dr_effect_on_xl_top10_recommendations": 0.0155
+        "top10_recommendation_positive_agreement_pct": 54.87,
+        "mean_dr_effect_on_xl_top10_recommendations": 0.0421
     },
     "target_improve_margin_90s": {
-        "n_test_samples": 83761,
-        "ate_xlearner": 0.3711,
-        "ate_dr_learner": 0.3231,
-        "spearman_rho": 0.5121,
-        "pearson_r": 0.165,
+        "n_test_samples": 569341,
+        "ate_xlearner": 0.4859,
+        "ate_dr_learner": 0.3189,
+        "spearman_rho": 0.5451,
+        "pearson_r": 0.1233,
         "direction_agreement": true,
-        "top10_recommendation_positive_agreement_pct": 98.1,
-        "mean_dr_effect_on_xl_top10_recommendations": 0.5234
+        "top10_recommendation_positive_agreement_pct": 97.7,
+        "mean_dr_effect_on_xl_top10_recommendations": 0.4407
     },
     "target_reverse_trend_180s": {
-        "n_test_samples": 72743,
-        "ate_xlearner": 0.2787,
-        "ate_dr_learner": 0.4318,
-        "spearman_rho": 0.5088,
-        "pearson_r": 0.3855,
+        "n_test_samples": 494037,
+        "ate_xlearner": 0.6241,
+        "ate_dr_learner": 0.5183,
+        "spearman_rho": 0.4599,
+        "pearson_r": 0.3578,
         "direction_agreement": true,
-        "top10_recommendation_positive_agreement_pct": 94.35,
-        "mean_dr_effect_on_xl_top10_recommendations": 1.0359
+        "top10_recommendation_positive_agreement_pct": 92.21,
+        "mean_dr_effect_on_xl_top10_recommendations": 1.1838
     },
     "target_improve_margin_180s": {
-        "n_test_samples": 72743,
-        "ate_xlearner": 0.26,
-        "ate_dr_learner": 0.2734,
-        "spearman_rho": 0.4912,
-        "pearson_r": 0.1321,
+        "n_test_samples": 494037,
+        "ate_xlearner": 0.5825,
+        "ate_dr_learner": 0.3381,
+        "spearman_rho": 0.3741,
+        "pearson_r": 0.0896,
         "direction_agreement": true,
-        "top10_recommendation_positive_agreement_pct": 95.82,
-        "mean_dr_effect_on_xl_top10_recommendations": 0.52
+        "top10_recommendation_positive_agreement_pct": 95.87,
+        "mean_dr_effect_on_xl_top10_recommendations": 0.4639
     }
 }

@@ -85,19 +85,19 @@ flowchart TD
 ---
 
 ### שלב 7: הרצת כל כלי הולידציה האקדמיים על ה-Test העיוור (2024/25)
-- [ ] **7.1 בדיקת Common Support & Overlap (`models/evaluate_overlap_balance.py`):**
+- [x] **7.1 בדיקת Common Support & Overlap (`models/evaluate_overlap_balance.py`):**
   - אימות הנחת ה-Positivity והפקת גרפי חפיפה ו-Love Plots מעודכנים.
-- [ ] **7.2 בדיקת Decile Uplift (`models/evaluate_cate_uplift.py`):**
+- [x] **7.2 בדיקת Decile Uplift (`models/evaluate_cate_uplift.py`):**
   - הוכחת מונוטוניות מחוץ למדגם על עונה עתידית מלאה (גרף עשירונים ו-JSON).
-- [ ] **7.3 בנצ'מרק מתחרה DR-Learner (`models/train_dr_learner_benchmark.py`):**
+- [x] **7.3 בנצ'מרק מתחרה DR-Learner (`models/train_dr_learner_benchmark.py`):**
   - אימון EconML DRLearner על ה-Train הרב-עונתי והשוואת קורלציית דירוג ואחוזי הסכמה ב-Test 2024/25.
 
 ---
 
 ### שלב 8: תיעוד סופי וסגירת הדרישות למאמר
-- [ ] **8.1 עדכון `docs/dr_shapira_action_items.md`:**
+- [x] **8.1 עדכון `docs/dr_shapira_action_items.md`:**
   - סיכום תוצאות המבחן העיוור הרב-עונתי (אימות סעיף 5).
-- [ ] **8.2 ארכוב גרפים ודוחות רשמיים:**
+- [x] **8.2 ארכוב גרפים ודוחות רשמיים:**
   - העברת כל התוצרים הסופיים לתיקיית `reports/paper_preparation/`.
-- [ ] **8.3 Git Commit & Push:**
+- [x] **8.3 Git Commit & Push:**
   - שמירה ודחיפה של כל הקוד והדוקומנטציה לענף `paper-preparation`.
